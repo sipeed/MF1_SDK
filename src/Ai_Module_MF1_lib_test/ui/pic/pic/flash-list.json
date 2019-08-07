@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "files": [
+    {
+      "address": 0xC00000,
+      "bin": "01.bin",
+      "sha256Prefix": false
+    },
+	{
+      "address": 0xC30000,
+      "bin": "02.bin",
+      "sha256Prefix": false
+    }
+  ]
+}
