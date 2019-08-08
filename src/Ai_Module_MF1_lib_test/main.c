@@ -132,11 +132,7 @@ int main(void)
     face_lib_init_module();
 
     /*load cfg from flash*/
-    if(flash_load_cfg(&g_board_cfg))
-    {
-        printf("load cfg %s\r\n", g_board_cfg.cfg_right_flag ? "success" : "error");
-        flash_cfg_print(&g_board_cfg);
-    } else
+    if(flash_load_cfg(&g_board_cfg) == 0)
     {
         printf("load cfg failed,save default config\r\n");
 
@@ -148,16 +144,19 @@ int main(void)
         }
     }
 
-    /* recognition threshold */
-    face_recognition_cfg.compare_threshold = (float)g_board_cfg.face_gate;
-    printf("set compare_threshold: %d \r\n", g_board_cfg.face_gate);
-
     /* init device */
     protocol_init_device(&g_board_cfg);
     init_relay_key_pin(g_board_cfg.key_relay_pin_cfg);
     protocol_send_init_done();
 
     face_lib_regisiter_callback(&face_recognition_cb);
+
+    printf("load cfg %s\r\n", g_board_cfg.cfg_right_flag ? "success" : "error");
+    flash_cfg_print(&g_board_cfg);
+
+    /* recognition threshold */
+    face_recognition_cfg.compare_threshold = (float)g_board_cfg.face_gate;
+    printf("set compare_threshold: %d \r\n", g_board_cfg.face_gate);
 
     while(1)
     {

@@ -229,7 +229,7 @@ void board_init(void)
     set_IR_LED(0);
     /* DVP init */
 
-    printf("DVP init\n");
+    // printf("DVP init\n");
     my_dvp_init(8);
     DBG_TIME();
     my_dvp_set_xclk_rate(48000000);
@@ -252,7 +252,7 @@ void board_init(void)
     rtc_timer_set(2019, 5, 1, 12, 00, 00);
 
     /* LCD init */
-    printf("LCD init\n");
+    // printf("LCD init\n");
 #if CONFIG_LCD_TYPE_ST7789
     lcd_init();
     lcd_clear(BLUE);
@@ -275,7 +275,7 @@ void board_init(void)
     dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 1);
     DBG_TIME();
 
-    printf("System start\r\n");
+    // printf("System start\r\n");
     return;
 }
 ///////////////////////////////////////////////////////////////////////////////
