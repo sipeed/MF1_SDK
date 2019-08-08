@@ -1,0 +1,3 @@
+[submodule "src/Ai_Module_Lib"]
+	path = src/Ai_Module_Lib
+	url = git@e.coding.net:sipeed_ai/Ai_Module_Lib.git
