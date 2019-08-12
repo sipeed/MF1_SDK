@@ -221,7 +221,7 @@ def bmp2hex(infile, tablewidth, sizebytes, invert, raw, named, double, xbm, k210
 		if k210bin:
 			if (byteWidth//3)%2 != 0:
 				raise Exception("Invalid width!")
-			file = open('bmp.bin','wb')
+			file = open(tablename + '.bin','wb')
 			for i in range(pixelHeight):
 				for j in range (byteWidth//6):
 					ndx = dataOffset + ((pixelHeight-1-i) * paddedWidth) + j*6
@@ -280,6 +280,8 @@ def bmp2hex(infile, tablewidth, sizebytes, invert, raw, named, double, xbm, k210
 		
 		if k210:
 			print ('};')
+		elif k210bin:
+			print("convert end")
 		else:
 			if (named):
 				print ('};')

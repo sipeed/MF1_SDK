@@ -3,12 +3,37 @@
   "files": [
     {
       "address": 0xC00000,
-      "bin": "01.bin",
+      "bin": "0.bin",
       "sha256Prefix": false
     },
-	{
-      "address": 0xC30000,
-      "bin": "02.bin",
+    {
+      "address": 0xC1d000,
+      "bin": "1.bin",
+      "sha256Prefix": false
+    },
+    {
+      "address": 0xC3a000,
+      "bin": "2.bin",
+      "sha256Prefix": false
+    },
+    {
+      "address": 0xC57000,
+      "bin": "3.bin",
+      "sha256Prefix": false
+    },
+    {
+      "address": 0xC74000,
+      "bin": "4.bin",
+      "sha256Prefix": false
+    },
+    {
+      "address": 0xC91000,
+      "bin": "5.bin",
+      "sha256Prefix": false
+    },
+    {
+      "address": 0xCae000,
+      "bin": "6.bin",
       "sha256Prefix": false
     }
   ]
