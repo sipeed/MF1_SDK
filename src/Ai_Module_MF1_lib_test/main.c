@@ -30,6 +30,8 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
 static uint64_t last_open_relay_time_in_s = 0;
 static volatile uint8_t relay_open_flag = 0;
 
+static void uart_send(char *buf, size_t len);
+
 face_recognition_cfg_t face_recognition_cfg = {
     .check_ir_face = 1,
     .auto_out_fea = 0,
@@ -43,7 +45,17 @@ face_lib_callback_t face_recognition_cb = {
     .lcd_draw_false_face = lcd_draw_false_face,
     .record_face = record_face,
     .face_pass_cb = face_pass_callback,
+#if CONFIG_PROTO_OVER_NET
+    .proto_send = spi_8266_mqtt_send,
+#else
+    .proto_send = uart_send,
+#endif
 };
+
+static void uart_send(char *buf, size_t len)
+{
+    uart_send_data(PROTOCOL_UART_NUM, buf, len);
+}
 
 static void open_relay(void)
 {
@@ -145,12 +157,12 @@ int main(void)
         }
     }
 
+    face_lib_regisiter_callback(&face_recognition_cb);
+
     /* init device */
     protocol_init_device(&g_board_cfg);
     init_relay_key_pin(g_board_cfg.key_relay_pin_cfg);
     protocol_send_init_done();
-
-    face_lib_regisiter_callback(&face_recognition_cb);
 
     printf("load cfg %s\r\n", g_board_cfg.cfg_right_flag ? "success" : "error");
     flash_cfg_print(&g_board_cfg);
@@ -184,6 +196,7 @@ int main(void)
         {
             face_lib_run(&face_recognition_cfg);
         }
+
         /* get key state */
         update_key_state();
 
@@ -277,6 +290,7 @@ int main(void)
             g_dvp_finish_flag = 0;
         }
 #endif
+
         if(g_key_long_press)
         {
             g_key_long_press = 0;
@@ -345,7 +359,9 @@ int main(void)
         /******Process uart protocol********/
         if(recv_over_flag)
         {
+#if(CONFIG_PROTO_OVER_NET == 0)
             protocol_prase(cJSON_prase_buf);
+#endif
             recv_over_flag = 0;
         }
 

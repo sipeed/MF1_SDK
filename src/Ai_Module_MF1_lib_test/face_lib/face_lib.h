@@ -141,6 +141,9 @@ typedef struct
 
     //face check pass callback
     void (*face_pass_cb)(face_obj_t *obj, uint32_t total, uint32_t current, uint64_t *time);
+    
+    //protocol send
+    void (*proto_send)(char *buf,size_t len);
 } face_lib_callback_t;
 
 ///////////////////////////////////////////////////////////////////////////////

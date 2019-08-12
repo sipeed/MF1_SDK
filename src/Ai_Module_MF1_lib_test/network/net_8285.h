@@ -2,6 +2,7 @@
 #define __NET_8285_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 //mqtt
 #include "PubSubClient.h"
@@ -40,5 +41,6 @@ uint8_t spi_8266_connect_ap(uint8_t wifi_ssid[32],
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void mqtt_reconnect(void);
 uint8_t spi_8266_mqtt_init(void);
+void spi_8266_mqtt_send(char *buf,size_t len);
 
 #endif

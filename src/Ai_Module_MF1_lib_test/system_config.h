@@ -22,6 +22,8 @@
 #define CONFIG_KEY_LONG_CLEAR_FEA           (1)
 
 #define CONFIG_SWAP_UART                    (1)
+
+#define CONFIG_PROTO_OVER_NET               (1)
 ///////////////////////////////////////////////////////////////////////////////
 #define DBG_UART_NUM                   	    (UART_DEV3) //FUCK Cannan
 #define PROTOCOL_UART_NUM                   (UART_DEV1)

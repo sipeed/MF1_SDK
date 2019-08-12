@@ -258,6 +258,10 @@ static void mqtt_callback(unsigned char *intopic, uint16_t msgId, unsigned char 
     {
         last_msgId = msgId;
         /* TODO: here you can prase mqtt msg */
+#if CONFIG_PROTO_OVER_NET
+        /* should use Qos 1 */
+        protocol_prase(payload);
+#endif
     } else
     {
         printf("same msgId\r\n");
@@ -309,4 +313,15 @@ uint8_t spi_8266_mqtt_init(void)
         printf("mqtt connect failed\r\n");
     }
     return 1;
+}
+
+void spi_8266_mqtt_send(char *buf, size_t len)
+{
+    if(g_net_status)
+    {
+        PubSubClient_publish(mqtt_topic, buf, len);
+    } else
+    {
+        printf("error modules not connect to net!\r\n");
+    }
 }
