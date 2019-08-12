@@ -15,7 +15,7 @@
 #include "lcd_st7789.h"
 #include <string.h>
 #include <unistd.h>
-#include "font.h"
+#include "../font.h"
 
 #include "nt35310.h"
 #include "stdio.h"

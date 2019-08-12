@@ -219,7 +219,7 @@ void flash_init(void)
 {
     /* spi flash init */
     w25qxx_init(3, 0, 60000000);
-    
+
     uint8_t manuf_id, device_id;
     w25qxx_read_id(&manuf_id, &device_id);
     printf("manuf_id:0x%02x, device_id:0x%02x\n", manuf_id, device_id);
@@ -228,9 +228,9 @@ void flash_init(void)
         printf("manuf_id:0x%02x, device_id:0x%02x\n", manuf_id, device_id);
         return;
     }
-    
+
     w25qxx_read_data(DATA_ADDRESS, (uint8_t *)&g_face_save_info, sizeof(face_save_info_t));
-    
+
     if(g_face_save_info.header == FACE_HEADER)
     {
         printf("The header ok\r\n");
@@ -256,9 +256,9 @@ void flash_init(void)
         {
             printf("ERR, too many pic\n");
         }
-        
+
         flash_init_uid_table(0);
-         //4.7ms
+        //4.7ms
     } else
     {
         printf("No header\n");
@@ -266,12 +266,12 @@ void flash_init(void)
         g_face_save_info.number = 0;
         memset((void *)g_face_save_info.face_info_index, 0, sizeof(g_face_save_info.face_info_index));
         w25qxx_write_data(DATA_ADDRESS, (uint8_t *)&g_face_save_info, sizeof(face_save_info_t));
-        
+
         flash_init_uid_table(1);
-         //4.7ms
+        //4.7ms
     }
     flash_check_wdt_reboot_count();
-    
+
     return;
 }
 
@@ -498,6 +498,8 @@ uint8_t flash_cfg_print(board_cfg_t *cfg)
     printf("face_gate:%d\r\n", cfg->face_gate);
     printf("port_cfg:%08X\r\n", cfg->port_cfg);
     printf("key_relay_pin_cfg:%08X\r\n", cfg->key_relay_pin_cfg);
+    printf("wifi_ssid:%s\r\n", cfg->wifi_ssid);
+    printf("wifi_passwd:%s\r\n", cfg->wifi_passwd);
 }
 
 uint8_t flash_cfg_set_default(board_cfg_t *cfg)
@@ -517,6 +519,7 @@ uint8_t flash_cfg_set_default(board_cfg_t *cfg)
     cfg->port_cfg = (uint32_t)((PROTOCOL_PORT_TX_PIN << 24) | (PROTOCOL_PORT_RX_PIN << 16) |
                                (DEBUE_TX_PIN << 8) | (DEBUE_RX_PIN));
     cfg->key_relay_pin_cfg = (uint32_t)((CONFIG_KEY_DIR << 24) | (KEY_PIN << 16) |
-                                (RELAY_HIGH_PIN << 8) | (RELAY_LOWX_PIN));
-
+                                        (RELAY_HIGH_PIN << 8) | (RELAY_LOWX_PIN));
+    memset(cfg->wifi_ssid, 0, 32);
+    memset(cfg->wifi_passwd, 0, 32);
 }

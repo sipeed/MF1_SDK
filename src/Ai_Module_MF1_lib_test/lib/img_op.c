@@ -62,3 +62,19 @@ void rgb5652rgb888(uint16_t *rgb565, uint8_t *rgb888, uint16_t img_w, uint16_t i
         }
     }
 }
+
+/* clang-format off */
+#define RGB888_RED          (0x00ff0000)
+#define RGB888_GREEN        (0x0000ff00)
+#define RGB888_BLUE         (0x000000ff)
+/* clang-format on */
+
+uint16_t rgb8882rgb565(uint32_t rgb888)
+{
+    uint8_t cRed = (rgb888 & RGB888_RED) >> 19;
+    uint8_t cGreen = (rgb888 & RGB888_GREEN) >> 10;
+    uint8_t cBlue = (rgb888 & RGB888_BLUE) >> 3;
+
+    uint16_t n565Color = (uint16_t)((cRed << 11) + (cGreen << 5) + (cBlue << 0));
+    return n565Color;
+}

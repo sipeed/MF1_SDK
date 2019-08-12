@@ -17,6 +17,8 @@
 #include "lcd_st7789.h"
 #elif CONFIG_LCD_TYPE_SSD1963
 #include "lcd_ssd1963.h"
+#elif CONFIG_LCD_TYPE_SIPEED
+#include "lcd_sipeed.h"
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -24,14 +26,18 @@ volatile uint8_t g_key_press = 0;
 volatile uint8_t g_key_long_press = 0;
 uint8_t sKey_dir = 0;
 
-///////////////////////////////////////////////////////////////////////////////
 volatile board_cfg_t g_board_cfg;
 
+///////////////////////////////////////////////////////////////////////////////
 uint8_t kpu_image[2][IMG_W * IMG_H * 3] __attribute__((aligned(128)));
 uint8_t display_image[IMG_W * IMG_H * 2] __attribute__((aligned(64)));
 
 #if CONFIG_LCD_TYPE_SSD1963
 uint8_t display_image_rgb888[IMG_W * IMG_H * 3] __attribute__((aligned(64)));
+#endif
+
+#if CONFIG_LCD_TYPE_SIPEED
+uint8_t lcd_image[LCD_W * LCD_H * 2] __attribute__((aligned(64)));
 #endif
 
 #if CONFIG_LCD_TYPE_ST7789
@@ -114,6 +120,10 @@ static void io_mux_init(void)
     fpioa_set_function(LCD_WRX_PIN, FUNC_SPI0_SS3);
     fpioa_set_function(LCD_SCK_PIN, FUNC_SPI0_SCLK);
 
+#if CONFIG_LCD_TYPE_SIPEED
+    fpioa_set_io_driving(LCD_SCK_PIN, FPIOA_DRIVING_7);
+#endif
+
     /* change to 1.8V */
     sysctl_set_spi0_dvp_data(1);
 
@@ -151,7 +161,7 @@ static void io_mux_init(void)
     fpioa_set_function(WIFI_EN_PIN, FUNC_GPIOHS0 + WIFI_EN_HS_NUM);
     gpiohs_set_drive_mode(WIFI_EN_HS_NUM, GPIO_DM_OUTPUT);
     gpiohs_set_pin(WIFI_EN_HS_NUM, 0); //disable WIFI
-    
+
 #if CONFIG_ENABLE_WIFI
     /*
      GPIO   |   Name    |   K210    
@@ -161,7 +171,8 @@ static void io_mux_init(void)
       14    |   SCK     |   1
       15    |   SS      |   0
     */
-    gpiohs_set_pin(WIFI_EN_HS_NUM, 0);                                        //enable WIFI
+    gpiohs_set_pin(WIFI_EN_HS_NUM, 1); //enable WIFI
+
     fpioa_set_function(WIFI_SPI_CSXX_PIN, FUNC_GPIOHS0 + WIFI_SPI_SS_HS_NUM); //CS
     fpioa_set_function(WIFI_SPI_MISO_PIN, FUNC_SPI1_D1);                      //MISO
     fpioa_set_function(WIFI_SPI_MOSI_PIN, FUNC_SPI1_D0);                      //MOSI
@@ -260,6 +271,8 @@ void board_init(void)
     /* CONFIG_LCD_TYPE_SSD1963 */
     lcd_init(&lcd_480x272_4_3inch);
     lcd_clear(lcd_color(0x00, 0x00, 0x00)); /* slow */
+#elif CONFIG_LCD_TYPE_SIPEED
+    lcd_init(); //delay 500ms...
 #endif
 
     /* DVP interrupt config */

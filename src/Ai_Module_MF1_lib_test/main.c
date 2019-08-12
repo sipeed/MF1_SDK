@@ -8,10 +8,14 @@
 #include "img_op.h"
 #include "sd_op.h"
 
+#include "net_8285.h"
+
 #if CONFIG_LCD_TYPE_ST7789
 #include "lcd_st7789.h"
 #elif CONFIG_LCD_TYPE_SSD1963
 #include "lcd_ssd1963.h"
+#elif CONFIG_LCD_TYPE_SIPEED
+#include "lcd_sipeed.h"
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -28,16 +32,15 @@ static volatile uint8_t relay_open_flag = 0;
 
 face_recognition_cfg_t face_recognition_cfg = {
     .check_ir_face = 1,
-    .lcd_type = 1,
     .auto_out_fea = 0,
     .detect_threshold = 0.0,
     .compare_threshold = 0.0,
 };
 
 face_lib_callback_t face_recognition_cb = {
-    .lcd_draw_picture = recognition_draw_callback,
-    .lcd_draw_edge = draw_edge,
-    .lcd_box_false_face = box_false_face,
+    .lcd_draw_edge = lcd_draw_edge,
+    .lcd_draw_picture = lcd_draw_picture_cb,
+    .lcd_draw_false_face = lcd_draw_false_face,
     .record_face = record_face,
     .face_pass_cb = face_pass_callback,
 };
@@ -80,9 +83,7 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
 
     last_pass_time = tim;
 
-#if CONFIG_LCD_TYPE_ST7789
-    utils_display_pass();
-#endif
+    lcd_draw_pass();
 
     open_relay();
 
@@ -125,7 +126,7 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
 
 int main(void)
 {
-    uint64_t tim = 0;
+    uint64_t tim = 0, last_mqtt_check_tim = 0;
 
     board_init();
     sd_init_fatfs();
@@ -158,15 +159,124 @@ int main(void)
     face_recognition_cfg.compare_threshold = (float)g_board_cfg.face_gate;
     printf("set compare_threshold: %d \r\n", g_board_cfg.face_gate);
 
+    /* init 8285 */
+    spi_8266_init_device();
+
+    if(strlen(g_board_cfg.wifi_ssid) > 0 && strlen(g_board_cfg.wifi_passwd) >= 8)
+    {
+        display_lcd_img_addr(IMG_CONNING_ADDR);
+        g_net_status = spi_8266_connect_ap(g_board_cfg.wifi_ssid, g_board_cfg.wifi_passwd, 2);
+        if(g_net_status)
+        {
+            display_lcd_img_addr(IMG_CONN_SUCC_ADDR);
+            spi_8266_mqtt_init();
+        } else
+        {
+            display_lcd_img_addr(IMG_CONN_FAILED_ADDR);
+            printf("wifi config maybe error,we can not connect to it!\r\n");
+        }
+    }
+
     while(1)
     {
-        /* if rcv jpg, will stuck a period */
-        if(!jpeg_recv_start_flag)
+        /* if rcv jpg or scan qrcode, will stuck a period */
+        if(!jpeg_recv_start_flag && !qrcode_get_info_flag)
         {
             face_lib_run(&face_recognition_cfg);
-            update_key_state();
+        }
+        /* get key state */
+        update_key_state();
+
+#if CONFIG_KEY_SHORT_QRCODE
+        /* key short to scan qrcode */
+        if(g_key_press)
+        {
+            g_key_press = 0;
+            qrcode_get_info_flag = 1;
+            qrcode_start_time = sysctl_get_time_us();
+
+            set_IR_LED(0);
+            open_gc0328_650();
+            dvp_set_output_enable(0, 0); //disable to ai
+            dvp_set_output_enable(1, 1); //enable to lcd
         }
 
+        if(qrcode_get_info_flag)
+        {
+            while(!g_dvp_finish_flag)
+                ;
+
+            /* here display pic */
+            display_fit_lcd_with_alpha(IMG_SCAN_QR_ADDR, lcd_image, 160);
+
+#if CONFIG_LCD_TYPE_ST7789
+            lcd_draw_picture(0, 0, LCD_W, LCD_H, (uint32_t *)lcd_image); //7.5ms
+#endif
+
+            qr_wifi_info_t *wifi_info = qrcode_get_wifi_cfg();
+            if(NULL == wifi_info)
+            {
+                printf("no memory!\r\n");
+            } else
+            {
+                switch(wifi_info->ret)
+                {
+                    case QRCODE_RET_CODE_OK:
+                    {
+                        printf("get qrcode\r\n");
+                        printf("ssid:%s\tpasswd:%s\r\n", wifi_info->ssid, wifi_info->passwd);
+
+                        if(g_net_status)
+                        {
+                            printf("already connect net, but want to reconfig, so reboot 8266\r\n");
+                            spi_8266_init_device();
+                            g_net_status = 0;
+                        }
+
+                        //connect to network
+                        display_lcd_img_addr(IMG_CONNING_ADDR);
+                        g_net_status = spi_8266_connect_ap(wifi_info->ssid, wifi_info->passwd, 2);
+                        if(g_net_status)
+                        {
+                            display_lcd_img_addr(IMG_CONN_SUCC_ADDR);
+                            spi_8266_mqtt_init();
+                            memcpy(g_board_cfg.wifi_ssid, wifi_info->ssid, 32);
+                            memcpy(g_board_cfg.wifi_passwd, wifi_info->passwd, 32);
+                            if(flash_save_cfg(&g_board_cfg) == 0)
+                            {
+                                printf("save g_board_cfg failed!\r\n");
+                            }
+                        } else
+                        {
+                            display_lcd_img_addr(IMG_CONN_FAILED_ADDR);
+                            printf("wifi config maybe error,we can not connect to it!\r\n");
+                        }
+                        qrcode_get_info_flag = 0;
+                    }
+                    break;
+                    case QRCODE_RET_CODE_PRASE_ERR:
+                    {
+                        printf("get error qrcode\r\n");
+                    }
+                    break;
+                    case QRCODE_RET_CODE_TIMEOUT:
+                    {
+                        printf("scan qrcode timeout\r\n");
+                        /* here display pic */
+                        display_lcd_img_addr(IMG_QR_TIMEOUT_ADDR);
+                        qrcode_get_info_flag = 0;
+                    }
+                    break;
+                    case QRCODE_RET_CODE_NO_DATA:
+                    default:
+                        break;
+                }
+                free(wifi_info);
+            }
+
+            g_dvp_finish_flag = 0;
+        }
+#endif
         if(g_key_long_press)
         {
             g_key_long_press = 0;
@@ -201,6 +311,25 @@ int main(void)
             }
             /* set cfg to default end */
 #endif
+        }
+
+        tim = sysctl_get_time_us();
+
+        /******Process mqtt ********/
+        if(g_net_status && !qrcode_get_info_flag)
+        {
+            /* mqtt loop */
+            if(PubSubClient_loop() == false)
+            { /* disconnect */
+                mqtt_reconnect();
+            }
+
+            if(last_mqtt_check_tim < tim)
+            {
+                if(!PubSubClient_connected())
+                    mqtt_reconnect();
+                last_mqtt_check_tim += 1000 * 1000; //1000ms
+            }
         }
 
         /******Process relay open********/

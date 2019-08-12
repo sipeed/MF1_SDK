@@ -40,12 +40,6 @@
 
 #include "system_config.h"
 
-#if CONFIG_LCD_TYPE_ST7789
-#include "lcd_st7789.h"
-#elif CONFIG_LCD_TYPE_SSD1963
-#include "lcd_ssd1963.h"
-#endif
-
 /* clang-format off */
 #define DBG_TIME_INIT()
 #define DBG_TIME()
@@ -125,7 +119,6 @@ typedef struct
 typedef struct
 {
     uint8_t check_ir_face; //1 check, 0 not check
-    uint8_t lcd_type;      //1 st7789, 0 ssd1963, now onlu support st7789
     uint8_t auto_out_fea;  //1 yes, 0 no
 
     float detect_threshold;
@@ -134,15 +127,24 @@ typedef struct
 
 typedef struct
 {
-    void (*lcd_draw_picture)(uint8_t *rgb565_img);
-    void (*lcd_draw_edge)(uint32_t *gram, face_obj_t *obj, uint16_t color);
+    //drae face edge on lcd image buf
+    void (*lcd_draw_edge)(face_obj_t *obj, uint32_t color);
 
-    void (*lcd_box_false_face)(face_recognition_ret_t *ret);
+    //darw lcd image buf to lcd
+    void (*lcd_draw_picture)(void);
+
+    //draw not pass face on lcd
+    void (*lcd_draw_false_face)(face_recognition_ret_t *ret);
+
+    //save face to flash
     void (*record_face)(face_recognition_ret_t *ret);
 
+    //face check pass callback
     void (*face_pass_cb)(face_obj_t *obj, uint32_t total, uint32_t current, uint64_t *time);
 } face_lib_callback_t;
 
+///////////////////////////////////////////////////////////////////////////////
+extern volatile uint8_t face_lib_draw_flag;
 ///////////////////////////////////////////////////////////////////////////////
 //init module
 uint8_t face_lib_init_module(void);
@@ -216,6 +218,8 @@ w25qxx_status_t my_w25qxx_read_data(uint32_t addr, uint8_t *data_buf, uint32_t l
 /* camera */
 int dvp_irq(void *ctx);
 int gc0328_init(uint16_t time); //sleep time in ms
+void open_gc0328_650();
+extern volatile uint8_t g_dvp_finish_flag;
 ///////////////////////////////////////////////////////////////////////////////
 
 #endif

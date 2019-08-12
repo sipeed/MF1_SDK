@@ -12,10 +12,15 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CONFIG_LCD_TYPE_ST7789              (1)
 #define CONFIG_LCD_TYPE_SSD1963             (0)
-#define CONFIG_ENABLE_WIFI                  (0)
+#define CONFIG_LCD_TYPE_SIPEED              (0)
+
+#define CONFIG_ENABLE_WIFI                  (1)
+
 #define CONFIG_KEY_DIR                      (1)
+#define CONFIG_KEY_SHORT_QRCODE             (1)
 #define CONFIG_KEY_LONG_RESTORE             (1)
 #define CONFIG_KEY_LONG_CLEAR_FEA           (1)
+
 #define CONFIG_SWAP_UART                    (1)
 ///////////////////////////////////////////////////////////////////////////////
 #define DBG_UART_NUM                   	    (UART_DEV3) //FUCK Cannan
@@ -49,7 +54,11 @@
 
 #define LCD_W                                 ()
 #define LCD_H                                 ()
+#elif CONFIG_LCD_TYPE_SIPEED
+#define LCD_W                                (402)
+#define LCD_H                                (242)
 #endif
+
 #define LCD_OFT                               ((IMG_W - LCD_W) / 2)
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -136,6 +145,7 @@
 #if CONFIG_ENABLE_WIFI
 #define WIFI_SPI_SS_HS_NUM                  (11)
 #endif
+
 /* TF CARD */
 #define TF_SPI_SCLK_HS_NUM                  (12)
 #define TF_SPI_MOSI_HS_NUM                  (13)
@@ -161,9 +171,14 @@
 #define FACE_DATA_MAX_COUNT                         (512)
 ///////////////////////////////////////////////////////////////////////////////
 //UI IMAGE	reserve 192KB for potential QVGA rgb565
-#define IMG_LCD_SIZE		                        (240 * 240 * 2)
-#define IMG_LOG_OK_ADDRESS	                        (0xC00000)//12M
-#define IMG_REC_OK_ADDRESS	                        (IMG_LOG_OK_ADDRESS+ (192 * 1024 * 1))
+#define IMG_LCD_SIZE		                        (240*240*2)
+#define IMG_RECORD_FACE_ADDR                        (0xC00000)
+#define IMG_FACE_PASS_ADDR                          (IMG_RECORD_FACE_ADDR + (116 * 1024 * 1))
+#define IMG_CONNING_ADDR                            (IMG_RECORD_FACE_ADDR + (116 * 1024 * 2))
+#define IMG_CONN_FAILED_ADDR                        (IMG_RECORD_FACE_ADDR + (116 * 1024 * 3))
+#define IMG_CONN_SUCC_ADDR                          (IMG_RECORD_FACE_ADDR + (116 * 1024 * 4))
+#define IMG_SCAN_QR_ADDR                            (IMG_RECORD_FACE_ADDR + (116 * 1024 * 5))
+#define IMG_QR_TIMEOUT_ADDR                         (IMG_RECORD_FACE_ADDR + (116 * 1024 * 6))
 ///////////////////////////////////////////////////////////////////////////////
 /* clang-format on */
 

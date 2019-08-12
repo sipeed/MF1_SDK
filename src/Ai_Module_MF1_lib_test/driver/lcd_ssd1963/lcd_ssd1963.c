@@ -19,7 +19,7 @@
 #include "lcd_ssd1963.h"
 #include "ssd1963.h"
 #include "sleep.h"
-#include "font.h"
+#include "../font.h"
 #include "zh_CN_font.h"
 
 #if CONFIG_LCD_TYPE_SSD1963
