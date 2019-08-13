@@ -14,7 +14,7 @@
 #define CONFIG_LCD_TYPE_SSD1963             (0)
 #define CONFIG_LCD_TYPE_SIPEED              (0)
 
-#define CONFIG_ENABLE_WIFI                  (1)
+#define CONFIG_ENABLE_WIFI                  (0)
 
 #define CONFIG_KEY_DIR                      (1)
 #define CONFIG_KEY_SHORT_QRCODE             (1)
@@ -22,8 +22,11 @@
 #define CONFIG_KEY_LONG_CLEAR_FEA           (1)
 
 #define CONFIG_SWAP_UART                    (1)
-
+#if CONFIG_ENABLE_WIFI
 #define CONFIG_PROTO_OVER_NET               (1)
+#else
+#define CONFIG_PROTO_OVER_NET               (0)
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 #define DBG_UART_NUM                   	    (UART_DEV3) //FUCK Cannan
 #define PROTOCOL_UART_NUM                   (UART_DEV1)

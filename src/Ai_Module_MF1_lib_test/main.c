@@ -171,6 +171,7 @@ int main(void)
     face_recognition_cfg.compare_threshold = (float)g_board_cfg.face_gate;
     printf("set compare_threshold: %d \r\n", g_board_cfg.face_gate);
 
+#if CONFIG_ENABLE_WIFI
     /* init 8285 */
     spi_8266_init_device();
 
@@ -188,6 +189,7 @@ int main(void)
             printf("wifi config maybe error,we can not connect to it!\r\n");
         }
     }
+#endif
 
     while(1)
     {
@@ -200,6 +202,7 @@ int main(void)
         /* get key state */
         update_key_state();
 
+#if CONFIG_ENABLE_WIFI
 #if CONFIG_KEY_SHORT_QRCODE
         /* key short to scan qrcode */
         if(g_key_press)
@@ -289,7 +292,8 @@ int main(void)
 
             g_dvp_finish_flag = 0;
         }
-#endif
+#endif/* CONFIG_KEY_SHORT_QRCODE */
+#endif/* CONFIG_ENABLE_WIFI */
 
         if(g_key_long_press)
         {
@@ -329,6 +333,7 @@ int main(void)
 
         tim = sysctl_get_time_us();
 
+#if CONFIG_ENABLE_WIFI
         /******Process mqtt ********/
         if(g_net_status && !qrcode_get_info_flag)
         {
@@ -345,6 +350,7 @@ int main(void)
                 last_mqtt_check_tim += 1000 * 1000; //1000ms
             }
         }
+#endif /* CONFIG_ENABLE_WIFI */
 
         /******Process relay open********/
         tim = sysctl_get_time_us();
@@ -375,7 +381,7 @@ int main(void)
                 protocol_stop_recv_jpeg();
                 protocol_send_cal_pic_result(7, "timeout to recv jpeg file", NULL, NULL, 0); //7  jpeg verify error
             }
-
+            
             /* recv over */
             if(jpeg_recv_len != 0)
             {
