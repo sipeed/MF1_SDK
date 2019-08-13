@@ -70,6 +70,11 @@ uint8_t protocol_send_face_info(face_obj_t *obj,
 ```
 识别到人脸之后,发送人脸信息,具体的使用方法请参考例程
 
+```C
+extern volatile uint8_t face_lib_draw_flag;
+```
+lib中是否要调用来绘图标志
+
 ### FLASH读写API
 
 ```C
@@ -90,8 +95,11 @@ int dvp_irq(void *ctx);
 DVP中断回调,在Board.c中进行注册
 
 ```C
-int gc0328_init(uint16_t time); //sleep time in ms
+int gc0328_init(void);
 ```
-GC0328初始化,在Board.c中调用
-  
-time表示初始化的时候延时的函数,之后会去掉
+GC0328初始化,在Board.c中调用，初始化摄像头
+
+```C
+extern volatile uint8_t g_dvp_finish_flag；
+```
+摄像头接收完一帧标志

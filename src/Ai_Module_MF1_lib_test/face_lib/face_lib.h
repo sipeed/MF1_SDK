@@ -220,7 +220,7 @@ w25qxx_status_t my_w25qxx_read_data(uint32_t addr, uint8_t *data_buf, uint32_t l
 ///////////////////////////////////////////////////////////////////////////////
 /* camera */
 int dvp_irq(void *ctx);
-int gc0328_init(uint16_t time); //sleep time in ms
+int gc0328_init(void); //sleep time in ms
 void open_gc0328_650();
 extern volatile uint8_t g_dvp_finish_flag;
 ///////////////////////////////////////////////////////////////////////////////

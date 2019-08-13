@@ -249,7 +249,7 @@ void board_init(void)
     dvp_set_output_enable(1, 1);
     dvp_set_image_format(DVP_CFG_RGB_FORMAT);
     dvp_set_image_size(IMG_W, IMG_H);
-    gc0328_init(1);
+    gc0328_init();
 
     dvp_set_ai_addr((uint32_t)kpu_image, (uint32_t)(kpu_image + IMG_W * IMG_H), (uint32_t)(kpu_image + IMG_W * IMG_H * 2));
     dvp_set_display_addr((uint32_t)display_image);
