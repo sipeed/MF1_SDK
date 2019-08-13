@@ -2,37 +2,37 @@
   "version": "0.1.0",
   "files": [
     {
-      "address": 0xC00000,
+      "address": 12582912,
       "bin": "0.bin",
       "sha256Prefix": false
     },
     {
-      "address": 0xC1d000,
+      "address": 12701696,
       "bin": "1.bin",
       "sha256Prefix": false
     },
     {
-      "address": 0xC3a000,
+      "address": 12820480,
       "bin": "2.bin",
       "sha256Prefix": false
     },
     {
-      "address": 0xC57000,
+      "address": 12939264,
       "bin": "3.bin",
       "sha256Prefix": false
     },
     {
-      "address": 0xC74000,
+      "address": 13058048,
       "bin": "4.bin",
       "sha256Prefix": false
     },
     {
-      "address": 0xC91000,
+      "address": 13176832,
       "bin": "5.bin",
       "sha256Prefix": false
     },
     {
-      "address": 0xCae000,
+      "address": 13295616,
       "bin": "6.bin",
       "sha256Prefix": false
     }
