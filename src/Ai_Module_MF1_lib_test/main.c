@@ -1,7 +1,5 @@
 #include "face_lib.h"
 
-#include "draw.h"
-
 #include "ff.h"
 
 #include "face_cb.h"
