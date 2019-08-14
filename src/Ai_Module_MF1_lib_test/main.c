@@ -95,12 +95,15 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
 
     last_pass_time = tim;
 
-    lcd_draw_pass();
+    if(g_board_cfg.auto_out_feature != 1)
+    {
+        lcd_draw_pass();
+    }
 
     open_relay();
 
     /* output feature */
-    if(g_board_cfg.auto_out_feature == 1)
+    if(g_board_cfg.auto_out_feature&0x1 == 1)
     {
         protocol_send_face_info(obj,
                                 0, NULL, obj->feature,
@@ -155,6 +158,12 @@ int main(void)
         {
             printf("save g_board_cfg failed!\r\n");
         }
+    }
+    
+    //TODO: when user change it by Json, also should change
+    if(g_board_cfg.auto_out_feature&0x1 == 0x1)
+    {
+        face_recognition_cfg.auto_out_fea = 1;
     }
 
     face_lib_regisiter_callback(&face_recognition_cb);
