@@ -6,6 +6,7 @@
 
 #include <utils.h>
 #include "spi.h"
+#include "printf.h"
 
 #include "system_config.h"
 

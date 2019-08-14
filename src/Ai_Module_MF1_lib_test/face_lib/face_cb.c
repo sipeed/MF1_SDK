@@ -213,28 +213,73 @@ void lcd_draw_pass(void)
 
 #else /* CONFIG_LCD_TYPE_SIPEED */
 
-static uint64_t last_dis_tim = 0;
-
 void lcd_draw_picture_cb(void)
 {
-    uint64_t tim = 0;
-    tim = sysctl_get_time_us();
-    lcd_covert_cam_to_order((uint32_t *)display_image, (IMG_W * IMG_H / 2));
-    // while(dis_flag)
-    //     ;
+    lcd_covert_cam_order((uint32_t *)display_image, (IMG_W * IMG_H / 2));
+    while(dis_flag)
+        ;
     copy_image_cma_to_lcd(display_image, lcd_image);
-    printk("convert img %ld us\r\n", sysctl_get_time_us() - tim);
     return;
 }
 
+static uint8_t line_buf[IMG_W * 2];
+static void display_fit_lcd_with_alpha_v1(uint8_t *pic_flash_addr, uint8_t *in_img, uint8_t *out_img, uint8_t alpha)
+{
+    //alpha pic lines to in_img
+    int x0, x1, x, y;
+
+    uint16_t *s0 = line_buf;
+    uint16_t *s1 = in_img;
+
+    memset(line_buf, 0xff, 2 * (IMG_W - DAT_W) / 2);
+    memset(line_buf + 2 * (IMG_W - DAT_W) / 2 + DAT_W * 2, 0xff, 2 * (IMG_W - DAT_W) / 2);
+
+    for(y = 0; y < IMG_H; y++)
+    {
+        my_w25qxx_read_data(pic_flash_addr + y * DAT_W * 2, line_buf + 2 * (IMG_W - DAT_W) / 2, DAT_W * 2, W25QXX_STANDARD);
+        for(x = 0; x < IMG_W; x++)
+        {
+            s1[y * IMG_W + x] = Fast_AlphaBlender((uint32_t)s0[x], (uint32_t)s1[y * IMG_W + x], (uint32_t)alpha / 8);
+        }
+    }
+    lcd_covert_cam_order((uint32_t *)in_img, (IMG_W * IMG_H / 2));
+
+    while(dis_flag)
+        ;
+
+    copy_image_cma_to_lcd(in_img, out_img);
+
+    return;
+}
 
 void record_face(face_recognition_ret_t *ret)
 {
+    uint32_t face_cnt = ret->result->face_obj_info.obj_number;
+    get_date_time();
+    for(uint32_t i = 0; i < face_cnt; i++)
+    {
+        if(flash_save_face_info(NULL, ret->result->face_obj_info.obj[i].feature,
+                                NULL, 1, NULL, NULL, NULL) < 0) //image, feature, uid, valid, name, note
+        {
+            printk("Feature Full\n");
+            break;
+        }
+        display_fit_lcd_with_alpha_v1(IMG_RECORD_FACE_ADDR, display_image, lcd_image, 128);
+        face_lib_draw_flag = 1;
+        set_RGB_LED(GLED);
+        msleep(1000);
+        set_RGB_LED(0);
+    }
     return;
 }
 
 void lcd_draw_pass(void)
 {
+    display_fit_lcd_with_alpha_v1(IMG_FACE_PASS_ADDR, display_image, lcd_image, 128);
+    face_lib_draw_flag = 1;
+    set_RGB_LED(GLED);
+    msleep(1000);
+    set_RGB_LED(0);
     return;
 }
 #endif

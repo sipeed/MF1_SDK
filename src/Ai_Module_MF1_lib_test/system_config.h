@@ -22,6 +22,7 @@
 #define CONFIG_KEY_LONG_CLEAR_FEA           (1)
 
 #define CONFIG_SWAP_UART                    (1)
+
 #if CONFIG_ENABLE_WIFI
 #define CONFIG_PROTO_OVER_NET               (1)
 #else
@@ -61,7 +62,10 @@
 #define LCD_H                                 ()
 #elif CONFIG_LCD_TYPE_SIPEED
 #define LCD_W                                (402)
-#define LCD_H                                (242)
+#define LCD_H                                (240)
+
+#define DAT_W                                (240)
+#define DAT_H                                (240)
 #endif
 
 #define LCD_OFT                               ((IMG_W - LCD_W) / 2)
