@@ -10,6 +10,8 @@
 #include <stdbool.h>
 #include <math.h>
 
+#include "printf.h"
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //////// "quirc.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2949,24 +2951,24 @@ static void dump_cells(const struct quirc_code *code)
 {
     int u, v;
 
-    printf("    %d cells, corners:", code->size);
+    printk("    %d cells, corners:", code->size);
     for (u = 0; u < 4; u++)
-        printf(" (%d,%d)", code->corners[u].x, code->corners[u].y);
-    printf("\r\n");
+        printk(" (%d,%d)", code->corners[u].x, code->corners[u].y);
+    printk("\r\n");
 
     for (v = 0; v < code->size; v++)
     {
-        printf("    ");
+        printk("    ");
         for (u = 0; u < code->size; u++)
         {
             int p = v * code->size + u;
 
             if (code->cell_bitmap[p >> 3] & (1 << (p & 7)))
-                printf("[]");
+                printk("[]");
             else
-                printf("  ");
+                printk("  ");
         }
-        printf("\r\n");
+        printk("\r\n");
     }
 }
 
@@ -2974,20 +2976,20 @@ static void dump_data(const struct quirc_data *data)
 {
     if (data->payload_len != 0)
     {
-        printf("    Version: %d\r\n", data->version);
-        printf("    ECC level: %c\r\n", "MLHQ"[data->ecc_level]);
-        printf("    Mask: %d\r\n", data->mask);
-        printf("    Data type: %d (%s)\r\n", data->data_type, data_type_str(data->data_type));
-        printf("    Length: %d\r\n", data->payload_len);
-        printf("    Payload: %s\r\n", data->payload);
+        printk("    Version: %d\r\n", data->version);
+        printk("    ECC level: %c\r\n", "MLHQ"[data->ecc_level]);
+        printk("    Mask: %d\r\n", data->mask);
+        printk("    Data type: %d (%s)\r\n", data->data_type, data_type_str(data->data_type));
+        printk("    Length: %d\r\n", data->payload_len);
+        printk("    Payload: %s\r\n", data->payload);
 
         if (data->eci)
-            printf("    ECI: %d\r\n", data->eci);
-        printf("\r\n\r\n");
+            printk("    ECI: %d\r\n", data->eci);
+        printk("\r\n\r\n");
     }
     else
     {
-        printf("payload_len err\r\n");
+        printk("payload_len err\r\n");
     }
 }
 
@@ -2996,7 +2998,7 @@ static void dump_info(struct quirc *q)
     int count = quirc_count(q);
     int i;
 
-    printf("%d QR-codes found:\r\n\r\n", count);
+    printk("%d QR-codes found:\r\n\r\n", count);
     for (i = 0; i < count; i++)
     {
         struct quirc_code code;
@@ -3007,18 +3009,18 @@ static void dump_info(struct quirc *q)
         err = quirc_decode(&code, &data);
 
         dump_cells(&code);
-        printf("\r\n");
+        printk("\r\n");
 
         if (err)
         {
-            printf("  Decoding FAILED: %s\r\n", quirc_strerror(err));
+            printk("  Decoding FAILED: %s\r\n", quirc_strerror(err));
         }
         else
         {
-            printf("  Decoding successful:\r\n");
+            printk("  Decoding successful:\r\n");
             dump_data(&data);
         }
-        printf("\r\n");
+        printk("\r\n");
     }
 }
 
@@ -3061,7 +3063,7 @@ uint8_t find_qrcodes(qrcode_result_t *out, qrcode_image_t *img)
 #if 1
     // if ((img->w % 2) != 0)
     // {
-    //     printf("image widht is not error\r\n");
+    //     printk("image widht is not error\r\n");
     //     return 0;
     // }
     // //将灰度图像进行左右镜像

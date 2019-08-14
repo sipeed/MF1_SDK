@@ -40,7 +40,7 @@ static uint8_t protocol_prase_qrcode_get_wifi_info(char *msg_buf, uint8_t ssid[3
     root = cJSON_Parse(msg_buf);
     if(root == NULL)
     {
-        printf("prase qrcode payload failed\r\n");
+        printk("prase qrcode payload failed\r\n");
         err = 1;
         goto _prase_json_error;
     }
@@ -48,63 +48,63 @@ static uint8_t protocol_prase_qrcode_get_wifi_info(char *msg_buf, uint8_t ssid[3
     tmp = cJSON_GetObjectItem(root, "w");
     if(tmp == NULL)
     {
-        printf("get \"w\"failed\r\n");
+        printk("get \"w\"failed\r\n");
         err = 1;
         goto _prase_json_error;
     }
     w_len = strlen(tmp->valuestring);
     if(w_len > 32)
     {
-        printf("ssid len too long\r\n");
+        printk("ssid len too long\r\n");
         err = 2;
         goto _prase_json_error;
     }
     memcpy(ssid, tmp->valuestring, w_len);
     ssid[w_len] = 0;
-    printf("qrcode ssid:%s\r\n", ssid);
+    printk("qrcode ssid:%s\r\n", ssid);
 
     //get passwd
     tmp = cJSON_GetObjectItem(root, "p");
     if(tmp == NULL)
     {
-        printf("get \"p\"failed\r\n");
+        printk("get \"p\"failed\r\n");
         err = 1;
         goto _prase_json_error;
     }
     w_len = strlen(tmp->valuestring);
     if(w_len > 32 || w_len < 8)
     {
-        printf("password len too long\r\n");
+        printk("password len too long\r\n");
         err = 2;
         goto _prase_json_error;
     }
     memcpy(passwd, tmp->valuestring, w_len);
     passwd[w_len] = 0;
-    printf("qrcode passwd:%s\r\n", passwd);
+    printk("qrcode passwd:%s\r\n", passwd);
 
     //get mac
     tmp = cJSON_GetObjectItem(root, "t");
     if(tmp == NULL)
     {
-        printf("get \"t\"failed\r\n");
+        printk("get \"t\"failed\r\n");
         err = 1;
         goto _prase_json_error;
     }
     w_len = strlen(tmp->valuestring);
-    printf("mac len:%d\r\n", w_len);
+    printk("mac len:%d\r\n", w_len);
     if(w_len > 21)
     {
-        printf("mac len too long\r\n");
+        printk("mac len too long\r\n");
         err = 2;
         goto _prase_json_error;
     }
     memcpy(mac, tmp->valuestring, w_len);
     mac[w_len] = 0;
-    printf("qrcode mac:%s\r\n", mac);
+    printk("qrcode mac:%s\r\n", mac);
 
     if(memcmp(mac, mqttc_id, w_len) != 0)
     {
-        printf("mac error, not for my qrcoder\n");
+        printk("mac error, not for my qrcoder\n");
         err = 3;
         goto _prase_json_error;
     }
@@ -143,18 +143,18 @@ qr_wifi_info_t *qrcode_get_wifi_cfg(void)
     {
         if(/* qrcode.version <= 6 && */ qrcode.payload_len <= 110)
         {
-            // printf("payload:%s\r\n", qrcode.payload);
+            // printk("payload:%s\r\n", qrcode.payload);
             scan_ret = protocol_prase_qrcode_get_wifi_info(qrcode.payload,
                                                            ret->ssid, ret->passwd);
 
             if(scan_ret == 0)
             {
-                printf("get cfg success\r\n");
+                printk("get cfg success\r\n");
                 ret->ret = QRCODE_RET_CODE_OK;
             }
         } else
         {
-            printf("qrcode type error\r\n");
+            printk("qrcode type error\r\n");
             ret->ret = QRCODE_RET_CODE_PRASE_ERR;
         }
     }
@@ -180,20 +180,20 @@ uint8_t spi_8266_init_device(void)
     // check for the presence of the ESP module:
     if(WiFiSpi_status() == WL_NO_SHIELD)
     {
-        printf("WiFi module not present\r\n");
+        printk("WiFi module not present\r\n");
         // don't continue:
         return 1;
     }
 
     // WiFiSpi_softReset();
 
-    printf("firmware version:%s\r\n", WiFiSpi_firmwareVersion());
-    printf("protocol version : %s\r\n", WiFiSpi_protocolVersion());
-    printf("status:%d\r\n", WiFiSpi_status());
+    printk("firmware version:%s\r\n", WiFiSpi_firmwareVersion());
+    printk("protocol version : %s\r\n", WiFiSpi_protocolVersion());
+    printk("status:%d\r\n", WiFiSpi_status());
 
     if(!WiFiSpi_checkProtocolVersion())
     {
-        printf("Protocol version mismatch. Please upgrade the firmware\r\n");
+        printk("Protocol version mismatch. Please upgrade the firmware\r\n");
         // don't continue:
         return 2;
     }
@@ -206,7 +206,7 @@ uint8_t spi_8266_init_device(void)
 #endif
 
     sprintf(mqttc_id, id_fmt, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    printf("mqtt_client_id: %s\r\n", mqttc_id);
+    printk("mqtt_client_id: %s\r\n", mqttc_id);
 
     return 0;
 }
@@ -228,14 +228,14 @@ uint8_t spi_8266_connect_ap(uint8_t wifi_ssid[32],
         {
             return 0;
         }
-        printf("Attempting to connect to WPA SSID: %s\r\n", wifi_ssid);
+        printk("Attempting to connect to WPA SSID: %s\r\n", wifi_ssid);
         status = WiFiSpi_begin_ssid_passwd(wifi_ssid, wifi_passwd);
         if(status == WL_CONNECTED)
             goto connect_success;
         retry_cnt++;
     }
 connect_success:
-    printf("You're connected to the network\r\n");
+    printk("You're connected to the network\r\n");
     g_net_status = 1;
     return 1;
 }
@@ -248,10 +248,10 @@ static void mqtt_callback(unsigned char *intopic, uint16_t msgId, unsigned char 
     *(payload + length) = 0;
 
 #if 1
-    printf("topic: %s \r\n", intopic);
-    printf("msgId: %d \r\n", msgId);
-    printf("payload len: %d \r\n", length);
-    printf("payload: %s\r\n\r\n", payload);
+    printk("topic: %s \r\n", intopic);
+    printk("msgId: %d \r\n", msgId);
+    printk("payload len: %d \r\n", length);
+    printk("payload: %s\r\n\r\n", payload);
 #endif
 
     if(last_msgId != msgId)
@@ -264,7 +264,7 @@ static void mqtt_callback(unsigned char *intopic, uint16_t msgId, unsigned char 
 #endif
     } else
     {
-        printf("same msgId\r\n");
+        printk("same msgId\r\n");
     }
 }
 
@@ -273,15 +273,15 @@ void mqtt_reconnect(void)
 {
     while(!PubSubClient_connected())
     {
-        printf("Attempting MQTT connection...\r\n");
+        printk("Attempting MQTT connection...\r\n");
         if(PubSubClient_connect1(mqttc_id, NULL, NULL))
         {
-            printf("reconnected\r\n");
+            printk("reconnected\r\n");
             PubSubClient_publish(mqtt_topic, "reconnected", strlen("reconnected"));
             PubSubClient_subscribe(mqtt_topic, 1);
         } else
         {
-            printf("failed, rc=%d\r\n", PubSubClient_state());
+            printk("failed, rc=%d\r\n", PubSubClient_state());
         }
     }
 }
@@ -296,21 +296,21 @@ uint8_t spi_8266_mqtt_init(void)
 #endif
 
     sprintf(mqttc_id, id_fmt, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    printf("Please see http://www.tongxinmao.com/txm/webmqtt.php\r\n");
+    printk("Please see http://www.tongxinmao.com/txm/webmqtt.php\r\n");
 
-    printf("mqtt_client_id: %s\r\n", mqttc_id);
-    printf("mqtt_topic:%s\r\n", mqtt_topic);
+    printk("mqtt_client_id: %s\r\n", mqttc_id);
+    printk("mqtt_topic:%s\r\n", mqtt_topic);
 
     PubSubClient_init(mqtt_domain, mqtt_ip, mqtt_port, 0, 60, mqtt_callback);
     // Connect to mqtt broker
     if(PubSubClient_connect1(mqttc_id, NULL, NULL))
     {
-        printf("mqtt connect successed\r\n");
+        printk("mqtt connect successed\r\n");
         PubSubClient_publish(mqtt_topic, "hello world", strlen("hello world"));
         PubSubClient_subscribe(mqtt_topic, 1);
     } else
     {
-        printf("mqtt connect failed\r\n");
+        printk("mqtt connect failed\r\n");
     }
     return 1;
 }
@@ -322,6 +322,6 @@ void spi_8266_mqtt_send(char *buf, size_t len)
         PubSubClient_publish(mqtt_topic, buf, len);
     } else
     {
-        printf("error modules not connect to net!\r\n");
+        printk("error modules not connect to net!\r\n");
     }
 }

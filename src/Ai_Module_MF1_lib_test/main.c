@@ -88,7 +88,7 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
     {
         if(((tim - last_pass_time) / 1000) < g_board_cfg.out_interval_in_ms)
         {
-            printf("last face pass time too short\r\n");
+            printk("last face pass time too short\r\n");
             return;
         }
     }
@@ -133,7 +133,7 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
             // }
         } else
         {
-            printf("index error!\r\n");
+            printk("index error!\r\n");
         }
     }
     return;
@@ -150,13 +150,13 @@ int main(void)
     /*load cfg from flash*/
     if(flash_load_cfg(&g_board_cfg) == 0)
     {
-        printf("load cfg failed,save default config\r\n");
+        printk("load cfg failed,save default config\r\n");
 
         flash_cfg_set_default(&g_board_cfg);
 
         if(flash_save_cfg(&g_board_cfg) == 0)
         {
-            printf("save g_board_cfg failed!\r\n");
+            printk("save g_board_cfg failed!\r\n");
         }
     }
     
@@ -173,12 +173,12 @@ int main(void)
     init_relay_key_pin(g_board_cfg.key_relay_pin_cfg);
     protocol_send_init_done();
 
-    printf("load cfg %s\r\n", g_board_cfg.cfg_right_flag ? "success" : "error");
+    printk("load cfg %s\r\n", g_board_cfg.cfg_right_flag ? "success" : "error");
     flash_cfg_print(&g_board_cfg);
 
     /* recognition threshold */
     face_recognition_cfg.compare_threshold = (float)g_board_cfg.face_gate;
-    printf("set compare_threshold: %d \r\n", g_board_cfg.face_gate);
+    printk("set compare_threshold: %d \r\n", g_board_cfg.face_gate);
 
 #if CONFIG_ENABLE_WIFI
     /* init 8285 */
@@ -195,7 +195,7 @@ int main(void)
         } else
         {
             display_lcd_img_addr(IMG_CONN_FAILED_ADDR);
-            printf("wifi config maybe error,we can not connect to it!\r\n");
+            printk("wifi config maybe error,we can not connect to it!\r\n");
         }
     }
 #endif
@@ -241,19 +241,19 @@ int main(void)
             qr_wifi_info_t *wifi_info = qrcode_get_wifi_cfg();
             if(NULL == wifi_info)
             {
-                printf("no memory!\r\n");
+                printk("no memory!\r\n");
             } else
             {
                 switch(wifi_info->ret)
                 {
                     case QRCODE_RET_CODE_OK:
                     {
-                        printf("get qrcode\r\n");
-                        printf("ssid:%s\tpasswd:%s\r\n", wifi_info->ssid, wifi_info->passwd);
+                        printk("get qrcode\r\n");
+                        printk("ssid:%s\tpasswd:%s\r\n", wifi_info->ssid, wifi_info->passwd);
 
                         if(g_net_status)
                         {
-                            printf("already connect net, but want to reconfig, so reboot 8266\r\n");
+                            printk("already connect net, but want to reconfig, so reboot 8266\r\n");
                             spi_8266_init_device();
                             g_net_status = 0;
                         }
@@ -269,24 +269,24 @@ int main(void)
                             memcpy(g_board_cfg.wifi_passwd, wifi_info->passwd, 32);
                             if(flash_save_cfg(&g_board_cfg) == 0)
                             {
-                                printf("save g_board_cfg failed!\r\n");
+                                printk("save g_board_cfg failed!\r\n");
                             }
                         } else
                         {
                             display_lcd_img_addr(IMG_CONN_FAILED_ADDR);
-                            printf("wifi config maybe error,we can not connect to it!\r\n");
+                            printk("wifi config maybe error,we can not connect to it!\r\n");
                         }
                         qrcode_get_info_flag = 0;
                     }
                     break;
                     case QRCODE_RET_CODE_PRASE_ERR:
                     {
-                        printf("get error qrcode\r\n");
+                        printk("get error qrcode\r\n");
                     }
                     break;
                     case QRCODE_RET_CODE_TIMEOUT:
                     {
-                        printf("scan qrcode timeout\r\n");
+                        printk("scan qrcode timeout\r\n");
                         /* here display pic */
                         display_lcd_img_addr(IMG_QR_TIMEOUT_ADDR);
                         qrcode_get_info_flag = 0;
@@ -308,9 +308,9 @@ int main(void)
         {
             g_key_long_press = 0;
             /* key long press */
-            printf("key long press\r\n");
+            printk("key long press\r\n");
 #if CONFIG_KEY_LONG_CLEAR_FEA
-            printf("Del All feature!\n");
+            printk("Del All feature!\n");
             flash_delete_face_all();
 #if CONFIG_LCD_TYPE_ST7789
 
@@ -325,7 +325,7 @@ int main(void)
 
 #if CONFIG_KEY_LONG_RESTORE
             /* set cfg to default */
-            printf("reset board config\r\n");
+            printk("reset board config\r\n");
             board_cfg_t board_cfg;
 
             memset(&board_cfg, 0, sizeof(board_cfg_t));
@@ -334,7 +334,7 @@ int main(void)
 
             if(flash_save_cfg(&board_cfg) == 0)
             {
-                printf("save board_cfg failed!\r\n");
+                printk("save board_cfg failed!\r\n");
             }
             /* set cfg to default end */
 #endif
@@ -385,7 +385,7 @@ int main(void)
             tim = sysctl_get_time_us();
             if(tim - jpeg_recv_start_time >= 10 * 1000 * 1000) //FIXME: 10s or 5s timeout
             {
-                printf("abort to recv jpeg file\r\n");
+                printk("abort to recv jpeg file\r\n");
                 jpeg_recv_start_flag = 0;
                 protocol_stop_recv_jpeg();
                 protocol_send_cal_pic_result(7, "timeout to recv jpeg file", NULL, NULL, 0); //7  jpeg verify error

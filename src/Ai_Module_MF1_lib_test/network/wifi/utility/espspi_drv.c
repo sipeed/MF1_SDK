@@ -31,7 +31,7 @@
 // Read and check one byte from the input
 #define READ_AND_CHECK_BYTE(c, err)    \
     if (EspSpiProxy_readByte() != (c)){} \
-        printf("err:%s\r\n",err);
+        printk("err:%s\r\n",err);
         return 0;
         }
 #endif

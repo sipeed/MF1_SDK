@@ -131,14 +131,14 @@ void lcd_init(ss1963_lcd_panel_t *lcd)
     //100M pll lcd_clk 33M
     //(33M*1048576/100M)-1=0x547ad
     lcd_clk_div = lcd->clk_Mhz * 1048576 / 100 - 1;
-    printf("lcd_clk_div:%08X\r\n", lcd_clk_div);
+    printk("lcd_clk_div:%08X\r\n", lcd_clk_div);
     WriteData((uint8_t)(lcd_clk_div >> 16 & 0xFF));
     WriteData((uint8_t)(lcd_clk_div >> 8 & 0xFF));
     WriteData((uint8_t)(lcd_clk_div & 0xFF));
 #elif PLL_200M //pll 200M
     WriteComm(0xE6); //Set LSHIFT(pixel clock) Frequency
     lcd_clk_div = lcd->clk_Mhz * 1048576 / 200 - 1;
-    printf("lcd_clk_div:%08X\r\n", lcd_clk_div);
+    printk("lcd_clk_div:%08X\r\n", lcd_clk_div);
     WriteData((uint8_t)(lcd_clk_div >> 16 & 0xFF));
     WriteData((uint8_t)(lcd_clk_div >> 8 & 0xFF));
     WriteData((uint8_t)(lcd_clk_div & 0xFF));

@@ -13,19 +13,19 @@ void sd_init_fatfs(void)
 {
     uint64_t tim = sysctl_get_time_us();
     uint8_t ret = SD_Initialize();
-    printf("init sd us :%ld\r\n", sysctl_get_time_us() - tim);
+    printk("init sd us :%ld\r\n", sysctl_get_time_us() - tim);
 
     if(ret != 0)
     {
-        printf("ret: 0x%02X\r\n", ret);
+        printk("ret: 0x%02X\r\n", ret);
         return;
     }
 
     uint32_t sd_size = SD_GetSectorCount();
-    printf("SD Type: %d Size: %dMB\r\n", SD_Type, sd_size >> 11);
+    printk("SD Type: %d Size: %dMB\r\n", SD_Type, sd_size >> 11);
 
     FRESULT res = f_mount(&fs);
-    printf(res == FR_OK ? ""
+    printk(res == FR_OK ? ""
                           "mount ok!\r\n"
                         : "mount error!%d\r\n",
            res);
@@ -53,7 +53,7 @@ uint8_t sd_save_img_ppm(char *fname, image_t *img)
     header_len = sprintf(ppm_header, "P6\r\n%d %d\r\n255\r\n", img->width, img->height);
     if(0 != f_write(&fp, ppm_header, header_len, &write_len))
     {
-        printf("%d write error!\r\n", __LINE__);
+        printk("%d write error!\r\n", __LINE__);
         goto end;
     }
 
@@ -82,12 +82,12 @@ uint8_t sd_save_img_ppm(char *fname, image_t *img)
 
                 if(0 != f_write(&fp, l_buf, rgb888_per_write_len, &write_len))
                 {
-                    printf("%d write error!\r\n", __LINE__);
+                    printk("%d write error!\r\n", __LINE__);
                     goto end;
                 }
                 if(write_len != (rgb888_per_write_len))
                 {
-                    printf("%d  write len error\r\n", __LINE__);
+                    printk("%d  write len error\r\n", __LINE__);
                 }
 
                 rgb565_wrote_len += rgb565_per_write_len;
@@ -100,12 +100,12 @@ uint8_t sd_save_img_ppm(char *fname, image_t *img)
         {
             if(0 != f_write(&fp, img->addr, (3 * img->height * img->width), &write_len))
             {
-                printf("%d write error!\r\n", __LINE__);
+                printk("%d write error!\r\n", __LINE__);
                 goto end;
             }
             if(write_len != (3 * img->height * img->width))
             {
-                printf("%d  write len error\r\n", __LINE__);
+                printk("%d  write len error\r\n", __LINE__);
             }
         }
         break;

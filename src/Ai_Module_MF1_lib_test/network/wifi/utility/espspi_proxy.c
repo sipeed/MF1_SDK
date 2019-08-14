@@ -22,6 +22,8 @@
 #include "espspi_proxy.h"
 #include "config.h"
 
+#include "printf.h"
+
 #include "myspi.h"
 #include "sleep.h"
 #include "gpiohs.h"
@@ -177,7 +179,7 @@ void EspSpiProxy_flush(uint8_t indicator)
       if (EspSpiProxy_waitForSlaveRxConfirmation())
         break;
       else
-        printf("Bad CRC, retransmitting\r\n");
+        printk("Bad CRC, retransmitting\r\n");
     }
   }
 
@@ -221,7 +223,7 @@ uint8_t EspSpiProxy_readByte()
       if (buffer[31] == crc8(buffer, 31))
         break;
 
-      printf("Bad CRC, request repeated\r\n");
+      printk("Bad CRC, request repeated\r\n");
 
     } while (get_millis() - thisTime < 200);
 
@@ -253,8 +255,8 @@ int8_t EspSpiProxy_waitForSlaveRxReady()
     // yield();
   } while ((get_millis() & 0x0fffffff) < endTime);
 
-  printf("Slave rx is not ready\r\n");
-  printf("Returning: %x\r\n", status >> 28);
+  printk("Slave rx is not ready\r\n");
+  printk("Returning: %x\r\n", status >> 28);
 
   return (status >> 28); // timeout
 #else
@@ -272,7 +274,7 @@ int8_t EspSpiProxy_waitForSlaveRxReady()
     // yield();
   } while (get_millis() - startTime < SLAVE_RX_READY_TIMEOUT);
 
-  printf("Slave rx is not ready, status %02x\r\n", (status >> 4) & 0x0f);
+  printk("Slave rx is not ready, status %02x\r\n", (status >> 4) & 0x0f);
 
   return ((status >> 4) & 0x0f); // timeout
 
@@ -300,8 +302,8 @@ int8_t EspSpiProxy_waitForSlaveTxReady()
     // yield();
   } while ((get_millis() & 0x0fffffff) < endTime);
 
-  printf("Slave tx is not ready\r\n");
-  printf("Returning: %x\r\n", (status >> 24) & 0x0f);
+  printk("Slave tx is not ready\r\n");
+  printk("Returning: %x\r\n", (status >> 24) & 0x0f);
 
   return ((status >> 24) & 0x0f); // timeout
 #else
@@ -323,7 +325,7 @@ int8_t EspSpiProxy_waitForSlaveTxReady()
         err_cnt++;
         if (err_cnt > 50)
         {
-          printf("return err\r\n");
+          printk("return err\r\n");
           return 0xff;
         }
       }
@@ -339,14 +341,14 @@ int8_t EspSpiProxy_waitForSlaveTxReady()
       err_cnt++;
       if (err_cnt > 50)
       {
-        printf("return err\r\n");
+        printk("return err\r\n");
         return 0xff;
       }
     }
 
     // if(get_millis() - startTime > 1000)
     // {
-    //   printf("waitForSlaveTxReady > 1000ms, stat:%02x\t %02x \t%02x\r\n",status,(status & 0xff),((status >> 8) ^ 0xff));
+    //   printk("waitForSlaveTxReady > 1000ms, stat:%02x\t %02x \t%02x\r\n",status,(status & 0xff),((status >> 8) ^ 0xff));
     //   if ((status & 0x0f) == SPISLAVE_TX_NODATA)
     //   {
     //     // Send Command
@@ -359,7 +361,7 @@ int8_t EspSpiProxy_waitForSlaveTxReady()
     // yield();
   } while (get_millis() - startTime < SLAVE_TX_READY_TIMEOUT);
 
-  printf("Slave tx is not ready, status %02x\r\n", status & 0x0f);
+  printk("Slave tx is not ready, status %02x\r\n", status & 0x0f);
 
   return (status & 0x0f); // timeout
 
@@ -393,7 +395,7 @@ int8_t EspSpiProxy_waitForSlaveRxConfirmation()
     // yield();
   } while (get_millis() - startTime < SLAVE_RX_READY_TIMEOUT);
 
-  printf("Slave rx (confirm) is not ready, status %02x\r\n", (status >> 4) & 0x0f);
+  printk("Slave rx (confirm) is not ready, status %02x\r\n", (status >> 4) & 0x0f);
 
   return 1; // timeout - we can't retransmit in order not to replay old data, assume everything is ok
 }

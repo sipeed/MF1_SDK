@@ -76,7 +76,7 @@ void update_key_state(void)
         {
             if(gpiohs_get_pin(KEY_HS_NUM) == !sKey_dir)
             {
-                printf("key press!\n");
+                printk("key press!\n");
                 g_key_press = 1;
                 g_gpio_flag = 0;
             }
@@ -222,7 +222,7 @@ void get_date_time(void)
     int minute;
     int second;
     rtc_timer_get(&year, &month, &day, &hour, &minute, &second);
-    printf("%4d-%02d-%02d %02d:%02d:%02d\n", year, month, day, hour, minute, second);
+    printk("%4d-%02d-%02d %02d:%02d:%02d\n", year, month, day, hour, minute, second);
 }
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -232,17 +232,14 @@ void board_init(void)
     sysctl_pll_set_freq(SYSCTL_PLL0, PLL0_OUTPUT_FREQ);
     sysctl_pll_set_freq(SYSCTL_PLL1, PLL1_OUTPUT_FREQ);
     sysctl_clock_enable(SYSCTL_CLOCK_AI);
-    myuarths_init(115200); //1500000
     io_set_power();
     plic_init();
     io_mux_init();
 
     set_IR_LED(0);
-    /* DVP init */
 
-    // printf("DVP init\n");
+    /* DVP init */
     my_dvp_init(8);
-    DBG_TIME();
     my_dvp_set_xclk_rate(48000000);
     dvp_enable_burst();
     dvp_set_output_enable(0, 1);
@@ -258,12 +255,12 @@ void board_init(void)
 
     /* Flash init */
     flash_init();
+
     /* RTC init */
     rtc_init();
     rtc_timer_set(2019, 5, 1, 12, 00, 00);
 
     /* LCD init */
-    // printf("LCD init\n");
 #if CONFIG_LCD_TYPE_ST7789
     lcd_init();
     lcd_clear(BLUE);
@@ -286,9 +283,7 @@ void board_init(void)
     /* system start */
     dvp_clear_interrupt(DVP_STS_FRAME_START | DVP_STS_FRAME_FINISH);
     dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 1);
-    DBG_TIME();
-
-    // printf("System start\r\n");
+    
     return;
 }
 ///////////////////////////////////////////////////////////////////////////////

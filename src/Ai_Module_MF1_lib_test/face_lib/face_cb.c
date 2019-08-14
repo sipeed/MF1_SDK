@@ -169,7 +169,7 @@ void record_face(face_recognition_ret_t *ret)
         if(flash_save_face_info(NULL, ret->result->face_obj_info.obj[i].feature,
                                 NULL, 1, NULL, NULL, NULL) < 0) //image, feature, uid, valid, name, note
         {
-            printf("Feature Full\n");
+            printk("Feature Full\n");
             break;
         }
         display_fit_lcd_with_alpha(IMG_RECORD_FACE_ADDR, lcd_image, 128);
@@ -223,25 +223,10 @@ void lcd_draw_picture_cb(void)
     // while(dis_flag)
     //     ;
     copy_image_cma_to_lcd(display_image, lcd_image);
-    printf("convert img %ld us\r\n", sysctl_get_time_us() - tim);
+    printk("convert img %ld us\r\n", sysctl_get_time_us() - tim);
     return;
 }
 
-// void lcd_draw_picture_cb(void)
-// {
-//     uint64_t tim = 0;
-//     printf("lcd_draw_picture_cb\r\n");
-//     tim = sysctl_get_time_us();
-//     lcd_covert_cam_to_order((uint32_t *)display_image, (IMG_W * IMG_H / 2));
-//     copy_image_cma_to_lcd(display_image, lcd_image);
-//     printf("convert img %ld us\r\n", sysctl_get_time_us() - tim);
-//     tim = sysctl_get_time_us();
-//     printf("last display interval %ld us\r\n", tim - last_dis_tim);
-//     lcd_sipeed_display(lcd_image, 1);
-//     printf("\tdisplay use %ld us\r\n", sysctl_get_time_us() - tim);
-//     last_dis_tim = tim;
-//     return;
-// }
 
 void record_face(face_recognition_ret_t *ret)
 {

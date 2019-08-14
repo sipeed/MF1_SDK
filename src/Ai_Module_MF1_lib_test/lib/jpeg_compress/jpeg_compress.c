@@ -1549,13 +1549,13 @@ jpeg_overflow:
     jpeg_out.data = jpeg_buf;
 
     uint8_t ret = jpeg_compress(&jpeg_src, &jpeg_out, 50, 0);
-    printf("jpeg_compress:%d\r\n", ret);
+    printk("jpeg_compress:%d\r\n", ret);
 
-    printf("w:%d\th:%d\tbpp:%d\r\n", jpeg_out.w, jpeg_out.h, jpeg_out.bpp);
+    printk("w:%d\th:%d\tbpp:%d\r\n", jpeg_out.w, jpeg_out.h, jpeg_out.bpp);
     if (ret == 0)
         for (uint32_t i = 0; i < jpeg_out.bpp; i++)
         {
-            // printf("%02x ", jpeg_out.data[i]);
+            // printk("%02x ", jpeg_out.data[i]);
             uarths_putchar(jpeg_out.data[i]);
         }
 

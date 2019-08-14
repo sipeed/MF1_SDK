@@ -29,7 +29,7 @@ static int get_face_id(void)
 
     if(i >= FACE_DATA_MAX_COUNT)
     {
-        printf("get_face_id:> Err too many data\n");
+        printk("get_face_id:> Err too many data\n");
         return -1;
     }
     return ret;
@@ -63,9 +63,9 @@ uint32_t flash_get_id_by_uid(uint8_t *uid)
         {
             if(memcmp(uid_table[i], uid, UID_LEN) == 0)
             {
-                printf("find uid:");
+                printk("find uid:");
                 for(uint8_t j = 0; j < UID_LEN; j++)
-                    printf("%02x ", uid_table[i][j]);
+                    printk("%02x ", uid_table[i][j]);
                 return i | 0xF0000000;
             }
         }
@@ -77,7 +77,7 @@ int flash_delete_face_info(uint32_t id)
 {
     if(g_face_save_info.number == 0)
     {
-        printf("del pic, no pic\n");
+        printk("del pic, no pic\n");
         return -1;
     }
     g_face_save_info.face_info_index[id / 32] &= ~(1 << (id % 32));
@@ -102,7 +102,7 @@ int flash_get_face_info(face_info_t *face_info, uint32_t id)
     w25qxx_read_data(image_address, (uint8_t *)face_info, sizeof(face_info_t));
     if(face_info->index != id)
     {
-        printf("flash dirty! oft=%x, info.index %d != id %d\r\n", image_address, face_info->index, id);
+        printk("flash dirty! oft=%x, info.index %d != id %d\r\n", image_address, face_info->index, id);
         return -1;
     }
     return 0;
@@ -113,10 +113,10 @@ int flash_save_face_info(uint8_t *image, float *features, uint8_t *uid, uint32_t
     int face_id = get_face_id();
     if(face_id >= FACE_DATA_MAX_COUNT || face_id < 0)
     {
-        printf("get_face_id err\n");
+        printk("get_face_id err\n");
         return -1;
     }
-    printf("Save face_id is %d\n", face_id);
+    printk("Save face_id is %d\n", face_id);
     memcpy(g_face_info.info, features, sizeof(g_face_info.info));
     g_face_info.index = face_id; //record to verify flash content
 
@@ -205,7 +205,7 @@ static void flash_check_wdt_reboot_count(void)
     sysctl_reset_enum_status_t v_reset_status = sysctl_get_reset_status();
     if(v_reset_status == SYSCTL_RESET_STATUS_WDT0 || v_reset_status == SYSCTL_RESET_STATUS_WDT1)
     {
-        printf("wdt reboot!\n");
+        printk("wdt reboot!\n");
         v_wdt_reboot_count++;
         // w25qxx_write_data(DATA_REBOOT_COUNT, (uint8_t *)&v_wdt_reboot_count, 4);
     } else if(v_wdt_reboot_count != 0)
@@ -222,10 +222,10 @@ void flash_init(void)
 
     uint8_t manuf_id, device_id;
     w25qxx_read_id(&manuf_id, &device_id);
-    printf("manuf_id:0x%02x, device_id:0x%02x\n", manuf_id, device_id);
+    printk("manuf_id:0x%02x, device_id:0x%02x\n", manuf_id, device_id);
     if((manuf_id != 0xEF && manuf_id != 0xC8) || (device_id != 0x17 && device_id != 0x16))
     {
-        printf("manuf_id:0x%02x, device_id:0x%02x\n", manuf_id, device_id);
+        printk("manuf_id:0x%02x, device_id:0x%02x\n", manuf_id, device_id);
         return;
     }
 
@@ -233,9 +233,9 @@ void flash_init(void)
 
     if(g_face_save_info.header == FACE_HEADER)
     {
-        printf("The header ok\r\n");
+        printk("The header ok\r\n");
         uint32_t v_num = g_face_save_info.number;
-        printf("there is %d img\r\n", v_num);
+        printk("there is %d img\r\n", v_num);
         v_num = 0;
 
         for(uint32_t i = 0; i < FACE_DATA_MAX_COUNT; i++)
@@ -248,20 +248,20 @@ void flash_init(void)
 
         if(v_num != g_face_save_info.number)
         {
-            printf("err:> index is %d, but saved is %d\n", v_num, g_face_save_info.number);
+            printk("err:> index is %d, but saved is %d\n", v_num, g_face_save_info.number);
             g_face_save_info.number = v_num;
         }
 
         if(v_num >= FACE_DATA_MAX_COUNT)
         {
-            printf("ERR, too many pic\n");
+            printk("ERR, too many pic\n");
         }
 
         flash_init_uid_table(0);
         //4.7ms
     } else
     {
-        printf("No header\n");
+        printk("No header\n");
         g_face_save_info.header = FACE_HEADER;
         g_face_save_info.number = 0;
         memset((void *)g_face_save_info.face_info_index, 0, sizeof(g_face_save_info.face_info_index));
@@ -331,7 +331,7 @@ int flash_get_saved_feature_sha256(uint8_t sha256[32 + 1])
                 }
             } else
             {
-                printf("flash_get_face_info failed\r\n");
+                printk("flash_get_face_info failed\r\n");
                 return 0;
             }
             cnt++;
@@ -340,7 +340,7 @@ int flash_get_saved_feature_sha256(uint8_t sha256[32 + 1])
 
     if(cnt == 0)
     {
-        printf("flash_get_saved_feature_sha256 cnt == 0\r\n");
+        printk("flash_get_saved_feature_sha256 cnt == 0\r\n");
         memset(sha256, 0xff, 32);
         return 1;
     }
@@ -348,18 +348,18 @@ int flash_get_saved_feature_sha256(uint8_t sha256[32 + 1])
     sha256_hard_calculate(feature, (FEATURE_DIMENSION * 4), cal_sha256);
     memcpy(sha256, cal_sha256, 32);
 #if 0
-    printf("feature: \r\n");
+    printk("feature: \r\n");
     for (uint16_t i = 0; i < FEATURE_DIMENSION * 4; i++)
     {
-        printf("%02x ", *(feature + i));
+        printk("%02x ", *(feature + i));
         if (i % 4 == 4)
-            printf("\r\n");
+            printk("\r\n");
     }
-    printf("\r\n************************************\r\n");
+    printk("\r\n************************************\r\n");
 
     for (uint16_t i = 0; i < 32; i++)
     {
-        printf("%02X", sha256[i]);
+        printk("%02X", sha256[i]);
     }
 #endif
 
@@ -445,7 +445,7 @@ uint8_t flash_load_cfg(board_cfg_t *cfg)
 
     stat = w25qxx_read_data(BOARD_CFG_ADDR, (uint8_t *)cfg, sizeof(board_cfg_t));
 
-    // printf("sizeof(board_cfg_t):%ld\r\n", sizeof(board_cfg_t));
+    // printk("sizeof(board_cfg_t):%ld\r\n", sizeof(board_cfg_t));
 
     if(cfg->header == CFG_HEADER && stat == W25QXX_OK)
     {
@@ -477,9 +477,9 @@ uint8_t flash_save_cfg(board_cfg_t *cfg)
 
     for(uint8_t i = 0; i < 32; i++)
     {
-        printf("%02X", cfg->cfg_sha256[i]);
+        printk("%02X", cfg->cfg_sha256[i]);
     }
-    printf("\r\n");
+    printk("\r\n");
 
     stat = w25qxx_write_data(BOARD_CFG_ADDR, (uint8_t *)cfg, sizeof(board_cfg_t));
 
@@ -488,18 +488,18 @@ uint8_t flash_save_cfg(board_cfg_t *cfg)
 
 uint8_t flash_cfg_print(board_cfg_t *cfg)
 {
-    printf("uart_baud:%d\r\n", cfg->uart_baud);
-    printf("recong_out_feature:%d\r\n", cfg->recong_out_feature);
-    printf("relay_open_in_s:%d\r\n", cfg->relay_open_in_s);
-    printf("pkt_fix:%d\r\n", cfg->pkt_sum_header);
-    printf("auto_out_feature:%d\r\n", cfg->auto_out_feature);
-    printf("out_interval_in_ms:%d\r\n", cfg->out_interval_in_ms);
-    printf("lcd_cam_dir:%08X\r\n", cfg->lcd_cam_dir);
-    printf("face_gate:%d\r\n", cfg->face_gate);
-    printf("port_cfg:%08X\r\n", cfg->port_cfg);
-    printf("key_relay_pin_cfg:%08X\r\n", cfg->key_relay_pin_cfg);
-    printf("wifi_ssid:%s\r\n", cfg->wifi_ssid);
-    printf("wifi_passwd:%s\r\n", cfg->wifi_passwd);
+    printk("uart_baud:%d\r\n", cfg->uart_baud);
+    printk("recong_out_feature:%d\r\n", cfg->recong_out_feature);
+    printk("relay_open_in_s:%d\r\n", cfg->relay_open_in_s);
+    printk("pkt_fix:%d\r\n", cfg->pkt_sum_header);
+    printk("auto_out_feature:%d\r\n", cfg->auto_out_feature);
+    printk("out_interval_in_ms:%d\r\n", cfg->out_interval_in_ms);
+    printk("lcd_cam_dir:%08X\r\n", cfg->lcd_cam_dir);
+    printk("face_gate:%d\r\n", cfg->face_gate);
+    printk("port_cfg:%08X\r\n", cfg->port_cfg);
+    printk("key_relay_pin_cfg:%08X\r\n", cfg->key_relay_pin_cfg);
+    printk("wifi_ssid:%s\r\n", cfg->wifi_ssid);
+    printk("wifi_passwd:%s\r\n", cfg->wifi_passwd);
 }
 
 uint8_t flash_cfg_set_default(board_cfg_t *cfg)

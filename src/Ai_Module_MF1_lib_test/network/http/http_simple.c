@@ -130,7 +130,7 @@ static struct http_response *http_req(char *http_headers, struct parsed_url *pur
 	/* Parse url */
 	if (purl == NULL)
 	{
-		printf("Unable to parse url");
+		printk("Unable to parse url");
 		return NULL;
 	}
 
@@ -145,7 +145,7 @@ static struct http_response *http_req(char *http_headers, struct parsed_url *pur
 	struct http_response *hresp = (struct http_response *)malloc(sizeof(struct http_response));
 	if (hresp == NULL)
 	{
-		printf("Unable to allocate memory for htmlcontent.");
+		printk("Unable to allocate memory for htmlcontent.");
 		return NULL;
 	}
 
@@ -159,7 +159,7 @@ static struct http_response *http_req(char *http_headers, struct parsed_url *pur
 	/* Create TCP socket */
 	if ((sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
 	{
-		printf("Can't create TCP socket");
+		printk("Can't create TCP socket");
 		return NULL;
 	}
 
@@ -169,12 +169,12 @@ static struct http_response *http_req(char *http_headers, struct parsed_url *pur
 	tmpres = inet_pton(AF_INET, purl->ip, (void *)(&(remote->sin_addr.s_addr)));
 	if (tmpres < 0)
 	{
-		printf("Can't set remote->sin_addr.s_addr");
+		printk("Can't set remote->sin_addr.s_addr");
 		return NULL;
 	}
 	else if (tmpres == 0)
 	{
-		printf("Not a valid IP");
+		printk("Not a valid IP");
 		return NULL;
 	}
 	remote->sin_port = htons(atoi(purl->port));
@@ -182,18 +182,18 @@ static struct http_response *http_req(char *http_headers, struct parsed_url *pur
 	/* Connect */
 	if (connect(sock, (struct sockaddr *)remote, sizeof(struct sockaddr)) < 0)
 	{
-		printf("Could not connect");
+		printk("Could not connect");
 		return NULL;
 	}
 #else
 	uint8_t sock = WiFiSpiClient_connect_host(purl->host, atoi(purl->port),0);
 	if (sock != SOCK_NOT_AVAIL)
 	{
-		printf("connect to server ok\r\n");
+		printk("connect to server ok\r\n");
 	}
 	else
 	{
-		printf("connect to server failed\r\n");
+		printk("connect to server failed\r\n");
 		return NULL;
 	}
 #endif
@@ -205,7 +205,7 @@ static struct http_response *http_req(char *http_headers, struct parsed_url *pur
 		tmpres = send(sock, http_headers + sent, strlen(http_headers) - sent, 0);
 		if (tmpres == -1)
 		{
-			printf("Can't send headers");
+			printk("Can't send headers");
 			return NULL;
 		}
 		sent += tmpres;
@@ -222,7 +222,7 @@ static struct http_response *http_req(char *http_headers, struct parsed_url *pur
 			tmp = 1024;
 			if (WiFiSpiClient_write(sock, http_headers + sent, tmp) != tmp)
 			{
-				printf("Send header to server failed\n");
+				printk("Send header to server failed\n");
 				return NULL;
 			}
 		}
@@ -231,7 +231,7 @@ static struct http_response *http_req(char *http_headers, struct parsed_url *pur
 			tmp = tmp_len - sent;
 			if (WiFiSpiClient_write(sock, http_headers + sent, tmp) != tmp)
 			{
-				printf("Send header to server failed\n");
+				printk("Send header to server failed\n");
 				return NULL;
 			}
 		}
@@ -280,7 +280,7 @@ static struct http_response *http_req(char *http_headers, struct parsed_url *pur
 		{
 			/* receive error or no data*/
 			flag = 0;
-			printf("%s\r\n", recived_len ? "receive over" : "receive failed");
+			printk("%s\r\n", recived_len ? "receive over" : "receive failed");
 		}
 		else
 		{
@@ -305,7 +305,7 @@ static struct http_response *http_req(char *http_headers, struct parsed_url *pur
 	if (recived_len < 0)
 	{
 		free(http_headers);
-		printf("Unabel to recieve");
+		printk("Unabel to recieve");
 		return NULL;
 	}
 
@@ -314,21 +314,21 @@ static struct http_response *http_req(char *http_headers, struct parsed_url *pur
 	response = (char *)realloc(response, recived_len + 1);
 	response[recived_len] = 0;
 
-	// printf("\r\nrecived_len:%ld\r\n%s\r\n\r\n\r\n", recived_len, response);
+	// printk("\r\nrecived_len:%ld\r\n%s\r\n\r\n\r\n", recived_len, response);
 
 #if 0
 	/* Parse status code and text */
 	char *status_line = my_get_until(response, "\r\n");
 	status_line = my_str_replace("HTTP/1.1 ", "", status_line);
-	printf("status_line:%s\r\n", status_line);
+	printk("status_line:%s\r\n", status_line);
 
 	char *status_code = my_str_ndup(status_line, 4);
 	status_code = my_str_replace(" ", "", status_code);
-	printf("status_code:%s\r\n", status_code);
+	printk("status_code:%s\r\n", status_code);
 
 	char *status_text = my_str_replace(status_code, "", status_line);
 	status_text = my_str_replace(" ", "", status_text);
-	printf("status_text:%s\r\n", status_text);
+	printk("status_text:%s\r\n", status_text);
 #else
 	/* Parse status code and text */
 	char *p1 = NULL;
@@ -343,13 +343,13 @@ static struct http_response *http_req(char *http_headers, struct parsed_url *pur
 	{
 		str_len1 = p1 - response;
 		memcpy(tmp1, response, str_len1);
-		// printf("tmp1:%s\tstr_len1:%d\r\n", tmp1, str_len1); //HTTP/1.1 200 OK
+		// printk("tmp1:%s\tstr_len1:%d\r\n", tmp1, str_len1); //HTTP/1.1 200 OK
 		p1 = strstr(tmp1, "HTTP/1.");
 		if (p1 != NULL)
 		{
 			str_len2 = p1 - tmp1;
 			memcpy(tmp2, p1 + 9, str_len1 - str_len2 - 9);
-			// printf("tmp2:%s\tlen:%d\r\n", tmp2, str_len1 - str_len2 - 9);
+			// printk("tmp2:%s\tlen:%d\r\n", tmp2, str_len1 - str_len2 - 9);
 			status_code = (char *)malloc(4);
 			memcpy(status_code, tmp2, 3);
 			status_code[3] = 0;
@@ -360,12 +360,12 @@ static struct http_response *http_req(char *http_headers, struct parsed_url *pur
 		}
 		else
 		{
-			printf("error @ %d\r\n", __LINE__);
+			printk("error @ %d\r\n", __LINE__);
 		}
 	}
 	else
 	{
-		printf("error @ %d\r\n", __LINE__);
+		printk("error @ %d\r\n", __LINE__);
 	}
 #endif
 	hresp->status_code = status_code;
@@ -389,7 +389,7 @@ static struct http_response *http_req(char *http_headers, struct parsed_url *pur
 	body = my_str_replace("\r\n\r\n", "", body);
 	hresp->body = body;
 
-	// printf("head_len:%ld\r\n\r\n", body_tmp - response);
+	// printk("head_len:%ld\r\n\r\n", body_tmp - response);
 	hresp->body_len = recived_len - (body_tmp - response);
 
 	/* Return response */
@@ -405,7 +405,7 @@ struct http_response *http_get(char *url, char *custom_headers)
 	struct parsed_url *purl = parse_url(url);
 	if (purl == NULL)
 	{
-		printf("Unable to parse url");
+		printk("Unable to parse url");
 		return NULL;
 	}
 
@@ -486,7 +486,7 @@ struct http_response *http_post(char *url, char *custom_headers, char *post_data
 	struct parsed_url *purl = parse_url(url);
 	if (purl == NULL)
 	{
-		printf("Unable to parse url");
+		printk("Unable to parse url");
 		return NULL;
 	}
 
@@ -567,7 +567,7 @@ static struct http_response *http_head(char *url, char *custom_headers)
 	struct parsed_url *purl = parse_url(url);
 	if (purl == NULL)
 	{
-		printf("Unable to parse url");
+		printk("Unable to parse url");
 		return NULL;
 	}
 
@@ -647,7 +647,7 @@ static struct http_response *http_options(char *url)
 	struct parsed_url *purl = parse_url(url);
 	if (purl == NULL)
 	{
-		printf("Unable to parse url");
+		printk("Unable to parse url");
 		return NULL;
 	}
 

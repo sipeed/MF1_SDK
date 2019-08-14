@@ -65,7 +65,7 @@ static int8_t WiFiSpiDrv_getNetworkData(uint8_t *ip, uint8_t *mask, uint8_t *gwi
 
     if (!EspSpiDrv_waitResponseParams(GET_IPADDR_CMD, PARAM_NUMS_3, params))
     {
-        printf("%s-->error waitResponse\r\n",__func__);
+        printk("%s-->error waitResponse\r\n",__func__);
         return WL_FAILURE;
     }
 
@@ -88,7 +88,7 @@ static int8_t WiFiSpiDrv_getScannedData(uint8_t networkItem, char *ssid, int32_t
 
     if (!EspSpiDrv_waitResponseParams(GET_SCANNED_DATA_CMD, PARAM_NUMS_3, params))
     {
-        printf("%s-->error waitResponse\r\n",__func__);
+        printk("%s-->error waitResponse\r\n",__func__);
         return WL_FAILURE;
     }
 
@@ -111,7 +111,7 @@ bool WiFiSpiDrv_getRemoteData(uint8_t sock, uint8_t *ip, uint16_t *port)
 
     if (!EspSpiDrv_waitResponseParams(GET_REMOTE_DATA_CMD, PARAM_NUMS_2, params))
     {
-        printf("%s-->error waitResponse\r\n",__func__);
+        printk("%s-->error waitResponse\r\n",__func__);
         return false;
     }
 
@@ -147,7 +147,7 @@ int8_t WiFiSpiDrv_wifiSetNetwork(const char *ssid, uint8_t ssid_len)
     uint8_t _dataLen = sizeof(_data);
     if (!EspSpiDrv_waitResponseCmd(SET_NET_CMD, PARAM_NUMS_1, &_data, &_dataLen))
     {
-        printf("%s-->error waitResponse\r\n",__func__);
+        printk("%s-->error waitResponse\r\n",__func__);
         _data = WL_FAILURE;
     }
 
@@ -175,7 +175,7 @@ int8_t WiFiSpiDrv_wifiSetPassphrase(const char *ssid, const uint8_t ssid_len, co
     uint8_t _dataLen = sizeof(_data);
     if (!EspSpiDrv_waitResponseCmd(SET_PASSPHRASE_CMD, PARAM_NUMS_1, &_data, &_dataLen))
     {
-        printf("%s-->error waitResponse\r\n",__func__);
+        printk("%s-->error waitResponse\r\n",__func__);
         _data = WL_FAILURE;
     }
 
@@ -201,7 +201,7 @@ bool WiFiSpiDrv_config(uint32_t local_ip, uint32_t gateway, uint32_t subnet, uin
     uint8_t _dataLen = sizeof(_data);
     if (!EspSpiDrv_waitResponseCmd(SET_IP_CONFIG_CMD, PARAM_NUMS_1, &_data, &_dataLen))
     {
-        printf("%s-->error waitResponse\r\n",__func__);
+        printk("%s-->error waitResponse\r\n",__func__);
         _data = false;
     }
 
@@ -221,7 +221,7 @@ uint8_t WiFiSpiDrv_disconnect()
     uint8_t _dataLen = sizeof(_data);
     if (!EspSpiDrv_waitResponseCmd(DISCONNECT_CMD, PARAM_NUMS_1, &_data, &_dataLen))
     {
-        printf("%s-->error waitResponse\r\n",__func__);
+        printk("%s-->error waitResponse\r\n",__func__);
         _data = WL_FAILURE;
     }
 
@@ -241,7 +241,7 @@ uint8_t WiFiSpiDrv_getConnectionStatus()
     uint8_t _dataLen = sizeof(_data);
     if (!EspSpiDrv_waitResponseCmd(GET_CONN_STATUS_CMD, PARAM_NUMS_1, &_data, &_dataLen))
     {
-        printf("%s-->error waitResponse\r\n",__func__);
+        printk("%s-->error waitResponse\r\n",__func__);
     }
 
     return _data;
@@ -259,12 +259,12 @@ uint8_t *WiFiSpiDrv_getMacAddress()
     uint8_t _dataLen = WL_MAC_ADDR_LENGTH;
     if (!EspSpiDrv_waitResponseCmd(GET_MACADDR_CMD, PARAM_NUMS_1, _mac, &_dataLen))
     {
-        printf("%s-->error waitResponse\r\n",__func__);
+        printk("%s-->error waitResponse\r\n",__func__);
     }
 
     if (_dataLen != WL_MAC_ADDR_LENGTH)
     {
-        printf("error badReply\r\n");
+        printk("error badReply\r\n");
     }
 
     return _mac;
@@ -321,7 +321,7 @@ char *WiFiSpiDrv_getCurrentSSID()
     uint8_t _dataLen = WL_SSID_MAX_LENGTH;
     if (!EspSpiDrv_waitResponseCmd(GET_CURR_SSID_CMD, PARAM_NUMS_1, (uint8_t *)(_ssid), &_dataLen))
     {
-        printf("%s-->error waitResponse\r\n",__func__);
+        printk("%s-->error waitResponse\r\n",__func__);
     }
 
     _ssid[_dataLen] = 0;  // terminate the string
@@ -341,12 +341,12 @@ uint8_t *WiFiSpiDrv_getCurrentBSSID()
     uint8_t _dataLen = WL_MAC_ADDR_LENGTH;
     if (!EspSpiDrv_waitResponseCmd(GET_CURR_BSSID_CMD, PARAM_NUMS_1, _bssid, &_dataLen))
     {
-        printf("%s-->error waitResponse\r\n",__func__);
+        printk("%s-->error waitResponse\r\n",__func__);
     }
 
     if (_dataLen != WL_MAC_ADDR_LENGTH)
     {
-        printf("error badReply\r\n");
+        printk("error badReply\r\n");
     }
 
     return _bssid;
@@ -365,13 +365,13 @@ int32_t WiFiSpiDrv_getCurrentRSSI()
     uint8_t _dataLen = sizeof(_rssi);
     if (!EspSpiDrv_waitResponseCmd(GET_CURR_RSSI_CMD, PARAM_NUMS_1, (uint8_t *)(&_rssi), &_dataLen))
     {
-        printf("%s-->error waitResponse\r\n",__func__);
+        printk("%s-->error waitResponse\r\n",__func__);
         _dataLen = 0;
     }
 
     if (_dataLen != sizeof(_rssi))
     {
-        printf("error badReply\r\n");
+        printk("error badReply\r\n");
     }
 
     return _rssi;
@@ -389,7 +389,7 @@ int8_t WiFiSpiDrv_startScanNetworks()
     uint8_t _dataLen = sizeof(_data);
     if (!EspSpiDrv_waitResponseCmd(START_SCAN_NETWORKS, PARAM_NUMS_1, (uint8_t *)(&_data), &_dataLen))
     {
-        printf("%s-->error waitResponse\r\n",__func__);
+        printk("%s-->error waitResponse\r\n",__func__);
     }
 
     return _data;
@@ -407,7 +407,7 @@ int8_t WiFiSpiDrv_getScanNetworks()
     uint8_t _dataLen = sizeof(_data);
     if (!EspSpiDrv_waitResponseCmd(SCAN_NETWORKS, PARAM_NUMS_1, (uint8_t *)(&_data), &_dataLen))
     {
-        printf("%s-->error waitResponse\r\n",__func__);
+        printk("%s-->error waitResponse\r\n",__func__);
     }
 
     return _data;
@@ -475,18 +475,18 @@ int8_t WiFiSpiDrv_getHostByName(const char *aHostname, IPAddress_t *aResult)
     {
         if (EspSpiProxy_waitForSlaveTxReady() != SPISLAVE_TX_PREPARING_DATA)
             break;                            // The state is either SPISLAVE_TX_READY or SPISLAVE_TX_NODATA with timeout
-        printf("Status: Preparing data\r\n"); ///
+        printk("Status: Preparing data\r\n"); ///
     }
 
     if (!EspSpiDrv_waitResponseParams(GET_HOST_BY_NAME_CMD, PARAM_NUMS_2, params))
     {
-        printf("%s-->error waitResponse\r\n",__func__);
+        printk("%s-->error waitResponse\r\n",__func__);
         return WL_FAILURE;
     }
 
     if (params[0].paramLen != sizeof(_status) || params[1].paramLen != sizeof(_ipAddr))
     {
-        printf("error badReply\r\n");
+        printk("error badReply\r\n");
         return 0;
     }
 
@@ -510,7 +510,7 @@ char *WiFiSpiDrv_getFwVersion()
     uint8_t _dataLen = WL_FW_VER_LENGTH;
     if (!EspSpiDrv_waitResponseCmd(GET_FW_VERSION_CMD, PARAM_NUMS_1, (uint8_t *)fwVersion, &_dataLen))
     {
-        printf("%s-->error waitResponse\r\n",__func__);
+        printk("%s-->error waitResponse\r\n",__func__);
     }
 
     return fwVersion;
@@ -530,7 +530,7 @@ void WiFiSpiDrv_softReset(void)
     uint8_t _dataLen = WL_FW_VER_LENGTH;
     if (!EspSpiDrv_waitResponseCmd(SOFTWARE_RESET_CMD, PARAM_NUMS_0, NULL, NULL))
     {
-        printf("%s-->error waitResponse\r\n",__func__);
+        printk("%s-->error waitResponse\r\n",__func__);
     }
 }
 
@@ -546,7 +546,7 @@ char *WiFiSpiDrv_getProtocolVersion()
     uint8_t _dataLen = WL_PROTOCOL_VER_LENGTH;
     if (!EspSpiDrv_waitResponseCmd(GET_PROTOCOL_VERSION_CMD, PARAM_NUMS_1, (uint8_t *)protocolVersion, &_dataLen))
     {
-        printf("%s-->error waitResponse\r\n",__func__);
+        printk("%s-->error waitResponse\r\n",__func__);
     }
 
     return protocolVersion;

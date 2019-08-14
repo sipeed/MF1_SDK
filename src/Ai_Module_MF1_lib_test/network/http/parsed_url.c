@@ -5,6 +5,8 @@
 #include "parsed_url.h"
 #include "my_str.h"
 
+#include "printf.h"
+
 /*********************************************************/
 /*
 	Free memory of parsed url
@@ -103,7 +105,7 @@ struct parsed_url *parse_url(const char *url)
     if (NULL == tmpstr)
     {
         parsed_url_free(purl);
-        printf("Error on line %d (%s)\n", __LINE__, __FILE__);
+        printk("Error on line %d (%s)\n", __LINE__, __FILE__);
         return NULL;
     }
 
@@ -117,7 +119,7 @@ struct parsed_url *parse_url(const char *url)
         {
             /* Invalid format */
             parsed_url_free(purl);
-            printf("Error on line %d (%s)\n", __LINE__, __FILE__);
+            printk("Error on line %d (%s)\n", __LINE__, __FILE__);
             return NULL;
         }
     }
@@ -126,7 +128,7 @@ struct parsed_url *parse_url(const char *url)
     if (NULL == purl->scheme)
     {
         parsed_url_free(purl);
-        printf("Error on line %d (%s)\n", __LINE__, __FILE__);
+        printk("Error on line %d (%s)\n", __LINE__, __FILE__);
         return NULL;
     }
 
@@ -153,7 +155,7 @@ struct parsed_url *parse_url(const char *url)
         if ('/' != *curstr)
         {
             parsed_url_free(purl);
-            printf("Error on line %d (%s)\n", __LINE__, __FILE__);
+            printk("Error on line %d (%s)\n", __LINE__, __FILE__);
             return NULL;
         }
         curstr++;
@@ -193,7 +195,7 @@ struct parsed_url *parse_url(const char *url)
         if (NULL == purl->username)
         {
             parsed_url_free(purl);
-            printf("Error on line %d (%s)\n", __LINE__, __FILE__);
+            printk("Error on line %d (%s)\n", __LINE__, __FILE__);
             return NULL;
         }
         (void)strncpy(purl->username, curstr, len);
@@ -217,7 +219,7 @@ struct parsed_url *parse_url(const char *url)
             if (NULL == purl->password)
             {
                 parsed_url_free(purl);
-                printf("Error on line %d (%s)\n", __LINE__, __FILE__);
+                printk("Error on line %d (%s)\n", __LINE__, __FILE__);
                 return NULL;
             }
             (void)strncpy(purl->password, curstr, len);
@@ -228,7 +230,7 @@ struct parsed_url *parse_url(const char *url)
         if ('@' != *curstr)
         {
             parsed_url_free(purl);
-            printf("Error on line %d (%s)\n", __LINE__, __FILE__);
+            printk("Error on line %d (%s)\n", __LINE__, __FILE__);
             return NULL;
         }
         curstr++;
@@ -264,7 +266,7 @@ struct parsed_url *parse_url(const char *url)
     if (NULL == purl->host || len <= 0)
     {
         parsed_url_free(purl);
-        printf("Error on line %d (%s)\n", __LINE__, __FILE__);
+        printk("Error on line %d (%s)\n", __LINE__, __FILE__);
         return NULL;
     }
     (void)strncpy(purl->host, curstr, len);
@@ -286,7 +288,7 @@ struct parsed_url *parse_url(const char *url)
         if (NULL == purl->port)
         {
             parsed_url_free(purl);
-            printf("Error on line %d (%s)\n", __LINE__, __FILE__);
+            printk("Error on line %d (%s)\n", __LINE__, __FILE__);
             return NULL;
         }
         (void)strncpy(purl->port, curstr, len);
@@ -299,7 +301,7 @@ struct parsed_url *parse_url(const char *url)
         if (NULL == purl->port)
         {
             parsed_url_free(purl);
-            printf("Error on line %d (%s)\n", __LINE__, __FILE__);
+            printk("Error on line %d (%s)\n", __LINE__, __FILE__);
             return NULL;
         }
         /* fixbug */
@@ -316,7 +318,7 @@ struct parsed_url *parse_url(const char *url)
     if (NULL == purl->ip)
     {
         parsed_url_free(purl);
-        printf("Error on line %d (%s)\n", __LINE__, __FILE__);
+        printk("Error on line %d (%s)\n", __LINE__, __FILE__);
         return NULL;
     }
 
@@ -325,13 +327,13 @@ struct parsed_url *parse_url(const char *url)
 
     // if ((dsst = nstr2ip(purl->host)) == 0)
     // {
-    //     printf("unknown host\n");
+    //     printk("unknown host\n");
     //     parsed_url_free(purl);
     //     return NULL;
     // }
     // addr.s_addr = dsst;
     // sprintf(purl->ip, "%s", inet_ntoa(addr));
-    // printf("gethostbyname ip is: %s\n", purl->ip);
+    // printk("gethostbyname ip is: %s\n", purl->ip);
 
     /* Set uri */
     purl->uri = (char *)url;
@@ -346,7 +348,7 @@ struct parsed_url *parse_url(const char *url)
     if ('/' != *curstr)
     {
         parsed_url_free(purl);
-        printf("Error on line %d (%s)\n", __LINE__, __FILE__);
+        printk("Error on line %d (%s)\n", __LINE__, __FILE__);
         return NULL;
     }
     curstr++;
@@ -362,7 +364,7 @@ struct parsed_url *parse_url(const char *url)
     if (NULL == purl->path)
     {
         parsed_url_free(purl);
-        printf("Error on line %d (%s)\n", __LINE__, __FILE__);
+        printk("Error on line %d (%s)\n", __LINE__, __FILE__);
         return NULL;
     }
     (void)strncpy(purl->path, curstr, len);
@@ -385,7 +387,7 @@ struct parsed_url *parse_url(const char *url)
         if (NULL == purl->query)
         {
             parsed_url_free(purl);
-            printf("Error on line %d (%s)\n", __LINE__, __FILE__);
+            printk("Error on line %d (%s)\n", __LINE__, __FILE__);
             return NULL;
         }
         (void)strncpy(purl->query, curstr, len);
@@ -409,7 +411,7 @@ struct parsed_url *parse_url(const char *url)
         if (NULL == purl->fragment)
         {
             parsed_url_free(purl);
-            printf("Error on line %d (%s)\n", __LINE__, __FILE__);
+            printk("Error on line %d (%s)\n", __LINE__, __FILE__);
             return NULL;
         }
         (void)strncpy(purl->fragment, curstr, len);

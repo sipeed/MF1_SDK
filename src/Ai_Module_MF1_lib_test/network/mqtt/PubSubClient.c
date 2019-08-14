@@ -141,7 +141,7 @@ void PubSubClient_init(const char *domain, uint8_t *ip, uint16_t port, uint8_t r
     }
     else
     {
-        printf("server must set, by doamin ot ipaddress\r\n");
+        printk("server must set, by doamin ot ipaddress\r\n");
     }
 
     mqtt.port = port;

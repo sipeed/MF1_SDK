@@ -79,7 +79,7 @@ uint32_t http_save_file(uint8_t sock, char *resp_header, uint32_t resp_header_le
 
     if((!l_recv_file_buf) || (l_recv_file_buf_len == 0) || (!l_recv_header_buf) || (l_recv_header_buf_len == 0))
     {
-        printf("error @ %d\r\n", __LINE__);
+        printk("error @ %d\r\n", __LINE__);
         return 0;
     }
 #if DEBUG_HTTP_TIME
@@ -100,7 +100,7 @@ uint32_t http_save_file(uint8_t sock, char *resp_header, uint32_t resp_header_le
         do
         {
             buff_len = WiFiSpiClient_available(sock);
-            // printf("buff_len:%d\r\n", buff_len);
+            // printk("buff_len:%d\r\n", buff_len);
 #if 0
             if ((buff_len > 1024) || (last_buf_len == buff_len))
             {
@@ -131,13 +131,13 @@ uint32_t http_save_file(uint8_t sock, char *resp_header, uint32_t resp_header_le
             msleep(4);
         } while(--poll_times > 0);
 
-        // printf("buff_len:%d\r\n", buff_len);
+        // printk("buff_len:%d\r\n", buff_len);
 
         if(buff_len == 0)
         {
             /* receive error or no data*/
             flag = 0;
-            printf("%s\r\n", l_recv_len ? "receive over" : "receive failed");
+            printk("%s\r\n", l_recv_len ? "receive over" : "receive failed");
         } else if(buff_len > 0 && !resp_body_start)
         {
             per_buf_len = buff_len;
@@ -174,12 +174,12 @@ uint32_t http_save_file(uint8_t sock, char *resp_header, uint32_t resp_header_le
 
         if(l_recv_len > l_recv_file_buf_len)
         {
-            printf("l_recv_len > l_recv_file_buf_len\r\n");
+            printk("l_recv_len > l_recv_file_buf_len\r\n");
             flag = 0;
         }
     }
 #if DEBUG_HTTP_TIME
-    printf("http get result us %ld us\r\n", sysctl_get_time_us() - tim);
+    printk("http get result us %ld us\r\n", sysctl_get_time_us() - tim);
 #endif
     WiFiSpiClient_stop(sock);
 

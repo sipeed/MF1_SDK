@@ -26,30 +26,30 @@ uint32_t http_get_file(char *url,
 {
     if ((!resp_header) || (resp_header_len == 0) || (!file) || (file_len == 0))
     {
-        printf("error @ %d\r\n", __LINE__);
+        printk("error @ %d\r\n", __LINE__);
         return 0;
     }
 
     struct parsed_url *url_parsed = parse_url(url);
     if (url_parsed == NULL)
     {
-        printf("parse_url error\r\n");
+        printk("parse_url error\r\n");
         return 0;
     }
 
 #if 0
-    printf("url_parsed->uri:\t%s\r\n", url_parsed->uri);
-    printf("url_parsed->scheme:\t%s\r\n", url_parsed->scheme);
-    printf("url_parsed->host:\t%s\r\n", url_parsed->host);
-    printf("url_parsed->ip:\t%s\r\n", url_parsed->ip);
-    printf("url_parsed->port:\t%s\r\n", url_parsed->port);
-    printf("url_parsed->path:\t%s\r\n", url_parsed->path);
-    printf("url_parsed->query:\t%s\r\n", url_parsed->query);
+    printk("url_parsed->uri:\t%s\r\n", url_parsed->uri);
+    printk("url_parsed->scheme:\t%s\r\n", url_parsed->scheme);
+    printk("url_parsed->host:\t%s\r\n", url_parsed->host);
+    printk("url_parsed->ip:\t%s\r\n", url_parsed->ip);
+    printk("url_parsed->port:\t%s\r\n", url_parsed->port);
+    printk("url_parsed->path:\t%s\r\n", url_parsed->path);
+    printk("url_parsed->query:\t%s\r\n", url_parsed->query);
 
 #if NOT_ONLY_SUPPORT_GET
-    printf("url_parsed->fragment:\t%s\r\n", url_parsed->fragment);
-    printf("url_parsed->username:\t%s\r\n", url_parsed->username);
-    printf("url_parsed->password:\t%s\r\n", url_parsed->password);
+    printk("url_parsed->fragment:\t%s\r\n", url_parsed->fragment);
+    printk("url_parsed->username:\t%s\r\n", url_parsed->username);
+    printk("url_parsed->password:\t%s\r\n", url_parsed->password);
 #endif
 #endif
     /* Declare variable */
@@ -58,7 +58,7 @@ uint32_t http_get_file(char *url,
 
     if (!headers || !headers_tmp)
     {
-        printf("error @ %d\r\n", __LINE__);
+        printk("error @ %d\r\n", __LINE__);
         if (headers)
             free(headers);
         if (headers_tmp)
@@ -132,11 +132,11 @@ uint32_t http_get_file(char *url,
     uint8_t sock = WiFiSpiClient_connect_host(url_parsed->host, atoi(url_parsed->port), 0);
     if (sock != SOCK_NOT_AVAIL)
     {
-        printf("connect to server ok\r\n");
+        printk("connect to server ok\r\n");
     }
     else
     {
-        printf("connect to server failed\r\n");
+        printk("connect to server failed\r\n");
         free(headers);
         parsed_url_free(url_parsed);
         return 0;
@@ -154,7 +154,7 @@ uint32_t http_get_file(char *url,
 
         if (WiFiSpiClient_write(sock, (uint8_t *)(headers + sent), per_send) != per_send)
         {
-            printf("Send header to server failed\n");
+            printk("Send header to server failed\n");
             free(headers);
             WiFiSpiClient_stop(sock);
             return 0;
@@ -200,41 +200,41 @@ uint32_t http_post_file(char *url,
 {
     if ((!post_file) || (post_file_len == 0))
     {
-        printf("error @ %d\r\n", __LINE__);
+        printk("error @ %d\r\n", __LINE__);
         return 0;
     }
 
     if (!custom_headers)
     {
-        printf("error @ %d\r\n", __LINE__);
+        printk("error @ %d\r\n", __LINE__);
         return 0;
     }
 
     if ((!resp_header) || (resp_header_len == 0) || (!file) || (file_len == 0))
     {
-        printf("error @ %d\r\n", __LINE__);
+        printk("error @ %d\r\n", __LINE__);
         return 0;
     }
 
     struct parsed_url *url_parsed = parse_url(url);
     if (url_parsed == NULL)
     {
-        printf("parse_url error\r\n");
+        printk("parse_url error\r\n");
         return 0;
     }
 
 #if 0
-    printf("url_parsed->uri:\t%s\r\n", url_parsed->uri);
-    printf("url_parsed->scheme:\t%s\r\n", url_parsed->scheme);
-    printf("url_parsed->host:\t%s\r\n", url_parsed->host);
-    printf("url_parsed->ip:\t%s\r\n", url_parsed->ip);
-    printf("url_parsed->port:\t%s\r\n", url_parsed->port);
-    printf("url_parsed->path:\t%s\r\n", url_parsed->path);
-    printf("url_parsed->query:\t%s\r\n", url_parsed->query);
+    printk("url_parsed->uri:\t%s\r\n", url_parsed->uri);
+    printk("url_parsed->scheme:\t%s\r\n", url_parsed->scheme);
+    printk("url_parsed->host:\t%s\r\n", url_parsed->host);
+    printk("url_parsed->ip:\t%s\r\n", url_parsed->ip);
+    printk("url_parsed->port:\t%s\r\n", url_parsed->port);
+    printk("url_parsed->path:\t%s\r\n", url_parsed->path);
+    printk("url_parsed->query:\t%s\r\n", url_parsed->query);
 #if NOT_ONLY_SUPPORT_GET
-    printf("url_parsed->fragment:\t%s\r\n", url_parsed->fragment);
-    printf("url_parsed->username:\t%s\r\n", url_parsed->username);
-    printf("url_parsed->password:\t%s\r\n", url_parsed->password);
+    printk("url_parsed->fragment:\t%s\r\n", url_parsed->fragment);
+    printk("url_parsed->username:\t%s\r\n", url_parsed->username);
+    printk("url_parsed->password:\t%s\r\n", url_parsed->password);
 #endif
 #endif
 
@@ -244,7 +244,7 @@ uint32_t http_post_file(char *url,
 
     if (!headers || !headers_tmp)
     {
-        printf("error @ %d\r\n", __LINE__);
+        printk("error @ %d\r\n", __LINE__);
         if (headers)
             free(headers);
         if (headers_tmp)
@@ -325,17 +325,17 @@ uint32_t http_post_file(char *url,
     uint8_t sock = WiFiSpiClient_connect_host(url_parsed->host, atoi(url_parsed->port), 0);
     if (sock != SOCK_NOT_AVAIL)
     {
-        printf("connect to server ok\r\n");
+        printk("connect to server ok\r\n");
     }
     else
     {
-        printf("connect to server failed\r\n");
+        printk("connect to server failed\r\n");
         free(headers);
         parsed_url_free(url_parsed);
         return 0;
     }
 #if DEBUG_HTTP_TIME
-    printf("http post connect server us %ld us\r\n", sysctl_get_time_us() - tim);
+    printk("http post connect server us %ld us\r\n", sysctl_get_time_us() - tim);
     tim = sysctl_get_time_us();
 #endif
     parsed_url_free(url_parsed);
@@ -351,7 +351,7 @@ uint32_t http_post_file(char *url,
 
         if (WiFiSpiClient_write(sock, (uint8_t *)(headers + sent), per_packet_len) != per_packet_len)
         {
-            printf("Send header to server failed\n");
+            printk("Send header to server failed\n");
             WiFiSpiClient_stop(sock);
             free(headers);
             return 0;
@@ -360,7 +360,7 @@ uint32_t http_post_file(char *url,
     }
     free(headers);
 #if DEBUG_HTTP_TIME
-    printf("http post send header  us %ld us\r\n", sysctl_get_time_us() - tim);
+    printk("http post send header  us %ld us\r\n", sysctl_get_time_us() - tim);
     tim = sysctl_get_time_us();
 #endif
     sent = 0, per_packet_len = 0;
@@ -370,7 +370,7 @@ uint32_t http_post_file(char *url,
 
         if (WiFiSpiClient_write(sock, post_file + sent, per_packet_len) != per_packet_len)
         {
-            printf("Send post_file request to server failed\r\n");
+            printk("Send post_file request to server failed\r\n");
             WiFiSpiClient_stop(sock);
             return 0;
         }
@@ -385,7 +385,7 @@ uint32_t http_post_file(char *url,
 
         if (WiFiSpiClient_write(sock, endboundary, end_len) != end_len)
         {
-            printf("Send endboundary request to server failed\r\n");
+            printk("Send endboundary request to server failed\r\n");
             free(endboundary);
             WiFiSpiClient_stop(sock);
             return 0;
@@ -393,7 +393,7 @@ uint32_t http_post_file(char *url,
         free(endboundary);
     }
 #if DEBUG_HTTP_TIME
-    printf("http post send body  us %ld us\r\n", sysctl_get_time_us() - tim);
+    printk("http post send body  us %ld us\r\n", sysctl_get_time_us() - tim);
     tim = sysctl_get_time_us();
 #endif
     return http_save_file(sock, resp_header, resp_header_len, file, file_len);

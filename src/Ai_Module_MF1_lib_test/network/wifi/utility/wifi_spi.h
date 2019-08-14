@@ -28,6 +28,8 @@
 #include <inttypes.h>
 #include "wl_definitions.h"
 
+#include "printf.h"
+
 /* clang-format off */
 #define REPLY_FLAG                  1 << 7
 

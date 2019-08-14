@@ -19,13 +19,13 @@ static void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip
 /* SPI端口初始化 */
 void my_spi_init(void)
 {
-    printf("hard spi\r\n");
+    printk("hard spi\r\n");
     //cs
     gpiohs_set_drive_mode(WIFI_SPI_SS_HS_NUM, GPIO_DM_OUTPUT);
     gpiohs_set_pin(WIFI_SPI_SS_HS_NUM, 1);
     //init SPI_DEVICE_1
     spi_init(SPI_DEVICE_1, SPI_WORK_MODE_1, SPI_FF_STANDARD, 8, 0);
-    printf("set spi clk:%d\r\n", spi_set_clk_rate(SPI_DEVICE_1, 1000000 * 8)); /*set clk rate*/
+    printk("set spi clk:%d\r\n", spi_set_clk_rate(SPI_DEVICE_1, 1000000 * 8)); /*set clk rate*/
 }
 
 void my_spi_cs_set(void)
@@ -49,7 +49,7 @@ void my_spi_rw_len(uint8_t *send, uint8_t *recv, uint32_t len)
 {
     if(send == NULL && recv == NULL)
     {
-        printf(" buffer is null\r\n");
+        printk(" buffer is null\r\n");
         return;
     }
 

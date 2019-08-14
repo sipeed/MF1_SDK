@@ -198,7 +198,7 @@ void init_board_uart_port(uint32_t port_cfg)
     log_tx = (uint8_t)((port_cfg) >> 8 & 0xFF);
     log_rx = (uint8_t)((port_cfg)&0xFF);
 
-    printf("board uart setting:\r\nport_tx:%d\tport_rx:%d\tlog_tx:%d\tlog_rx:%d\r\n",
+    printk("board uart setting:\r\nport_tx:%d\tport_rx:%d\tlog_tx:%d\tlog_rx:%d\r\n",
            port_tx, port_rx, log_tx, log_rx);
 
     msleep(2);
@@ -244,12 +244,12 @@ void init_relay_key_pin(uint32_t cfg)
 
     sKey_dir = key_dir;
 
-    printf("key:%d\tkey_dir:%d\trelay_high:%d\trelay_low:%d\r\n", key_pin, key_dir, relay_1_pin, relay_0_pin);
+    printk("key:%d\tkey_dir:%d\trelay_high:%d\trelay_low:%d\r\n", key_pin, key_dir, relay_1_pin, relay_0_pin);
 }
 
 void protocol_start_recv_jpeg(void)
 {
-    printf("protocol_start_recv_jpeg\r\n");
+    printk("protocol_start_recv_jpeg\r\n");
 
     jpeg_recv_start_flag = 1;
     recv_jpeg_flag = 1;
@@ -262,7 +262,7 @@ void protocol_start_recv_jpeg(void)
 
 void protocol_stop_recv_jpeg(void)
 {
-    printf("protocol_stop_recv_jpeg\r\n");
+    printk("protocol_stop_recv_jpeg\r\n");
 
     jpeg_recv_start_flag = 0;
     recv_jpeg_flag = 0;

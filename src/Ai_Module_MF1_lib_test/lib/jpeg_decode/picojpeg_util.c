@@ -7,6 +7,8 @@
 #include "picojpeg.h"
 #include "picojpeg_util.h"
 
+#include "printf.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -120,16 +122,16 @@ uint8 *pjpeg_load_from_file(uint8_t *buf, uint32_t buf_len, int *x, int *y, int 
 
    if (status)
    {
-      printf("pjpeg_decode_init() failed with status %u\r\n", status);
+      printk("pjpeg_decode_init() failed with status %u\r\n", status);
       if (status == PJPG_UNSUPPORTED_MODE)
       {
-         printf("Progressive JPEG files are not supported.\r\n");
+         printk("Progressive JPEG files are not supported.\r\n");
       }
       return NULL;
    }
 
-   printf("reduce:%d\r\n", reduce);
-   printf("rgb565:%d\r\n", rgb565);
+   printk("reduce:%d\r\n", reduce);
+   printk("rgb565:%d\r\n", rgb565);
 
    if (pScan_type)
       *pScan_type = image_info.m_scanType;
@@ -152,7 +154,7 @@ uint8 *pjpeg_load_from_file(uint8_t *buf, uint32_t buf_len, int *x, int *y, int 
    {
       if ((row_pitch * decoded_height) > (320 * 240 * 3))
       {
-         printf("image: max supported size: 320 x 240\r\n");
+         printk("image: max supported size: 320 x 240\r\n");
          *err = -1;
          return NULL;
       }
@@ -176,7 +178,7 @@ uint8 *pjpeg_load_from_file(uint8_t *buf, uint32_t buf_len, int *x, int *y, int 
       {
          if (status != PJPG_NO_MORE_BLOCKS)
          {
-            printf("pjpeg_decode_mcu() failed with status %u\r\n", status);
+            printk("pjpeg_decode_mcu() failed with status %u\r\n", status);
             if (pixels == NULL)
                free(pImage);
             *err = -1;
@@ -447,7 +449,7 @@ jpeg_decode_image_t *pico_jpeg_decode(uint8_t *out_img, uint8_t *buf, uint32_t b
 
    if (img_data == NULL)
    {
-      printf("Failed loading source image! err:%s\r\n", (err == -1) ? "EINVAL" : (err == -2) ? "ENOMEM" : "EPERM");
+      printk("Failed loading source image! err:%s\r\n", (err == -1) ? "EINVAL" : (err == -2) ? "ENOMEM" : "EPERM");
       return NULL;
    }
 

@@ -65,7 +65,7 @@ uint8_t WiFiSpiClient_connect_ip(IPAddress_t ip, uint16_t port, uint8_t isSSL)
     }
     else
     {
-        printf("No Socket available");
+        printk("No Socket available");
         return SOCK_NOT_AVAIL;
     }
     return sock;
@@ -87,14 +87,14 @@ size_t WiFiSpiClient_write(uint8_t sock, const uint8_t *buf, size_t size)
     if (sock >= MAX_SOCK_NUM || size == 0)
     {
         // setWriteError();
-        printf("%d write error!\r\n",__LINE__);
+        printk("%d write error!\r\n",__LINE__);
         return 0;
     }
 
     if (!ServerSpiDrv_sendData(sock, buf, size))
     {
         // setWriteError();
-        printf("%d write error!\r\n",__LINE__);
+        printk("%d write error!\r\n",__LINE__);
         return 0;
     }
 

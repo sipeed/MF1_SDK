@@ -27,6 +27,8 @@
 
 #include <stdio.h>
 
+#include "printf.h"
+
 #include "wifispi_drv.h"
 
 uint8_t WiFiSpiClient_connect_host(const char *host, uint16_t port,uint8_t isSSL);
