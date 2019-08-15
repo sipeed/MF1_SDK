@@ -127,23 +127,17 @@ typedef struct
 
 typedef struct
 {
-    //drae face edge on lcd image buf
-    void (*lcd_draw_edge)(face_obj_t *obj, uint32_t color);
-
-    //darw lcd image buf to lcd
-    void (*lcd_draw_picture)(void);
-
-    //draw not pass face on lcd
-    void (*lcd_draw_false_face)(face_recognition_ret_t *ret);
-
-    //save face to flash
-    void (*record_face)(face_recognition_ret_t *ret);
-
-    //face check pass callback
-    void (*face_pass_cb)(face_obj_t *obj, uint32_t total, uint32_t current, uint64_t *time);
-    
     //protocol send
-    void (*proto_send)(char *buf,size_t len);
+    void (*proto_send)(char*buf, size_t len);
+
+    //detect face, user can record face
+    void (*detected_face_cb)(face_recognition_ret_t *face);
+
+    void (*fake_face_cb)(face_recognition_ret_t *face);
+
+    void (*pass_face_cb)(face_recognition_ret_t *face, uint8_t ir_check);
+
+    void (*lcd_refresh_cb)(void);
 } face_lib_callback_t;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -224,5 +218,6 @@ int gc0328_init(void); //sleep time in ms
 void open_gc0328_650();
 extern volatile uint8_t g_dvp_finish_flag;
 ///////////////////////////////////////////////////////////////////////////////
-
+void sipeed_spi_send_data_dma(uint8_t spi_num, uint8_t chip_select,uint8_t dma_chn, const uint8_t *data_buf, size_t buf_len);
+///////////////////////////////////////////////////////////////////////////////
 #endif

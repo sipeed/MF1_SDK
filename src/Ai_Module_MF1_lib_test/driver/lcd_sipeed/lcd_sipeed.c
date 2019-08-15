@@ -31,9 +31,9 @@ static void irq_RS_Sync(void)
     PageCount++;
     if(PageCount < LCD_H * 2)
     {
+        dis_flag = 1;
         lcd_sipeed_send_dat(&img_ptr[PageCount / 2 * LCD_W * 2], LCD_W * 2);
-    }
-    else if(PageCount > LCD_SIPEED_FRAME_END_LINE && dis_flag)
+    } else if(PageCount > LCD_SIPEED_FRAME_END_LINE && dis_flag)
     {
         dis_flag = 0;
     }
@@ -46,12 +46,13 @@ static void lcd_sipeed_send_cmd(uint8_t CMDData)
     spi_init(LCD_SIPEED_SPI_DEV, SPI_WORK_MODE_0, SPI_FF_OCTAL, 8, 0);
     spi_init_non_standard(LCD_SIPEED_SPI_DEV, 8 /*instrction length*/, 0 /*address length*/, 0 /*wait cycles*/,
                           SPI_AITM_AS_FRAME_FORMAT /*spi address trans mode*/);
-	spi_send_data_normal(LCD_SIPEED_SPI_DEV, LCD_SIPEED_SPI_SS, (uint8_t *)(&CMDData), 1);
+    spi_send_data_normal(LCD_SIPEED_SPI_DEV, LCD_SIPEED_SPI_SS, (uint8_t *)(&CMDData), 1);
 }
 
 static void lcd_sipeed_send_dat(uint8_t *DataBuf, uint32_t Length)
 {
-    spi_send_data_normal_dma(DMAC_CHANNEL2, LCD_SIPEED_SPI_DEV, LCD_SIPEED_SPI_SS, DataBuf-0x40000000, Length / 4, SPI_TRANS_INT);
+    // spi_send_data_normal_dma(DMAC_CHANNEL2, LCD_SIPEED_SPI_DEV, LCD_SIPEED_SPI_SS, DataBuf-0x40000000, Length / 4, SPI_TRANS_INT);
+    sipeed_spi_send_data_dma(LCD_SIPEED_SPI_DEV, LCD_SIPEED_SPI_SS, DMAC_CHANNEL2, DataBuf - 0x40000000, Length);
 }
 
 static volatile uint64_t int_tim = 0;
@@ -83,7 +84,7 @@ void lcd_init(void)
     lcd_sipeed_send_cmd(LCD_DISOLAY_ON);
 
     timer_init(1);
-    timer_set_interval(1, 1, 60 * 1000 * 1000); //60ms
+    timer_set_interval(1, 1, 60 * 1000 * 1000);           //60ms
     timer_irq_register(1, 1, 0, 1, timer_callback, NULL); //4th pri
     timer_set_enable(1, 1, 1);
 }
@@ -175,7 +176,7 @@ void lcd_sipeed_display(uint8_t *img_buf, uint8_t block)
 
     spi_init(LCD_SIPEED_SPI_DEV, SPI_WORK_MODE_0, SPI_FF_OCTAL, 32, 0);
     lcd_sipeed_send_cmd(LCD_FRAME_START);
-	
+
     spi_init(LCD_SIPEED_SPI_DEV, SPI_WORK_MODE_0, SPI_FF_OCTAL, 32, 1);
     spi_init_non_standard(LCD_SIPEED_SPI_DEV, 0, 32, 0, SPI_AITM_AS_FRAME_FORMAT);
 
@@ -189,7 +190,7 @@ void lcd_sipeed_display(uint8_t *img_buf, uint8_t block)
         while(PageCount < LCD_SIPEED_FRAME_END_LINE)
         {
             msleep(1);
-        }; 
+        };
     }
 }
 

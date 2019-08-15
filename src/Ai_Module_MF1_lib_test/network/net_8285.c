@@ -10,6 +10,15 @@
 #include "myspi.h"
 
 #include "system_config.h"
+
+#if CONFIG_LCD_TYPE_ST7789
+#include "lcd_st7789.h"
+#elif CONFIG_LCD_TYPE_SSD1963
+#include "lcd_ssd1963.h"
+#elif CONFIG_LCD_TYPE_SIPEED
+#include "lcd_sipeed.h"
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* for qrcode scan */
 volatile uint8_t g_net_status = 0;
@@ -180,6 +189,9 @@ uint8_t spi_8266_init_device(void)
     // check for the presence of the ESP module:
     if(WiFiSpi_status() == WL_NO_SHIELD)
     {
+#if CONFIG_LCD_TYPE_ST7789
+    lcd_clear(RED);
+#endif
         printk("WiFi module not present\r\n");
         // don't continue:
         return 1;
@@ -193,12 +205,15 @@ uint8_t spi_8266_init_device(void)
 
     if(!WiFiSpi_checkProtocolVersion())
     {
+#if CONFIG_LCD_TYPE_ST7789
+    lcd_clear(RED);
+#endif
         printk("Protocol version mismatch. Please upgrade the firmware\r\n");
         // don't continue:
         return 2;
     }
 
-#if 0
+#if 1
     uint8_t mac[6];
     WiFiSpi_macAddress(mac);
 #else
@@ -207,7 +222,9 @@ uint8_t spi_8266_init_device(void)
 
     sprintf(mqttc_id, id_fmt, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     printk("mqtt_client_id: %s\r\n", mqttc_id);
-
+#if CONFIG_LCD_TYPE_ST7789
+    lcd_clear(BLUE);
+#endif
     return 0;
 }
 
@@ -288,7 +305,7 @@ void mqtt_reconnect(void)
 
 uint8_t spi_8266_mqtt_init(void)
 {
-#if 0
+#if 1
     uint8_t mac[6];
     WiFiSpi_macAddress(mac);
 #else

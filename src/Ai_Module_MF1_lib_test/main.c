@@ -17,14 +17,6 @@
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-#define DBG_650_IMG 0
-#define DBG_850_IMG 0
-
-extern volatile uint8_t g_key_long_press;
-
-void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint64_t *time);
-
 static uint64_t last_open_relay_time_in_s = 0;
 static volatile uint8_t relay_open_flag = 0;
 
@@ -38,16 +30,15 @@ face_recognition_cfg_t face_recognition_cfg = {
 };
 
 face_lib_callback_t face_recognition_cb = {
-    .lcd_draw_edge = lcd_draw_edge,
-    .lcd_draw_picture = lcd_draw_picture_cb,
-    .lcd_draw_false_face = lcd_draw_false_face,
-    .record_face = record_face,
-    .face_pass_cb = face_pass_callback,
 #if CONFIG_PROTO_OVER_NET
     .proto_send = spi_8266_mqtt_send,
 #else
     .proto_send = uart_send,
 #endif
+    .detected_face_cb = detected_face_cb,
+    .fake_face_cb = fake_face_cb,
+    .pass_face_cb = pass_face_cb,
+    .lcd_refresh_cb = lcd_refresh_cb,
 };
 
 static void uart_send(char *buf, size_t len)
@@ -101,7 +92,7 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
     open_relay();
 
     /* output feature */
-    if(g_board_cfg.auto_out_feature&0x1 == 1)
+    if(g_board_cfg.auto_out_feature & 0x1 == 0x1)
     {
         protocol_send_face_info(obj,
                                 0, NULL, obj->feature,
@@ -157,12 +148,7 @@ int main(void)
             printk("save g_board_cfg failed!\r\n");
         }
     }
-    
-    //TODO: when user change it by Json, also should change
-    if(g_board_cfg.auto_out_feature&0x1 == 0x1)
-    {
-        face_recognition_cfg.auto_out_fea = 1;
-    }
+
 
     face_lib_regisiter_callback(&face_recognition_cb);
 
@@ -203,6 +189,8 @@ int main(void)
         /* if rcv jpg or scan qrcode, will stuck a period */
         if(!jpeg_recv_start_flag && !qrcode_get_info_flag)
         {
+            face_recognition_cfg.auto_out_fea = (uint8_t)g_board_cfg.auto_out_feature;
+            face_recognition_cfg.compare_threshold = (uint8_t)g_board_cfg.face_gate;
             face_lib_run(&face_recognition_cfg);
         }
 
@@ -229,10 +217,9 @@ int main(void)
             while(!g_dvp_finish_flag)
                 ;
 
-            /* here display pic */
-            display_fit_lcd_with_alpha(IMG_SCAN_QR_ADDR, lcd_image, 160);
-
+                /* here display pic */
 #if CONFIG_LCD_TYPE_ST7789
+            display_fit_lcd_with_alpha(IMG_SCAN_QR_ADDR, lcd_image, 160);
             lcd_draw_picture(0, 0, LCD_W, LCD_H, (uint32_t *)lcd_image); //7.5ms
 #endif
 
@@ -299,8 +286,8 @@ int main(void)
 
             g_dvp_finish_flag = 0;
         }
-#endif/* CONFIG_KEY_SHORT_QRCODE */
-#endif/* CONFIG_ENABLE_WIFI */
+#endif /* CONFIG_KEY_SHORT_QRCODE */
+#endif /* CONFIG_ENABLE_WIFI */
 
         if(g_key_long_press)
         {
@@ -388,7 +375,7 @@ int main(void)
                 protocol_stop_recv_jpeg();
                 protocol_send_cal_pic_result(7, "timeout to recv jpeg file", NULL, NULL, 0); //7  jpeg verify error
             }
-            
+
             /* recv over */
             if(jpeg_recv_len != 0)
             {
