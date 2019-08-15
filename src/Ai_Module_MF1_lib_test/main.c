@@ -16,6 +16,8 @@
 #include "lcd_sipeed.h"
 #endif
 
+#include "http_file.h"
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 static uint64_t last_open_relay_time_in_s = 0;
 static volatile uint8_t relay_open_flag = 0;
@@ -149,13 +151,15 @@ int main(void)
         }
     }
 
-
     face_lib_regisiter_callback(&face_recognition_cb);
 
     /* init device */
+#if(CONFIG_PROTO_OVER_NET == 0)
     protocol_init_device(&g_board_cfg);
-    init_relay_key_pin(g_board_cfg.key_relay_pin_cfg);
     protocol_send_init_done();
+#endif
+
+    init_relay_key_pin(g_board_cfg.key_relay_pin_cfg);
 
     printk("load cfg %s\r\n", g_board_cfg.cfg_right_flag ? "success" : "error");
     flash_cfg_print(&g_board_cfg);
@@ -175,7 +179,9 @@ int main(void)
         if(g_net_status)
         {
             display_lcd_img_addr(IMG_CONN_SUCC_ADDR);
+#if CONFIG_NET_DEMO_MQTT
             spi_8266_mqtt_init();
+#endif
         } else
         {
             display_lcd_img_addr(IMG_CONN_FAILED_ADDR);
@@ -186,6 +192,63 @@ int main(void)
 
     while(1)
     {
+#if CONFIG_NET_DEMO_HTTP_GET
+
+        uint8_t http_header[1024];
+
+        if(g_net_status)
+        {
+            dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 0);
+
+            uint64_t tm = sysctl_get_time_us();
+
+            uint32_t get_recv_len = http_get_file(
+                "https://fdvad021asfd8q.oss-cn-hangzhou.aliyuncs.com/logo.jpg",
+                NULL,
+                http_header,
+                sizeof(http_header),
+                display_image,
+                sizeof(display_image));
+
+            uint64_t tt = sysctl_get_time_us() - tm;
+
+            printk("http get use %ld us\r\n", tt);
+
+            float time_s = (float)((float)tt / 1000.0 / 1000.0);
+            float file_kb = (float)((float)get_recv_len / 1024.0);
+
+            printf("about %f KB/s\r\n", (float)(file_kb / time_s));
+
+            printk("get_recv_len:%d\r\n", get_recv_len);
+            printk("get recv hdr:%s\r\n", http_header);
+
+            if(get_recv_len > 0)
+            {
+                jpeg_decode_image_t *jpeg = NULL;
+
+                jpeg = pico_jpeg_decode(kpu_image[0], display_image, get_recv_len, 1);
+
+                if(jpeg)
+                {
+                    printk("img width:%d\theight:%d\r\n", jpeg->width, jpeg->height);
+                    if(jpeg->width == 240 && jpeg->height == 240)
+                    {
+                        convert_jpeg_img_order(jpeg);
+
+                        lcd_draw_picture(0, 0, LCD_W, LCD_H, (uint32_t *)jpeg->img_data);
+                    }
+                }
+            }
+            while(1)
+                ;
+        }
+
+        lcd_draw_string(0, 0, "please touch key", RED);
+
+#elif CONFIG_NET_DEMO_HTTP_POST
+        // dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 0);
+
+#else
         /* if rcv jpg or scan qrcode, will stuck a period */
         if(!jpeg_recv_start_flag && !qrcode_get_info_flag)
         {
@@ -193,11 +256,10 @@ int main(void)
             face_recognition_cfg.compare_threshold = (uint8_t)g_board_cfg.face_gate;
             face_lib_run(&face_recognition_cfg);
         }
-
+#endif
         /* get key state */
         update_key_state();
 
-#if CONFIG_ENABLE_WIFI
 #if CONFIG_KEY_SHORT_QRCODE
         /* key short to scan qrcode */
         if(g_key_press)
@@ -287,7 +349,6 @@ int main(void)
             g_dvp_finish_flag = 0;
         }
 #endif /* CONFIG_KEY_SHORT_QRCODE */
-#endif /* CONFIG_ENABLE_WIFI */
 
         if(g_key_long_press)
         {
@@ -327,7 +388,7 @@ int main(void)
 
         tim = sysctl_get_time_us();
 
-#if CONFIG_ENABLE_WIFI
+#if CONFIG_NET_DEMO_MQTT
         /******Process mqtt ********/
         if(g_net_status && !qrcode_get_info_flag)
         {
@@ -344,7 +405,7 @@ int main(void)
                 last_mqtt_check_tim += 1000 * 1000; //1000ms
             }
         }
-#endif /* CONFIG_ENABLE_WIFI */
+#endif /* CONFIG_NET_DEMO_MQTT */
 
         /******Process relay open********/
         tim = sysctl_get_time_us();
@@ -356,12 +417,11 @@ int main(void)
             relay_open_flag = 0;
         }
 
+#if(CONFIG_PROTO_OVER_NET == 0)
         /******Process uart protocol********/
         if(recv_over_flag)
         {
-#if(CONFIG_PROTO_OVER_NET == 0)
             protocol_prase(cJSON_prase_buf);
-#endif
             recv_over_flag = 0;
         }
 
@@ -383,5 +443,10 @@ int main(void)
                 jpeg_recv_len = 0;
             }
         }
+#else
+        jpeg_recv_start_flag = 0;
+        protocol_stop_recv_jpeg();
+        protocol_send_cal_pic_result(2, "not support cal pic fea over net", NULL, NULL, 0); //7  jpeg verify error
+#endif
     }
 }

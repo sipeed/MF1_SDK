@@ -416,27 +416,22 @@ static void image_compare(image_compare_results *pResults, int width, int height
 
 //------------------------------------------------------------------------------
 
-// #define SWAP_16(x) ((x >> 8 & 0xff) | (x << 8))
+#define SWAP_16(x) ((x >> 8 & 0xff) | (x << 8))
 
-// void jpeg_display(uint16_t startx, uint16_t starty, jpeg_decode_image_t *jpeg)
-// {
-//    uint16_t t[2];
-//    uint16_t *ptr = jpeg->img_data;
-//    uint16_t *p = ptr;
+void convert_jpeg_img_order(jpeg_decode_image_t *jpeg)
+{
+   uint16_t t[2];
+   uint16_t *ptr = jpeg->img_data;
 
-//    lcd_set_area(startx, starty, startx + jpeg->width - 1, starty + jpeg->height - 1);
-
-//    for (uint32_t i = 0; i < (jpeg->width * jpeg->height); i += 2)
-//    {
-//       t[0] = *(ptr + 1);
-//       t[1] = *(ptr);
-//       *(ptr) = SWAP_16(t[0]);
-//       *(ptr + 1) = SWAP_16(t[1]);
-//       ptr += 2;
-//    }
-
-//    tft_write_word(p, (jpeg->width * jpeg->height / 2), 0);
-// }
+   for (uint32_t i = 0; i < (jpeg->width * jpeg->height); i += 2)
+   {
+      t[0] = *(ptr + 1);
+      t[1] = *(ptr);
+      *(ptr) = SWAP_16(t[0]);
+      *(ptr + 1) = SWAP_16(t[1]);
+      ptr += 2;
+   }
+}
 
 //------------------------------------------------------------------------------
 jpeg_decode_image_t *pico_jpeg_decode(uint8_t *out_img, uint8_t *buf, uint32_t buf_len, uint8_t rgb565)
