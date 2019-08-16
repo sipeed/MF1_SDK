@@ -2697,8 +2697,8 @@ CJSON_PUBLIC(void) cJSON_Minify(char *json)
     }
 
     /* and null-terminate. */
-    // *into++='\r';
-    // *into++='\n';
+    *into++='\r';
+    *into++='\n';
     *into = '\0';
 }
 

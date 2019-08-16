@@ -130,6 +130,49 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
     return;
 }
 
+//recv: {"version":1,"type":"test"}
+//send: {"version":1,"type":"test","code":0,"msg":"test"}
+void test_cmd(cJSON *root)
+{
+    cJSON *ret = protocol_gen_header("test", 0, "test");
+    if(ret)
+    {
+        protocol_send(ret);
+    }
+    cJSON_Delete(ret);
+    return;
+}
+
+//recv: {"version":1,"type":"test2","log_tx":10}
+//send: {"version":1,"type":"test2","code":0,"msg":"test2"}
+void test2_cmd(cJSON *root)
+{
+    cJSON *ret = NULL;
+    cJSON *tmp = NULL;
+
+    tmp = cJSON_GetObjectItem(root, "log_tx");
+    if(tmp == NULL)
+    {
+        printk("no log_tx recv\r\n");
+    } else
+    {
+        printk("log_tx:%d\r\n", tmp->valueint);
+    }
+
+    ret = protocol_gen_header("test2", 0, "test2");
+    if(ret)
+    {
+        protocol_send(ret);
+    }
+    cJSON_Delete(ret);
+    return;
+}
+
+protocol_custom_cb_t user_custom_cmd[] = {
+    {.cmd = "test", .cmd_cb = test_cmd},
+    {.cmd = "test2", .cmd_cb = test2_cmd},
+};
+
 int main(void)
 {
     uint64_t tim = 0, last_mqtt_check_tim = 0;
@@ -155,8 +198,9 @@ int main(void)
 
     /* init device */
 #if(CONFIG_PROTO_OVER_NET == 0)
+    protocol_regesiter_user_cb(&user_custom_cmd[0], sizeof(user_custom_cmd) / sizeof(user_custom_cmd[0]));
+
     protocol_init_device(&g_board_cfg);
-    protocol_send_init_done();
 #endif
 
     init_relay_key_pin(g_board_cfg.key_relay_pin_cfg);
@@ -190,6 +234,7 @@ int main(void)
     }
 #endif
 
+    protocol_send_init_done();
     while(1)
     {
 #if CONFIG_NET_DEMO_HTTP_GET

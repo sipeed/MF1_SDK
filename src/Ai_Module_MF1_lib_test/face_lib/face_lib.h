@@ -151,6 +151,8 @@ uint8_t face_lib_regisiter_callback(face_lib_callback_t *cfg_cb);
 //cal camera pic face feature
 void face_lib_run(face_recognition_cfg_t *cfg);
 
+//compare two face
+float face_compare_score(int8_t *feature0, int8_t *feature1);
 ///////////////////////////////////////////////////////////////////////////////
 /* uart protocol */
 /* clang-format off */
@@ -175,6 +177,12 @@ typedef struct _pkt_head
 
 } pkt_head_t;
 
+typedef struct
+{
+    char *cmd;
+    void (*cmd_cb)(cJSON *root);
+} protocol_custom_cb_t;
+
 #include "uart_recv.h"
 
 uint8_t protocol_send_init_done(void);
@@ -186,6 +194,10 @@ uint8_t protocol_send_cal_pic_result(uint8_t code, char *msg, float feature[FEAT
 uint8_t protocol_send_face_info(face_obj_t *obj,
                                 float score, uint8_t uid[UID_LEN], float feature[FEATURE_DIMENSION],
                                 uint32_t total, uint32_t current, uint64_t *time);
+
+cJSON *protocol_gen_header(char *cmd, uint8_t code, char *msg);
+uint8_t protocol_send(const cJSON *const send);
+uint8_t protocol_regesiter_user_cb(protocol_custom_cb_t *cb_list, uint32_t ncb);
 ///////////////////////////////////////////////////////////////////////////////
 /* w25qxx */
 typedef enum _w25qxx_status
