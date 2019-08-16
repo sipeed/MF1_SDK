@@ -29,7 +29,7 @@
 
 #define CONFIG_NET_DEMO_MQTT                (1)
 #define CONFIG_NET_DEMO_HTTP_GET            (1)
-#define CONFIG_NET_DEMO_HTTP_POST           (0)
+#define CONFIG_NET_DEMO_HTTP_POST           (1)
 #else
 #define CONFIG_KEY_SHORT_QRCODE             (0)
 

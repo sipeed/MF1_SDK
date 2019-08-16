@@ -238,16 +238,49 @@ int main(void)
                         lcd_draw_picture(0, 0, LCD_W, LCD_H, (uint32_t *)jpeg->img_data);
                     }
                 }
+#if CONFIG_NET_DEMO_HTTP_POST
+                uint8_t *post_send_body = (uint8_t *)malloc(sizeof(uint8_t) * 1024);
+                uint8_t *post_send_header = (uint8_t *)malloc(sizeof(uint8_t) * 512);
+
+                uint8_t *boundary = "----WebKitFormBoundaryO2aA3WiAfUqIcD6e"; //header 中要比正文少俩--
+                                                                              //结尾又比正文在街位数多俩--
+                sprintf(post_send_header, "Sec-Fetch-Mode: cors\r\nUser-Agent: Xel\r\nContent-Type: multipart/form-data; boundary=%s\r\n", boundary);
+                sprintf(post_send_body, "--%s\r\nContent-Disposition: form-data; name=\"file\"\r\n\r\nmultipart\r\n--%s\r\nContent-Disposition: form-data; name=\"Filedata\"; filename=\"logo.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n", boundary, boundary);
+
+                tm = sysctl_get_time_us();
+                uint32_t post_recv_len = http_post_file("http://api.uomg.com/api/image.ali",
+                                                        post_send_header,
+                                                        post_send_body,
+                                                        boundary,
+                                                        display_image,
+                                                        get_recv_len,
+                                                        http_header,
+                                                        sizeof(http_header),
+                                                        display_image,
+                                                        sizeof(display_image));
+
+                tt = sysctl_get_time_us() - tm;
+
+                if(post_recv_len > 0)
+                {
+                    printk("post_recv_len %d \r\n", post_recv_len);
+                    printk("http_header:%s\r\n", http_header);
+                    printf("http_body:\r\n%s\r\n", display_image);
+
+                    time_s = (float)((float)tt / 1000.0 / 1000.0);
+                    file_kb = (float)((float)get_recv_len / 1024.0);
+
+                    printk("http post use %ld us\r\n", tt);
+
+                    printf("about %f KB/s\r\n", (float)(file_kb / time_s));
+                }
+#endif
             }
             while(1)
                 ;
         }
 
         lcd_draw_string(0, 0, "please touch key", RED);
-
-#elif CONFIG_NET_DEMO_HTTP_POST
-        // dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 0);
-
 #else
         /* if rcv jpg or scan qrcode, will stuck a period */
         if(!jpeg_recv_start_flag && !qrcode_get_info_flag)

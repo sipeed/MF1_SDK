@@ -17,6 +17,16 @@
 extern void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint64_t *time);
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/* uart send all fea is compressed and base64 encoded, you can use base64 decode,and decompress it */
+void decompress_feature(float feature[FEATURE_DIMENSION], int8_t compress_feature[FEATURE_DIMENSION])
+{
+    for(uint16_t i = 0; i < FEATURE_DIMENSION; i++)
+    {
+        feature[i] = (float)((float)compress_feature[i] / 512.0 /* /256 * 0.5 */);
+    }
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 //所有的操作都在dvo输出的图像中进行操作，然后再转换。
 void lcd_draw_edge(face_obj_t *obj, uint32_t color)
 {
