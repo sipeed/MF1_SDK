@@ -14,6 +14,19 @@
 #include "lcd_sipeed.h"
 #endif
 
+/* clang-format off */
+#define PASS_SAVE_PIC       (0)
+/* clang-format on */
+
+#if PASS_SAVE_PIC
+
+#include "jpeg_compress.h"
+
+#define JPEG_LEN (15 * 1024)
+uint8_t jpeg_buf[JPEG_LEN];
+uint8_t jpeg_tmp[IMG_W * IMG_H * 2];
+#endif
+
 extern void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint64_t *time);
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -227,6 +240,34 @@ void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
     uint32_t face_cnt = 0;
     face_obj_info_t *face_info = NULL;
     uint64_t tim = sysctl_get_time_us();
+
+#if PASS_SAVE_PIC
+    jpeg_encode_t jpeg_src, jpeg_out;
+
+    memcpy(jpeg_tmp, display_image, IMG_W * IMG_H * 2); //如果不拷贝，会影响显示的内容
+    reverse_u32pixel(jpeg_tmp, 320 * 240 / 2);
+
+    jpeg_src.w = 320;
+    jpeg_src.h = 240;
+    jpeg_src.bpp = 2;
+    jpeg_src.data = jpeg_tmp;
+
+    jpeg_out.w = jpeg_src.w;
+    jpeg_out.h = jpeg_src.h;
+    jpeg_out.bpp = JPEG_LEN;
+    jpeg_out.data = jpeg_buf;
+
+    //将摄像头输出图像压缩成Jpeg,压缩后图像大小为jpeg_out.bpp
+    if(jpeg_compress(&jpeg_src, &jpeg_out, 80, 0) == 0)
+    {
+        printf("w:%d\th:%d\tbpp:%d\r\n", jpeg_out.w, jpeg_out.h, jpeg_out.bpp);
+    } else
+    {
+        printf("jpeg encode failed\r\n");
+    }
+    printk("jpeg compress: %ld us\r\n", sysctl_get_time_us() - tim);
+    tim = sysctl_get_time_us();
+#endif
 
     if(ir_check)
     {
