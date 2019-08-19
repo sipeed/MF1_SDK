@@ -22,7 +22,7 @@
 #define CONFIG_ENABLE_WIFI                  (0)
 
 #define CONFIG_KEY_DIR                      (1)
-#define CONFIG_KEY_LONG_RESTORE           (1)
+#define CONFIG_KEY_LONG_RESTORE             (1)
 
 #if CONFIG_ENABLE_WIFI
 #define CONFIG_KEY_SHORT_QRCODE             (1)
@@ -46,7 +46,7 @@
 #define DBG_UART_NUM                   	    (UART_DEV3) //FUCK Cannan
 #define PROTOCOL_UART_NUM                   (UART_DEV1)
 
-#if CONFIG_SWAP_UART
+#if (CONFIG_SWAP_UART==0)
 #define PROTOCOL_PORT_TX_PIN                (10)
 #define PROTOCOL_PORT_RX_PIN                (11)
 
