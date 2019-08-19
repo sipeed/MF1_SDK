@@ -14,12 +14,14 @@
 #define CONFIG_LCD_TYPE_SSD1963             (0)
 #define CONFIG_LCD_TYPE_SIPEED              (0)
 
-#define CONFIG_SWAP_UART                    (1)
+//START
+#define CONFIG_SWAP_UART                    (1)//must be L18
+#define CONFIG_KEY_LONG_RESTORE             (1)//must be L19
+//END
 
 #define CONFIG_ENABLE_WIFI                  (0)
 
 #define CONFIG_KEY_DIR                      (1)
-#define CONFIG_KEY_LONG_RESTORE             (1)
 #define CONFIG_KEY_LONG_CLEAR_FEA           (1)
 
 #if CONFIG_ENABLE_WIFI

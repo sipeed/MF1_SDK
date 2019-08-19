@@ -1,5 +1,7 @@
 #include "face_lib.h"
 
+#include "version.h"
+
 #include "ff.h"
 
 #include "face_cb.h"
@@ -180,6 +182,9 @@ int main(void)
     board_init();
     sd_init_fatfs();
     face_lib_init_module();
+
+    printk("firmware version:\r\n%s\r\n", VERSION_STR);
+    printk("face_lib_version:\r\n%s\r\n", face_lib_version());
 
     /*load cfg from flash*/
     if(flash_load_cfg(&g_board_cfg) == 0)

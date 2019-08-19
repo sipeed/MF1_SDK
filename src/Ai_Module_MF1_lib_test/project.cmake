@@ -10,4 +10,9 @@ target_link_libraries(${PROJECT_NAME}
         -Wl,--end-group
         )
 
+execute_process(
+        COMMAND ./version.sh
+        WORKING_DIRECTORY ${SDK_ROOT}/src/${PROJ}/tools/version
+        )
+
 message("")
