@@ -225,11 +225,11 @@ void fake_face_cb(face_recognition_ret_t *face)
 {
     uint32_t face_cnt = face->result->face_obj_info.obj_number;
 
-    face_obj_info_t *face_info = NULL;
+    face_obj_t *face_info = NULL;
 
     for(uint32_t i = 0; i < face_cnt; i++)
     {
-        face_info = (face_obj_info_t *)&(face->result->face_obj_info.obj[i]);
+        face_info = (face_obj_t *)&(face->result->face_obj_info.obj[i]);
         lcd_draw_edge(face_info, 0x0000ff); //BLUE
     }
 }
@@ -238,7 +238,7 @@ void fake_face_cb(face_recognition_ret_t *face)
 void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
 {
     uint32_t face_cnt = 0;
-    face_obj_info_t *face_info = NULL;
+    face_obj_t *face_info = NULL;
     uint64_t tim = sysctl_get_time_us();
 
 #if PASS_SAVE_PIC
@@ -275,7 +275,7 @@ void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
 
         for(uint32_t i = 0; i < face_cnt; i++)
         {
-            face_info = (face_obj_info_t *)(face->result->face_compare_info.obj[i]);
+            face_info = (face_obj_t *)(face->result->face_compare_info.obj[i]);
             face_pass_callback(face_info, face_cnt, i, &tim);
             lcd_draw_edge(face_info, 0x00ff00); //GREEN
         }
@@ -287,7 +287,7 @@ void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
         {
             if((g_board_cfg.auto_out_feature & 1) == 1)
             {
-                face_info = (face_obj_info_t *)&(face->result->face_obj_info.obj[i]);
+                face_info = (face_obj_t *)&(face->result->face_obj_info.obj[i]);
                 face_pass_callback(face_info, face_cnt, i, &tim);
                 lcd_draw_edge(face_info, 0xffffff); //WHITE
             } else
@@ -416,11 +416,11 @@ void fake_face_cb(face_recognition_ret_t *face)
 {
     uint32_t face_cnt = face->result->face_obj_info.obj_number;
 
-    face_obj_info_t *face_info = NULL;
+    face_obj_t *face_info = NULL;
 
     for(uint32_t i = 0; i < face_cnt; i++)
     {
-        face_info = (face_obj_info_t *)&(face->result->face_obj_info.obj[i]);
+        face_info = (face_obj_t *)&(face->result->face_obj_info.obj[i]);
         lcd_draw_edge(face_info, 0x0000ff); //BLUE
     }
 }
@@ -428,7 +428,7 @@ void fake_face_cb(face_recognition_ret_t *face)
 void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
 {
     uint32_t face_cnt = 0;
-    face_obj_info_t *face_info = NULL;
+    face_obj_t *face_info = NULL;
     uint64_t tim = sysctl_get_time_us();
 
     if(ir_check)
@@ -437,7 +437,7 @@ void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
 
         for(uint32_t i = 0; i < face_cnt; i++)
         {
-            face_info = (face_obj_info_t *)(face->result->face_compare_info.obj[i]);
+            face_info = (face_obj_t *)(face->result->face_compare_info.obj[i]);
             face_pass_callback(face_info, face_cnt, i, &tim);
             lcd_draw_edge(face_info, 0x00ff00); //GREEN
         }
@@ -449,7 +449,7 @@ void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
         {
             if((g_board_cfg.auto_out_feature & 1) == 1)
             {
-                face_info = (face_obj_info_t *)&(face->result->face_obj_info.obj[i]);
+                face_info = (face_obj_t *)&(face->result->face_obj_info.obj[i]);
                 face_pass_callback(face_info, face_cnt, i, &tim);
                 lcd_draw_edge(face_info, 0xffffff); //WHITE
             } else
