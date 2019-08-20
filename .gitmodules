@@ -1,6 +1,3 @@
-[submodule "src/Ai_Module_Lib"]
-	path = src/Ai_Module_Lib
-	url = git@e.coding.net:sipeed_ai/Ai_Module_Lib.git
 [submodule "src/MF1-User-Manual"]
 	path = src/MF1-User-Manual
 	url = https://github.com/sipeed/MF1-User-Manual.git
