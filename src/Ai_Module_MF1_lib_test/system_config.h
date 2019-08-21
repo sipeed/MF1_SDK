@@ -16,7 +16,7 @@
 
 //START
 #define CONFIG_SWAP_UART                    (1)//must be L18
-#define CONFIG_KEY_LONG_CLEAR_FEA           (1)//must be L19
+#define CONFIG_KEY_LONG_CLEAR_FEA           (0)//must be L19
 //END
 
 #define CONFIG_ENABLE_WIFI                  (0)
@@ -43,7 +43,7 @@
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
-#define DBG_UART_NUM                   	    (UART_DEV3) //FUCK Cannan
+#define DBG_UART_NUM                   	    (UART_DEV3) //maybe bug
 #define PROTOCOL_UART_NUM                   (UART_DEV1)
 
 #if (CONFIG_SWAP_UART==0)

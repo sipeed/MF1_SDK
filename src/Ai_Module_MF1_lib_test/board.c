@@ -249,7 +249,7 @@ void board_init(void)
     gc0328_init();
 
     dvp_set_ai_addr((uint32_t)kpu_image, (uint32_t)(kpu_image + IMG_W * IMG_H), (uint32_t)(kpu_image + IMG_W * IMG_H * 2));
-    dvp_set_display_addr((uint32_t)display_image - 0x40000000);
+    dvp_set_display_addr((uint32_t)display_image);
     dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 0);
     dvp_disable_auto();
 

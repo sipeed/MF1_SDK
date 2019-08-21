@@ -191,7 +191,7 @@ void detected_face_cb(face_recognition_ret_t *face)
 
     for(uint32_t i = 0; i < face_cnt; i++)
     {
-        face_obj_t *face_info = &face->result->face_obj_info.obj[i];
+        face_obj_t *face_info = (face_obj_t *)&(face->result->face_obj_info.obj[i]);
         if(face_info->pass == false)
         {
             lcd_draw_edge(face_info, 0xff0000);
