@@ -34,6 +34,18 @@ typedef enum _audio_play_state_t{
     PLAY_STATE_PAUSE,
 } audio_play_state_t;
 
+typedef enum _audio_play_volume_level_t{
+    PLAY_VOLUME_LEVEL_0,
+    PLAY_VOLUME_LEVEL_25,
+    PLAY_VOLUME_LEVEL_50,
+    PLAY_VOLUME_LEVEL_75,
+    PLAY_VOLUME_LEVEL_100,
+    PLAY_VOLUME_LEVEL_125,
+    PLAY_VOLUME_LEVEL_150,
+    PLAY_VOLUME_LEVEL_175,
+    PLAY_VOLUME_LEVEL_200,
+} audio_play_volume_level_t;
+
 typedef struct _audio_speaker_t
 {
     float volume;
@@ -60,25 +72,28 @@ typedef struct _audio_speaker_t
 
 extern audio_speaker_t audio_speaker;
 
-void audio_speaker_init(audio_speaker_t *speaker);
-void audio_speaker_deinit(audio_speaker_t *speaker);
+void audio_speaker_init();
+void audio_speaker_deinit();
 
-void audio_speaker_set_sample_rate(audio_speaker_t *speaker, uint32_t sample_rate);
-void audio_speaker_set_mode(audio_speaker_t *speaker, audio_play_mode_t mode);
-void audio_speaker_set_timing_mode_time(audio_speaker_t *speaker, uint32_t ms);
-void audio_speaker_set_buffer(audio_speaker_t *speaker, int16_t* buf, uint64_t length);
-void audio_speaker_set_volume(audio_speaker_t *speaker, uint32_t level);
+void audio_speaker_set_sample_rate(uint32_t sample_rate);
+void audio_speaker_set_mode(audio_play_mode_t mode);
+void audio_speaker_set_timing_mode_time(uint32_t ms);
+void audio_speaker_set_buffer(int16_t* buf, uint64_t length);
+void audio_speaker_set_volume(audio_play_volume_level_t level);
 
-uint32_t audio_speaker_get_sample_rate(audio_speaker_t *speaker);
-audio_play_mode_t audio_speaker_get_mode(audio_speaker_t *speaker);
-audio_play_state_t audio_speaker_get_state(audio_speaker_t *speaker);
-uint32_t audio_speaker_get_timing_mode_time(audio_speaker_t *speaker);
-float audio_speaker_get_volume(audio_speaker_t *speaker);
+uint32_t audio_speaker_get_sample_rate();
+audio_play_mode_t audio_speaker_get_mode();
+audio_play_state_t audio_speaker_get_state();
+uint32_t audio_speaker_get_timing_mode_time();
+float audio_speaker_get_volume();
 
-void audio_speaker_play(audio_speaker_t *speaker);
-void audio_speaker_pause(audio_speaker_t *speaker);
-void audio_speaker_resume(audio_speaker_t *speaker);
-void audio_speaker_stop(audio_speaker_t *speaker);
-void audio_speaker_replay(audio_speaker_t *speaker);
+void audio_speaker_play();
+void audio_speaker_pause();
+void audio_speaker_resume();
+void audio_speaker_stop();
+void audio_speaker_replay();
+
+int16_t *audio_speaker_read_from_flash(uint32_t addr, uint32_t length);
+void audio_speaker_free_buf(int16_t *buf);
 
 #endif
