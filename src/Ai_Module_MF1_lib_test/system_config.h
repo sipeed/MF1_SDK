@@ -43,7 +43,7 @@
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
-#define DBG_UART_NUM                   	    (UART_DEV3) //FUCK Cannan
+#define DBG_UART_NUM                   	    (UART_DEV3) //maybe bug
 #define PROTOCOL_UART_NUM                   (UART_DEV1)
 
 #if (CONFIG_SWAP_UART==0)
