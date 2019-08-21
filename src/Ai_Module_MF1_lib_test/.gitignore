@@ -1,2 +1,4 @@
 build/
 !face_lib/lib_face.a
+
+.vscode

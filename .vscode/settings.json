@@ -1,7 +1,0 @@
-{
-    "files.associations": {
-        "*.ino": "cpp",
-        "board.h": "c",
-        "face_lib.h": "c"
-    }
-}
