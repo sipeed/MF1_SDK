@@ -336,7 +336,7 @@ int main(void)
         if(!jpeg_recv_start_flag && !qrcode_get_info_flag)
         {
             face_recognition_cfg.auto_out_fea = (uint8_t)g_board_cfg.auto_out_feature;
-            face_recognition_cfg.compare_threshold = (uint8_t)g_board_cfg.face_gate;
+            face_recognition_cfg.compare_threshold = (float)g_board_cfg.face_gate;
             face_lib_run(&face_recognition_cfg);
         }
 #endif

@@ -46,7 +46,7 @@
 
 #define FEATURE_DIMENSION                   (196UL)
 #define FACE_MAX_NUMBER                     (10UL)
-#define FACE_RECGONITION_THRESHOLD          (80.0f)
+#define FACE_RECGONITION_THRESHOLD          (88.0f)
 #define FACE_RECGONITION_SCORE_MAX          (95.0f)
 
 /* clang-format on */

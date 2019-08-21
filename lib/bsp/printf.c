@@ -630,10 +630,10 @@ int printk(const char *format, ...)
 
     va_start(ap, format);
     /* Begin protected code */
-    // corelock_lock(&lock);
+    corelock_lock(&lock);
     tfp_format(stdout_putp, uart_putf, format, ap);
     /* End protected code */
-    // corelock_unlock(&lock);
+    corelock_unlock(&lock);
     va_end(ap);
 
     return 0;
