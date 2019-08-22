@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.9)
 
 
 # Get SDK path
@@ -29,7 +29,7 @@ include(${SDK_PATH}/tools/cmake/compile.cmake)
 
 
 # Project Name
-project(demo1)
+project(hello_world)
 
 
 
