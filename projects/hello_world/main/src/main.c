@@ -4,6 +4,8 @@
 
 int main()
 {
-    printf("hello maixpy\n");
+    printf("hello k210\n");
+    
+    while(1){}
 }
 

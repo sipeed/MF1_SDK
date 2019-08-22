@@ -19,6 +19,8 @@ set(PROJECT_BINARY_DIR "${parent_dir}/build")
 message(STATUS "SDK_PATH:${SDK_PATH}")
 message(STATUS "PROJECT_PATH:${PROJECT_SOURCE_DIR}")
 
+include(${SDK_PATH}/tools/cmake/tools.cmake)
+
 
 function(register_component)
     get_filename_component(component_dir ${CMAKE_CURRENT_LIST_FILE} DIRECTORY)
@@ -235,7 +237,6 @@ macro(project name)
             message(FATAL_ERROR "TOOLCHAIN_PATH set error:${CONFIG_TOOLCHAIN_PATH}")
         endif()
         set(TOOLCHAIN_PATH ${CONFIG_TOOLCHAIN_PATH})
-        message(STATUS "TOOLCHAIN_PATH:${CONFIG_TOOLCHAIN_PATH}")
         set(CMAKE_C_COMPILER "${CONFIG_TOOLCHAIN_PATH}/${CONFIG_TOOLCHAIN_PREFIX}gcc${EXT}")
         set(CMAKE_CXX_COMPILER "${CONFIG_TOOLCHAIN_PATH}/${CONFIG_TOOLCHAIN_PREFIX}g++${EXT}")
         set(CMAKE_ASM_COMPILER "${CONFIG_TOOLCHAIN_PATH}/${CONFIG_TOOLCHAIN_PREFIX}gcc${EXT}")
@@ -253,18 +254,19 @@ macro(project name)
     
     set(CMAKE_SYSTEM_NAME Generic) 
 
-    # Declare project # This function will cler flags!
+    # Declare project
     _project(${name} ASM C CXX)
-    
-    include(${SDK_PATH}/tools/cmake/compile_flags.cmake)
 
+    include(${SDK_PATH}/tools/cmake/compile_flags.cmake)
+    
     # Add dependence: update configfile, append time and git info for global config header file
     # we didn't generate build info for cmake and makefile for if we do, it will always rebuild cmake
     # everytime we execute make
     set(gen_build_info_config_cmd ${python}  ${SDK_PATH}/tools/kconfig/update_build_info.py
-                                  --configfile header ${PROJECT_BINARY_DIR}/config/global_build_info_time.h ${PROJECT_BINARY_DIR}/config/global_build_info_version.h
+                                            --configfile header ${PROJECT_BINARY_DIR}/config/global_build_info_time.h ${PROJECT_BINARY_DIR}/config/global_build_info_version.h
                                   )
-    add_custom_target(update_build_info COMMAND ${gen_build_info_config_cmd})
+    add_custom_target(update_build_info COMMAND ${gen_build_info_config_cmd}
+                                        COMMENT "Generating global_build_info.h ...")
 
     # Create exe_src.c to satisfy cmake's `add_executable` interface!
     set(exe_src ${CMAKE_BINARY_DIR}/exe_src.c)
@@ -272,7 +274,7 @@ macro(project name)
     add_custom_command(OUTPUT ${exe_src} COMMAND ${CMAKE_COMMAND} -E touch ${exe_src} VERBATIM)
     add_custom_target(gen_exe_src DEPENDS "${exe_src}")
     add_dependencies(${name} gen_exe_src)
-    
+
     # Sort component according to priority.conf config file
     set(component_priority_conf_file "${PROJECT_PATH}/compile/priority.conf")
     set(sort_components ${python}  ${SDK_PATH}/tools/cmake/sort_components.py
@@ -304,11 +306,9 @@ macro(project name)
     add_custom_target(menuconfig COMMAND ${generate_config_cmd2})
 
     # Add main component(lib)
-    target_link_libraries(${name} main)
+    target_link_libraries(${name} main )
 
-    # Add binary
     include("${SDK_PATH}/tools/cmake/gen_binary.cmake")
-
 endmacro()
 
 
