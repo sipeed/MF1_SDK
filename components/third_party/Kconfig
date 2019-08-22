@@ -1,0 +1,7 @@
+
+menu "Third party config"
+    config OOFATFS_ENABLE
+			bool "Enbale oofatfs"
+			default n
+endmenu
+
