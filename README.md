@@ -70,15 +70,15 @@ ls /opt/kendryte-toolchain/bin
 * Switch path to `hello_world` project director
 
 ```
-cd MaixPy
+cd MF1_SDK
 cd projects/hello_world
 ```
 
-or maixpy project
+or MF1 project
 
 ```
-cd MaixPy
-cd projects/maixpy_k210
+cd MF1_SDK
+cd projects/MF1
 ```
 
 * Configure toolchain path
@@ -132,13 +132,13 @@ python3 project.py distclean
 ```
 
 The make system is generated from `cmake`, 
-you must run
+you **MUST** run
 
 ```
 python3 project.py rebuild
 ```
 
-to rebuild make system after you add/delete source files or edit kconfig files
+to rebuild make system after you **add/delete** source files or edit kconfig files
 
 
 
@@ -180,7 +180,6 @@ python3 project.py --help
 
 ## Others
 
-* Code conventions: TODO
 * Build system: refer to [c_cpp_project_framework](https://github.com/Neutree/c_cpp_project_framework)
 
 
