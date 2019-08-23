@@ -37,7 +37,7 @@
 
 #include "board.h"
 
-#include "system_config.h"
+#include "global_config.h"
 
 /* clang-format off */
 #define DBG_TIME_INIT()

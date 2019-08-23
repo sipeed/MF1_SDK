@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "system_config.h"
+#include "lcd_config.h"
 
 #if CONFIG_LCD_TYPE_SIPEED
 

@@ -12,6 +12,8 @@
 #include "sysctl.h"
 #include "uart.h"
 #include "uarths.h"
+#include "camera.h"
+#include "lcd.h"
 
 #if CONFIG_LCD_TYPE_ST7789
 #include "lcd_st7789.h"
@@ -31,24 +33,7 @@ uint8_t sKey_dir = 0;
 volatile board_cfg_t g_board_cfg;
 
 ///////////////////////////////////////////////////////////////////////////////
-uint8_t kpu_image[2][IMG_W * IMG_H * 3] __attribute__((aligned(128)));
-uint8_t display_image[IMG_W * IMG_H * 2] __attribute__((aligned(64)));
 
-#if CONFIG_LCD_TYPE_SSD1963
-uint8_t display_image_rgb888[IMG_W * IMG_H * 3] __attribute__((aligned(64)));
-#endif
-
-#if CONFIG_LCD_TYPE_SIPEED
-uint8_t lcd_image[LCD_W * LCD_H * 2] __attribute__((aligned(64)));
-#endif
-
-#if CONFIG_LCD_TYPE_ST7789
-#if LCD_240240
-uint8_t lcd_image[LCD_W * LCD_H * 2] __attribute__((aligned(64)));
-#else
-const uint8_t *lcd_image = display_image;
-#endif
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 static volatile uint8_t g_gpio_flag = 0;
@@ -136,7 +121,7 @@ static void io_mux_init(void)
     pwm_set_enable(TIMER_PWM, TIMER_PWM_CHN, 1);
 
     //IR LED
-    fpioa_set_function(IR_LED_PIN, FUNC_GPIOHS0 + IR_LED_HS_NUM);
+    fpioa_set_function(CONFIG_INFRARED_LED_PIN, FUNC_GPIOHS0 + IR_LED_HS_NUM);
     gpiohs_set_drive_mode(IR_LED_HS_NUM, GPIO_DM_OUTPUT);
     gpiohs_set_pin(IR_LED_HS_NUM, 1);
 
@@ -164,7 +149,7 @@ static void io_mux_init(void)
     gpiohs_set_drive_mode(WIFI_EN_HS_NUM, GPIO_DM_OUTPUT);
     gpiohs_set_pin(WIFI_EN_HS_NUM, 0); //disable WIFI
 
-#if CONFIG_ENABLE_WIFI
+#if CONFIG_WIFI_ENABLE
     /*
      GPIO   |   Name    |   K210    
 =====================================
@@ -247,10 +232,10 @@ void board_init(void)
     dvp_set_output_enable(0, 1);
     dvp_set_output_enable(1, 1);
     dvp_set_image_format(DVP_CFG_RGB_FORMAT);
-    dvp_set_image_size(IMG_W, IMG_H);
+    dvp_set_image_size(CONFIG_CAMERA_RESOLUTION_WIDTH, CONFIG_CAMERA_RESOLUTION_HEIGHT);
     gc0328_init();
 
-    dvp_set_ai_addr((uint32_t)kpu_image, (uint32_t)(kpu_image + IMG_W * IMG_H), (uint32_t)(kpu_image + IMG_W * IMG_H * 2));
+    dvp_set_ai_addr((uint32_t)kpu_image, (uint32_t)(kpu_image + CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT), (uint32_t)(kpu_image + CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2));
     dvp_set_display_addr((uint32_t)display_image);
     dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 0);
     dvp_disable_auto();

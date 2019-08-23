@@ -16,7 +16,7 @@
 #define _NT35310_H_
 
 #include <stdint.h>
-#include "system_config.h"
+#include "lcd_sipeed.h"
 
 #if CONFIG_LCD_TYPE_ST7789
 

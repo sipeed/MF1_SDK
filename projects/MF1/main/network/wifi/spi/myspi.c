@@ -8,9 +8,10 @@
 #include "spi.h"
 #include "printf.h"
 
+#include "global_config.h"
 #include "system_config.h"
 
-#if CONFIG_ENABLE_WIFI
+#if CONFIG_WIFI_ENABLE
 
 static spi_transfer_width_t sipeed_spi_get_frame_size(size_t data_bit_length);
 static void sipeed_spi_set_tmod(uint8_t spi_num, uint32_t tmod);

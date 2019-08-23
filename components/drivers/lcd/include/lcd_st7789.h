@@ -2,7 +2,7 @@
 #define _LCD_ST7789_H_
 
 #include <stdint.h>
-#include "system_config.h"
+#include "lcd_sipeed.h"
 
 #if CONFIG_LCD_TYPE_ST7789
 /* clang-format off */

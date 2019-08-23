@@ -6,7 +6,7 @@
 #include "sleep.h"
 
 #include "font.h"
-#include "system_config.h"
+#include "global_config.h"
 
 #include "printf.h"
 
@@ -162,7 +162,7 @@ void copy_image_cma_to_lcd(uint8_t *cam_img, uint8_t *lcd_img)
     uint32_t x = 0, y = 0;
     for(y = 0; y < LCD_H; y++)
     {
-        memcpy(lcd_img + (y * LCD_W * 2) - 0x40000000, cam_img + (y * IMG_W + x) * 2, IMG_W * 2);
+        memcpy(lcd_img + (y * LCD_W * 2) - 0x40000000, cam_img + (y * CONFIG_CAMERA_RESOLUTION_WIDTH + x) * 2, CONFIG_CAMERA_RESOLUTION_WIDTH * 2);
     }
     return;
 }

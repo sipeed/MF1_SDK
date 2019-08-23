@@ -292,7 +292,7 @@ void ram_draw_char(uint32_t *ptr, uint16_t x, uint16_t y, char c, uint16_t color
 
     for(i = 0; i < 16; i++)
     {
-        addr = ((uint16_t *)ptr) + y * (IMG_W + 0) + x;
+        addr = ((uint16_t *)ptr) + y * (CONFIG_CAMERA_RESOLUTION_WIDTH + 0) + x;
         data = ascii0816[c * 16 + i];
         for(j = 0; j < 8; j++)
         {

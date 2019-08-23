@@ -2,6 +2,7 @@
 #define _FLASH_H
 
 #include <stdint.h>
+#include "global_config.h"
 #include "system_config.h"
 
 #define DBG_TIME_INIT()

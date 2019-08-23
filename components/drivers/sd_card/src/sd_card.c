@@ -6,7 +6,8 @@
 #include "gpiohs.h"
 #include "sleep.h"
 
-#include "system_config.h"
+#include "global_config.h"
+#include "sd_config.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 

@@ -6,6 +6,7 @@
 #include "face_cb.h"
 #include "img_op.h"
 // #include "sd_op.h"
+#include "camera.h"
 
 #include "net_8285.h"
 
@@ -216,7 +217,7 @@ int main(void)
     face_recognition_cfg.compare_threshold = (float)g_board_cfg.face_gate;
     printk("set compare_threshold: %d \r\n", g_board_cfg.face_gate);
 
-#if CONFIG_ENABLE_WIFI
+#if CONFIG_WIFI_ENABLE
     /* init 8285 */
     spi_8266_init_device();
 
@@ -437,13 +438,14 @@ int main(void)
             g_key_long_press = 0;
             /* key long press */
             printk("key long press\r\n");
-#if CONFIG_KEY_LONG_CLEAR_FEA
+#if CONFIG_LONG_FRESS_FUNCTION_KEY_CLEAR_FEATURE
             printk("Del All feature!\n");
             flash_delete_face_all();
 #if CONFIG_LCD_TYPE_ST7789
 
 #elif CONFIG_LCD_TYPE_SSD1963
-            lcd_draw_string(LCD_OFT, IMG_H - 16, "Del All feature!", lcd_color(0xff, 0, 0));
+#define LCD_OFT                               ((CONFIG_CAMERA_RESOLUTION_WIDTH - LCD_W) / 2)
+            lcd_draw_string(LCD_OFT, CONFIG_CAMERA_RESOLUTION_HEIGHT - 16, "Del All feature!", lcd_color(0xff, 0, 0));
 #endif
             set_RGB_LED(RLED);
             msleep(500);

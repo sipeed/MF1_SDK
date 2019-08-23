@@ -16,7 +16,6 @@
 #define __ZH_CN_FONT_H
 
 #include <stdint.h>
-#include "system_config.h"
 
 
 /* 阴码 逐行式 顺向 */

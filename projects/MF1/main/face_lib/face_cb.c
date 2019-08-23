@@ -1,10 +1,12 @@
 #include "face_cb.h"
 
-#include "system_config.h"
+#include "global_config.h"
 
 #include "board.h"
 #include "flash.h"
 #include "img_op.h"
+#include "camera.h"
+#include "lcd.h"
 
 #if CONFIG_LCD_TYPE_ST7789
 #include "lcd_st7789.h"
@@ -24,7 +26,7 @@
 
 #define JPEG_LEN (15 * 1024)
 uint8_t jpeg_buf[JPEG_LEN];
-uint8_t jpeg_tmp[IMG_W * IMG_H * 2];
+uint8_t jpeg_tmp[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2];
 #endif
 
 extern void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint64_t *time);
@@ -55,46 +57,46 @@ void lcd_draw_edge(face_obj_t *obj, uint32_t color)
 
     if(x1 <= 0)
         x1 = 1;
-    if(x2 >= IMG_W - 1)
-        x2 = IMG_W - 2;
+    if(x2 >= CONFIG_CAMERA_RESOLUTION_WIDTH - 1)
+        x2 = CONFIG_CAMERA_RESOLUTION_WIDTH - 2;
     if(y1 <= 0)
         y1 = 1;
-    if(y2 >= IMG_H - 1)
-        y2 = IMG_H - 2;
+    if(y2 >= CONFIG_CAMERA_RESOLUTION_HEIGHT - 1)
+        y2 = CONFIG_CAMERA_RESOLUTION_HEIGHT - 2;
 
-    addr1 = gram + (IMG_W * y1 + x1) / 2;
-    addr2 = gram + (IMG_W * y1 + x2 - 8) / 2;
-    addr3 = gram + (IMG_W * (y2 - 1) + x1) / 2;
-    addr4 = gram + (IMG_W * (y2 - 1) + x2 - 8) / 2;
+    addr1 = gram + (CONFIG_CAMERA_RESOLUTION_WIDTH * y1 + x1) / 2;
+    addr2 = gram + (CONFIG_CAMERA_RESOLUTION_WIDTH * y1 + x2 - 8) / 2;
+    addr3 = gram + (CONFIG_CAMERA_RESOLUTION_WIDTH * (y2 - 1) + x1) / 2;
+    addr4 = gram + (CONFIG_CAMERA_RESOLUTION_WIDTH * (y2 - 1) + x2 - 8) / 2;
     for(uint32_t i = 0; i < 4; i++)
     {
         *addr1 = data;
-        *(addr1 + IMG_W / 2) = data;
+        *(addr1 + CONFIG_CAMERA_RESOLUTION_WIDTH / 2) = data;
         *addr2 = data;
-        *(addr2 + IMG_W / 2) = data;
+        *(addr2 + CONFIG_CAMERA_RESOLUTION_WIDTH / 2) = data;
         *addr3 = data;
-        *(addr3 + IMG_W / 2) = data;
+        *(addr3 + CONFIG_CAMERA_RESOLUTION_WIDTH / 2) = data;
         *addr4 = data;
-        *(addr4 + IMG_W / 2) = data;
+        *(addr4 + CONFIG_CAMERA_RESOLUTION_WIDTH / 2) = data;
         addr1++;
         addr2++;
         addr3++;
         addr4++;
     }
-    addr1 = gram + (IMG_W * y1 + x1) / 2;
-    addr2 = gram + (IMG_W * y1 + x2 - 2) / 2;
-    addr3 = gram + (IMG_W * (y2 - 8) + x1) / 2;
-    addr4 = gram + (IMG_W * (y2 - 8) + x2 - 2) / 2;
+    addr1 = gram + (CONFIG_CAMERA_RESOLUTION_WIDTH * y1 + x1) / 2;
+    addr2 = gram + (CONFIG_CAMERA_RESOLUTION_WIDTH * y1 + x2 - 2) / 2;
+    addr3 = gram + (CONFIG_CAMERA_RESOLUTION_WIDTH * (y2 - 8) + x1) / 2;
+    addr4 = gram + (CONFIG_CAMERA_RESOLUTION_WIDTH * (y2 - 8) + x2 - 2) / 2;
     for(uint32_t i = 0; i < 8; i++)
     {
         *addr1 = data;
         *addr2 = data;
         *addr3 = data;
         *addr4 = data;
-        addr1 += IMG_W / 2;
-        addr2 += IMG_W / 2;
-        addr3 += IMG_W / 2;
-        addr4 += IMG_W / 2;
+        addr1 += CONFIG_CAMERA_RESOLUTION_WIDTH / 2;
+        addr2 += CONFIG_CAMERA_RESOLUTION_WIDTH / 2;
+        addr3 += CONFIG_CAMERA_RESOLUTION_WIDTH / 2;
+        addr4 += CONFIG_CAMERA_RESOLUTION_WIDTH / 2;
     }
     return;
 }
@@ -129,11 +131,11 @@ static void display_fit_lcd(void)
     uint16_t r, g, b;
     uint16_t *src = (uint16_t *)display_image;
     uint16_t *dest = (uint16_t *)lcd_image;
-    x0 = (IMG_W - LCD_W) / 2;
+    x0 = (CONFIG_CAMERA_RESOLUTION_WIDTH - LCD_W) / 2;
     x1 = x0 + LCD_W;
     for(y = 0; y < LCD_H; y++)
     {
-        memcpy(lcd_image + y * LCD_W * 2, display_image + (y * IMG_W + x0) * 2, LCD_W * 2);
+        memcpy(lcd_image + y * LCD_W * 2, display_image + (y * CONFIG_CAMERA_RESOLUTION_WIDTH + x0) * 2, LCD_W * 2);
     }
     return;
 }
@@ -147,14 +149,14 @@ void display_fit_lcd_with_alpha(uint8_t *pic_addr, uint8_t *out_img, uint8_t alp
     my_w25qxx_read_data(pic_addr, out_img, IMG_LCD_SIZE, W25QXX_STANDARD);
     uint16_t *s0 = (uint16_t *)display_image;
     uint16_t *s1 = (uint16_t *)out_img;
-    x0 = (IMG_W - LCD_W) / 2;
+    x0 = (CONFIG_CAMERA_RESOLUTION_WIDTH - LCD_W) / 2;
     x1 = x0 + LCD_W;
 
     for(y = 0; y < LCD_H; y++)
     {
         for(x = 0; x < LCD_W; x++)
         {
-            s1[y * LCD_W + x] = Fast_AlphaBlender((uint32_t)s0[y * IMG_W + x + x0], (uint32_t)s1[y * LCD_W + x], (uint32_t)alpha / 8);
+            s1[y * LCD_W + x] = Fast_AlphaBlender((uint32_t)s0[y * CONFIG_CAMERA_RESOLUTION_WIDTH + x + x0], (uint32_t)s1[y * LCD_W + x], (uint32_t)alpha / 8);
         }
     }
     return;
@@ -244,7 +246,7 @@ void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
 #if PASS_SAVE_PIC
     jpeg_encode_t jpeg_src, jpeg_out;
 
-    memcpy(jpeg_tmp, display_image, IMG_W * IMG_H * 2); //如果不拷贝，会影响显示的内容
+    memcpy(jpeg_tmp, display_image, CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2); //如果不拷贝，会影响显示的内容
     reverse_u32pixel(jpeg_tmp, 320 * 240 / 2);
 
     jpeg_src.w = 320;
@@ -321,7 +323,7 @@ void lcd_draw_pass(void)
 
 #else /* CONFIG_LCD_TYPE_SIPEED */
 
-static uint8_t line_buf[IMG_W * 2];
+static uint8_t line_buf[CONFIG_CAMERA_RESOLUTION_WIDTH * 2];
 
 void display_fit_lcd_with_alpha_v1(uint8_t *pic_flash_addr, uint8_t *in_img, uint8_t *out_img, uint8_t alpha)
 {
@@ -331,18 +333,18 @@ void display_fit_lcd_with_alpha_v1(uint8_t *pic_flash_addr, uint8_t *in_img, uin
     uint16_t *s0 = line_buf;
     uint16_t *s1 = in_img;
 
-    memset(line_buf, 0xff, 2 * (IMG_W - DAT_W) / 2);
-    memset(line_buf + 2 * (IMG_W - DAT_W) / 2 + DAT_W * 2, 0xff, 2 * (IMG_W - DAT_W) / 2);
+    memset(line_buf, 0xff, 2 * (CONFIG_CAMERA_RESOLUTION_WIDTH - DAT_W) / 2);
+    memset(line_buf + 2 * (CONFIG_CAMERA_RESOLUTION_WIDTH - DAT_W) / 2 + DAT_W * 2, 0xff, 2 * (CONFIG_CAMERA_RESOLUTION_WIDTH - DAT_W) / 2);
 
-    for(y = 0; y < IMG_H; y++)
+    for(y = 0; y < CONFIG_CAMERA_RESOLUTION_HEIGHT; y++)
     {
-        my_w25qxx_read_data(pic_flash_addr + y * DAT_W * 2, line_buf + 2 * (IMG_W - DAT_W) / 2, DAT_W * 2, W25QXX_STANDARD);
-        for(x = 0; x < IMG_W; x++)
+        my_w25qxx_read_data(pic_flash_addr + y * DAT_W * 2, line_buf + 2 * (CONFIG_CAMERA_RESOLUTION_WIDTH - DAT_W) / 2, DAT_W * 2, W25QXX_STANDARD);
+        for(x = 0; x < CONFIG_CAMERA_RESOLUTION_WIDTH; x++)
         {
-            s1[y * IMG_W + x] = Fast_AlphaBlender((uint32_t)s0[x], (uint32_t)s1[y * IMG_W + x], (uint32_t)alpha / 8);
+            s1[y * CONFIG_CAMERA_RESOLUTION_WIDTH + x] = Fast_AlphaBlender((uint32_t)s0[x], (uint32_t)s1[y * CONFIG_CAMERA_RESOLUTION_WIDTH + x], (uint32_t)alpha / 8);
         }
     }
-    lcd_covert_cam_order((uint32_t *)in_img, (IMG_W * IMG_H / 2));
+    lcd_covert_cam_order((uint32_t *)in_img, (CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT / 2));
 
     while(dis_flag)
         ;
@@ -366,7 +368,7 @@ void lcd_draw_pass(void)
 
 void lcd_refresh_cb(void)
 {
-    lcd_covert_cam_order((uint32_t *)display_image, (IMG_W * IMG_H / 2));
+    lcd_covert_cam_order((uint32_t *)display_image, (CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT / 2));
     while(dis_flag)
         ;
     copy_image_cma_to_lcd(display_image, lcd_image);

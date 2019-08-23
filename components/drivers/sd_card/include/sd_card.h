@@ -2,6 +2,7 @@
 #define __SD_CARD_H
 
 #include "stdint.h"
+#include "sd_config.h"
 
 /* clang-format off */
 // SD卡类型定义

@@ -1,0 +1,8 @@
+menu "Application configuration"
+
+    config LONG_FRESS_FUNCTION_KEY_CLEAR_FEATURE
+        bool "Long press button to clear feature"
+        default y
+
+endmenu
+

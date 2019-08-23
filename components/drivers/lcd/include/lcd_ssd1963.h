@@ -16,7 +16,7 @@
 #define _LCD_SSD1963_H_
 
 #include <stdint.h>
-#include "system_config.h"
+#include "lcd_sipeed.h"
 
 #if CONFIG_LCD_TYPE_SSD1963
 /* clang-format off */

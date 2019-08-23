@@ -9,7 +9,8 @@
 #include "WiFiSpi.h"
 #include "myspi.h"
 
-#include "system_config.h"
+#include "global_config.h"
+#include "camera.h"
 
 #if CONFIG_LCD_TYPE_ST7789
 #include "lcd_st7789.h"
@@ -147,8 +148,8 @@ qr_wifi_info_t *qrcode_get_wifi_cfg(void)
     }
 
     memset(&img, 0, sizeof(img));
-    img.w = IMG_W; /* 320 */
-    img.h = IMG_H; /* 240 */
+    img.w = CONFIG_CAMERA_RESOLUTION_WIDTH; /* 320 */
+    img.h = CONFIG_CAMERA_RESOLUTION_HEIGHT; /* 240 */
     img.data = (uint8_t *)display_image;
 
     ret->ret = QRCODE_RET_CODE_NO_DATA;
