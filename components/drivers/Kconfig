@@ -34,6 +34,10 @@ menu "Drivers configuration"
 	config WIFI_ENABLE
 		bool "Enable WiFi"
 		default n
+	
+	config FUNCTION_KEY_PRESS_VOLTAGE_HIGH
+		bool "Voltage is high when key pressed"
+		default y
 
 	menu "Pin configuration"
 		menu "LCD Pin configuration"

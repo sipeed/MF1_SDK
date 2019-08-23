@@ -519,7 +519,7 @@ uint8_t flash_cfg_set_default(board_cfg_t *cfg)
     cfg->face_gate = FACE_RECGONITION_THRESHOLD;
     cfg->port_cfg = (uint32_t)((PROTOCOL_PORT_TX_PIN << 24) | (PROTOCOL_PORT_RX_PIN << 16) |
                                (DEBUE_TX_PIN << 8) | (DEBUE_RX_PIN));
-    cfg->key_relay_pin_cfg = (uint32_t)((CONFIG_KEY_DIR << 24) | (CONFIG_FUNCTION_KEY_PIN << 16) |
+    cfg->key_relay_pin_cfg = (uint32_t)((CONFIG_FUNCTION_KEY_PRESS_VOLTAGE_HIGH << 24) | (CONFIG_FUNCTION_KEY_PIN << 16) |
                                         (RELAY_HIGH_PIN << 8) | (RELAY_LOWX_PIN));
     memset(cfg->wifi_ssid, 0, 32);
     memset(cfg->wifi_passwd, 0, 32);

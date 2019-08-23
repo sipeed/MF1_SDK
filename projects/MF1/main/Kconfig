@@ -1,7 +1,10 @@
 menu "Application configuration"
 
-    config LONG_FRESS_FUNCTION_KEY_CLEAR_FEATURE
+    config LONG_PRESS_FUNCTION_KEY_CLEAR_FEATURE
         bool "Long press button to clear feature"
+        default y
+    config LONG_PRESS_FUNCTION_KEY_RESTORE
+        bool "Long press button to reset system"
         default y
 
 endmenu

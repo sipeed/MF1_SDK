@@ -438,7 +438,7 @@ int main(void)
             g_key_long_press = 0;
             /* key long press */
             printk("key long press\r\n");
-#if CONFIG_LONG_FRESS_FUNCTION_KEY_CLEAR_FEATURE
+#if CONFIG_LONG_PRESS_FUNCTION_KEY_CLEAR_FEATURE
             printk("Del All feature!\n");
             flash_delete_face_all();
 #if CONFIG_LCD_TYPE_ST7789
@@ -453,7 +453,7 @@ int main(void)
             set_RGB_LED(0);
 #endif
 
-#if CONFIG_KEY_LONG_RESTORE
+#if CONFIG_LONG_PRESS_FUNCTION_KEY_RESTORE
             /* set cfg to default */
             printk("reset board config\r\n");
             board_cfg_t board_cfg;

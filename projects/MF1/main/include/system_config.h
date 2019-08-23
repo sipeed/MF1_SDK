@@ -6,9 +6,6 @@
 
 /* clang-format off */
 
-#define CONFIG_KEY_DIR                      (1)
-#define CONFIG_KEY_LONG_RESTORE             (1)
-
 #if CONFIG_WIFI_ENABLE
 #define CONFIG_KEY_SHORT_QRCODE             (1)
 
