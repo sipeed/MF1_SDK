@@ -6,6 +6,7 @@
 #include "dmac.h"
 #include "stdio.h"
 #include "sysctl.h"
+#include "face_lib.h"
 
 
 audio_speaker_t audio_speaker;
@@ -24,9 +25,10 @@ static void audio_speaker_io_mux_init()
     gpiohs_set_pin(SPEAKER_PA_IO_NUM, GPIO_PV_HIGH);
 }
 
-static void i2s_parse_voice(audio_speaker_t *speaker, i2s_device_number_t device_num, uint32_t *buf, const uint8_t *pcm, size_t length, size_t bits_per_sample,
+static void i2s_parse_voice(i2s_device_number_t device_num, uint32_t *buf, const uint8_t *pcm, size_t length, size_t bits_per_sample,
                             uint8_t track_num, size_t *send_len)
 {
+    audio_speaker_t *speaker = &audio_speaker;
     uint32_t i, j = 0;
     *send_len = length * 2;
     switch(bits_per_sample)
@@ -86,7 +88,7 @@ static int audio_speaker_timer_tx_irq(void *ctx)
             trans_buf = (uint8_t *)(playing_buf + (speaker->current_frame * send_len));
         }
 
-        i2s_parse_voice(speaker, speaker->i2s_device_num, i2s_tx_buf, trans_buf, speaker->play_frame_length, 16, 1, &send_len);
+        i2s_parse_voice(speaker->i2s_device_num, i2s_tx_buf, trans_buf, speaker->play_frame_length, 16, 1, &send_len);
         i2s_send_data_dma(speaker->i2s_device_num, i2s_tx_buf, send_len, speaker->dmac_channel);
         speaker->current_frame += 1;
         switch(speaker->play_mode)
@@ -119,7 +121,7 @@ static int audio_speaker_timer_tx_irq(void *ctx)
     {
         if(speaker->ispaly){
             trans_buf = (uint8_t *)zero_buf;
-            i2s_parse_voice(speaker, speaker->i2s_device_num, i2s_tx_buf, trans_buf, speaker->play_frame_length, 16, 1, &send_len);
+            i2s_parse_voice(speaker->i2s_device_num, i2s_tx_buf, trans_buf, speaker->play_frame_length, 16, 1, &send_len);
             i2s_send_data_dma(speaker->i2s_device_num, i2s_tx_buf, send_len, speaker->dmac_channel);
         }
     }else if(speaker->play_state == PLAY_STATE_STOP)
@@ -134,11 +136,11 @@ static int audio_speaker_timer_tx_irq(void *ctx)
     return 0;
 }
 
-void audio_speaker_init(audio_speaker_t *speaker)
+void audio_speaker_init()
 {
+    audio_speaker_t *speaker = &audio_speaker;
     sysctl_pll_set_freq(SYSCTL_PLL2, 45158400UL);
     audio_speaker_io_mux_init();
-    
     speaker->ispaly = 0;
     speaker->volume = 1;
 
@@ -160,7 +162,6 @@ void audio_speaker_init(audio_speaker_t *speaker)
         TRIGGER_LEVEL_4, RIGHT_JUSTIFYING_MODE);
     i2s_set_sample_rate(speaker->i2s_device_num, speaker->sample_rate);
 
-    dmac_init();
 
     timer_init(speaker->timer_device);
     timer_irq_register(speaker->timer_device, speaker->timer_channel, 0, 7, audio_speaker_timer_tx_irq, speaker);
@@ -169,87 +170,142 @@ void audio_speaker_init(audio_speaker_t *speaker)
     timer_set_enable(speaker->timer_device, speaker->timer_channel, 1);
     
 }
-void audio_speaker_deinit(audio_speaker_t *speaker)
+void audio_speaker_deinit()
 {
+    audio_speaker_t *speaker = &audio_speaker;
     timer_irq_unregister(speaker->timer_device, speaker->timer_channel);
     timer_set_enable(speaker->timer_device, speaker->timer_channel, 0);
     gpiohs_set_pin(SPEAKER_PA_IO_NUM, GPIO_PV_LOW);
 }
 
-void audio_speaker_set_sample_rate(audio_speaker_t *speaker, uint32_t sample_rate)
+void audio_speaker_set_sample_rate(uint32_t sample_rate)
 {
+    audio_speaker_t *speaker = &audio_speaker;
     speaker->sample_rate = sample_rate;
     i2s_set_sample_rate(speaker->i2s_device_num, speaker->sample_rate);
 }
-void audio_speaker_set_mode(audio_speaker_t *speaker, audio_play_mode_t mode)
+void audio_speaker_set_mode(audio_play_mode_t mode)
 {
+    audio_speaker_t *speaker = &audio_speaker;
     speaker->play_mode = mode;
 }
-void audio_speaker_set_timing_mode_time(audio_speaker_t *speaker, uint32_t ms)
+void audio_speaker_set_timing_mode_time(uint32_t ms)
 {
+    audio_speaker_t *speaker = &audio_speaker;
     speaker->play_time_ms = ms;
-    speaker->play_time_frame = (uint32_t)((float)speaker->sample_rate / 1000.f * ms) / speaker->play_frame_length; 
+    speaker->play_time_frame = (uint32_t)((float)speaker->sample_rate / 1000.f * speaker->play_time_ms) / speaker->play_frame_length; 
 }
-void audio_speaker_set_buffer(audio_speaker_t *speaker, int16_t* buf, uint64_t length)
+void audio_speaker_set_buffer(int16_t* buf, uint64_t length)
 {
+    audio_speaker_t *speaker = &audio_speaker;
     speaker->play_buffer = buf;
     speaker->play_buffer_length = length;
     speaker->play_buffer_frames = speaker->play_buffer_length / speaker->play_frame_length;
 }
-void audio_speaker_set_volume(audio_speaker_t *speaker, uint32_t level)
+void audio_speaker_set_volume(audio_play_volume_level_t level)
 {
-    if(level > 200)
-        level = 200;
-    else if (level < 0)
-        level = 0;
-    speaker->volume = level / 100.f;
+    audio_speaker_t *speaker = &audio_speaker;
+    switch (level)
+    {
+    case PLAY_VOLUME_LEVEL_100:
+        speaker->volume = 1;
+        break;
+    case PLAY_VOLUME_LEVEL_125:
+        speaker->volume = 2;
+        break;
+    case PLAY_VOLUME_LEVEL_150:
+        speaker->volume = 4;
+        break;
+    case PLAY_VOLUME_LEVEL_175:
+        speaker->volume = 8;
+        break;
+    case PLAY_VOLUME_LEVEL_200:
+        speaker->volume = 16;
+        break;
+    case PLAY_VOLUME_LEVEL_75:
+        speaker->volume = 0.5;
+        break;
+    case PLAY_VOLUME_LEVEL_50:
+        speaker->volume = 0.25;
+        break;
+    case PLAY_VOLUME_LEVEL_25:
+        speaker->volume = 0.125;
+        break;
+    case PLAY_VOLUME_LEVEL_0:
+        speaker->volume = 0;
+    default:
+        speaker->volume = 1;
+        break;
+    }
 }
 
-uint32_t audio_speaker_get_sample_rate(audio_speaker_t *speaker)
+uint32_t audio_speaker_get_sample_rate()
 {
+    audio_speaker_t *speaker = &audio_speaker;
     return speaker->sample_rate;
 }
-audio_play_mode_t audio_speaker_get_mode(audio_speaker_t *speaker)
+audio_play_mode_t audio_speaker_get_mode()
 {
+    audio_speaker_t *speaker = &audio_speaker;
     return speaker->play_mode;
 }
-audio_play_state_t audio_speaker_get_state(audio_speaker_t *speaker)
+audio_play_state_t audio_speaker_get_state()
 {
+    audio_speaker_t *speaker = &audio_speaker;
     return speaker->play_state;
 }
-uint32_t audio_speaker_get_timing_mode_time(audio_speaker_t *speaker)
+uint32_t audio_speaker_get_timing_mode_time()
 {
+    audio_speaker_t *speaker = &audio_speaker;
     return speaker->play_time_ms;
 }
-float audio_speaker_get_volume(audio_speaker_t *speaker)
+float audio_speaker_get_volume()
 {
+    audio_speaker_t *speaker = &audio_speaker;
     return speaker->volume;
 }
 
-void audio_speaker_play(audio_speaker_t *speaker)
+void audio_speaker_play()
 {
+    audio_speaker_t *speaker = &audio_speaker;
     speaker->play_state = PLAY_STATE_PLAYING;
 }
-void audio_speaker_pause(audio_speaker_t *speaker)
+void audio_speaker_pause()
 {
+    audio_speaker_t *speaker = &audio_speaker;
     speaker->play_state = PLAY_STATE_PAUSE;
 }
-void audio_speaker_resume(audio_speaker_t *speaker)
+void audio_speaker_resume()
 {
+    audio_speaker_t *speaker = &audio_speaker;
     if(speaker->ispaly)
     {
         speaker->play_state = PLAY_STATE_PLAYING;
     }
 }
-void audio_speaker_stop(audio_speaker_t *speaker)
+void audio_speaker_stop()
 {
+    audio_speaker_t *speaker = &audio_speaker;
     speaker->play_state = PLAY_STATE_STOP;
 }
-void audio_speaker_replay(audio_speaker_t *speaker)
+void audio_speaker_replay()
 {
+    audio_speaker_t *speaker = &audio_speaker;
     if(speaker->ispaly)
     {
         speaker->current_frame = 0;
         speaker->play_state = PLAY_STATE_PLAYING;
     }
+}
+
+int16_t *audio_speaker_read_from_flash(uint32_t addr, uint32_t length)
+{
+    int16_t *buf;
+    buf = malloc(sizeof(int16_t) * length);
+    w25qxx_read_data(addr, buf, sizeof(int16_t) * length);
+    return buf;
+}
+void audio_speaker_free_buf(int16_t *buf)
+{
+    free(buf);
 }

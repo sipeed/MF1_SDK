@@ -195,6 +195,10 @@
 #define IMG_SCAN_QR_ADDR                            (IMG_RECORD_FACE_ADDR + (116 * 1024 * 5))
 #define IMG_QR_TIMEOUT_ADDR                         (IMG_RECORD_FACE_ADDR + (116 * 1024 * 6))
 ///////////////////////////////////////////////////////////////////////////////
+// AUDIO DATA
+#define AUDIO_DATA_ADDR                             (0xE00000) 
+
+
 /* clang-format on */
 
 #endif
