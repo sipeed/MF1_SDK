@@ -13,8 +13,6 @@
 
 #if CONFIG_LCD_TYPE_ST7789
 #include "lcd_st7789.h"
-#elif CONFIG_LCD_TYPE_SSD1963
-#include "lcd_ssd1963.h"
 #elif CONFIG_LCD_TYPE_SIPEED
 #include "lcd_sipeed.h"
 #endif

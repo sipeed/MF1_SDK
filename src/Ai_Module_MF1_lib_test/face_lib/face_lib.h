@@ -44,6 +44,9 @@
 #define DBG_TIME_INIT()
 #define DBG_TIME()
 
+#define FTR_850                             (1)
+#define FTR_650                             (0)
+
 #define FEATURE_DIMENSION                   (196UL)
 #define FACE_MAX_NUMBER                     (10UL)
 #define FACE_RECGONITION_THRESHOLD          (88.0f)
@@ -86,7 +89,7 @@ typedef struct
     uint32_t class_id;
     float prob;
     key_point_t key_point;
-    float *feature;
+    int8_t *feature;
     uint32_t index;
     float score;
     bool pass;
@@ -128,7 +131,7 @@ typedef struct
 typedef struct
 {
     //protocol send
-    void (*proto_send)(char*buf, size_t len);
+    void (*proto_send)(char *buf, size_t len);
 
     //detect face, user can record face
     void (*detected_face_cb)(face_recognition_ret_t *face);
@@ -155,7 +158,7 @@ uint8_t face_lib_regisiter_callback(face_lib_callback_t *cfg_cb);
 void face_lib_run(face_recognition_cfg_t *cfg);
 
 //compare two face
-float face_compare_score(int8_t *feature0, int8_t *feature1);
+float face_lib_compare_score(int8_t *feature0, int8_t *feature1);
 ///////////////////////////////////////////////////////////////////////////////
 /* uart protocol */
 /* clang-format off */
@@ -192,10 +195,10 @@ uint8_t protocol_send_init_done(void);
 
 void protocol_prase(unsigned char *protocol_buf);
 void protocol_cal_pic_fea(uint8_t *jpeg_buf, uint32_t jpeg_len);
-uint8_t protocol_send_cal_pic_result(uint8_t code, char *msg, float feature[FEATURE_DIMENSION], uint8_t *uid, float prob);
+uint8_t protocol_send_cal_pic_result(uint8_t code, char *msg, int8_t feature[FEATURE_DIMENSION], uint8_t *uid, float prob);
 
 uint8_t protocol_send_face_info(face_obj_t *obj,
-                                float score, uint8_t uid[UID_LEN], float feature[FEATURE_DIMENSION],
+                                float score, uint8_t uid[UID_LEN], int8_t feature[FEATURE_DIMENSION],
                                 uint32_t total, uint32_t current, uint64_t *time);
 
 cJSON *protocol_gen_header(char *cmd, uint8_t code, char *msg);
@@ -233,6 +236,6 @@ int gc0328_init(void); //sleep time in ms
 void open_gc0328_650();
 extern volatile uint8_t g_dvp_finish_flag;
 ///////////////////////////////////////////////////////////////////////////////
-void sipeed_spi_send_data_dma(uint8_t spi_num, uint8_t chip_select,uint8_t dma_chn, const uint8_t *data_buf, size_t buf_len);
+void sipeed_spi_send_data_dma(uint8_t spi_num, uint8_t chip_select, uint8_t dma_chn, const uint8_t *data_buf, size_t buf_len);
 ///////////////////////////////////////////////////////////////////////////////
 #endif

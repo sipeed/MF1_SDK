@@ -5,15 +5,15 @@
 #include "ff.h"
 
 #include "face_cb.h"
-#include "img_op.h"
 #include "sd_op.h"
+
+#include "image_op.h"
+#include "lcd_dis.h"
 
 #include "net_8285.h"
 
 #if CONFIG_LCD_TYPE_ST7789
 #include "lcd_st7789.h"
-#elif CONFIG_LCD_TYPE_SSD1963
-#include "lcd_ssd1963.h"
 #elif CONFIG_LCD_TYPE_SIPEED
 #include "lcd_sipeed.h"
 #endif
@@ -88,47 +88,64 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
 
     last_pass_time = tim;
 
-    if(g_board_cfg.auto_out_feature != 1)
-    {
-        lcd_draw_pass();
-    }
-
-    open_relay();
-
     /* output feature */
     if(g_board_cfg.auto_out_feature & 0x1 == 0x1)
     {
         protocol_send_face_info(obj,
                                 0, NULL, obj->feature,
                                 total, current, time);
-        // open_relay(); //open when have face
+        open_relay(); //open when have face
     } else
     {
-        if(flash_get_saved_faceinfo(&info, obj->index) == 0)
+        if(obj->score > g_board_cfg.face_gate)
         {
-            if((g_board_cfg.auto_out_feature >> 1) & 1)
+            open_relay(); //open when score > gate
+            if(flash_get_saved_faceinfo(&info, obj->index) == 0)
             {
-                //output real time feature
-                protocol_send_face_info(obj,
-                                        obj->score, info.uid, obj->feature,
-                                        total, current, time);
+                if((g_board_cfg.auto_out_feature >> 1) & 1)
+                {
+                    //output real time feature
+                    protocol_send_face_info(obj,
+                                            obj->score, info.uid, g_board_cfg.recong_out_feature ? obj->feature : NULL,
+                                            total, current, time);
+                } else
+                {
+                    //output stored in flash face feature
+                    face_fea_t *face_fea = (face_fea_t *)&(info.info);
+                    protocol_send_face_info(obj,
+                                            obj->score, info.uid,
+                                            g_board_cfg.recong_out_feature ? (face_fea->stat == 1) ? face_fea->fea_ir : face_fea->fea_rgb : NULL,
+                                            total, current, time);
+                }
+
+                uint16_t bg = 0x0;
+                char str[33];
+                sprintf(str, "%d:%.2f", obj->index, obj->score);
+                image_rgb565_draw_string(display_image, str, LCD_OFT, LCD_H - 32, WHITE, &bg, 320);
+
+                // for(uint8_t i = 0; i < 16; i++)
+                // {
+                //     sprintf(str + i * 2, "%02d", info.uid[i]);
+                // }
+                // str[32] = 0;
+
+                // image_rgb565_draw_string(display_image, str, LCD_OFT, LCD_H - 16, WHITE, &bg, 320);
+
             } else
             {
-                //output feature in flash
-                protocol_send_face_info(obj,
-                                        obj->score, info.uid, info.info,
-                                        total, current, time);
+                printk("index error!\r\n");
             }
-
-            // if(obj->score >= g_board_cfg.face_gate)
-            // {
-            //     open_relay(); //open when score > gate
-            // }
         } else
         {
-            printk("index error!\r\n");
+            printf("face score not pass\r\n");
         }
     }
+
+    if(g_board_cfg.auto_out_feature != 1)
+    {
+        lcd_draw_pass();
+    }
+
     return;
 }
 
@@ -182,6 +199,8 @@ int main(void)
     board_init();
     sd_init_fatfs();
     face_lib_init_module();
+
+    lcd_dis_list_init();
 
     printk("firmware version:\r\n%s\r\n", VERSION_STR);
     printk("face_lib_version:\r\n%s\r\n", face_lib_version());

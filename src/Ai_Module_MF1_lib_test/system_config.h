@@ -15,8 +15,8 @@
 #define CONFIG_LCD_TYPE_SIPEED              (0)
 
 //START
-#define CONFIG_SWAP_UART                    (1)//must be L18
-#define CONFIG_KEY_LONG_CLEAR_FEA           (0)//must be L19
+
+#define CONFIG_KEY_LONG_CLEAR_FEA           (1)//must be L19
 //END
 
 #define CONFIG_ENABLE_WIFI                  (0)
@@ -46,19 +46,11 @@
 #define DBG_UART_NUM                   	    (UART_DEV3) //maybe bug
 #define PROTOCOL_UART_NUM                   (UART_DEV1)
 
-#if (CONFIG_SWAP_UART==0)
-#define PROTOCOL_PORT_TX_PIN                (10)
-#define PROTOCOL_PORT_RX_PIN                (11)
-
-#define DEBUE_TX_PIN                        (5)
-#define DEBUE_RX_PIN                        (4)
-#else
 #define PROTOCOL_PORT_TX_PIN                (5)
 #define PROTOCOL_PORT_RX_PIN                (4)
 
 #define DEBUE_TX_PIN                        (10)
 #define DEBUE_RX_PIN                        (11)
-#endif
 ///////////////////////////////////////////////////////////////////////////////
 #if CONFIG_LCD_TYPE_ST7789
 #define LCD_240240                           (1)
@@ -82,7 +74,7 @@
 #define DAT_H                                (240)
 #endif
 
-#define LCD_OFT                               ((IMG_W - LCD_W) / 2)
+#define LCD_OFT                               (40)
 ///////////////////////////////////////////////////////////////////////////////
 
 #if 1 /* MF1 */

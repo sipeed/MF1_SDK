@@ -15,8 +15,6 @@
 
 #if CONFIG_LCD_TYPE_ST7789
 #include "lcd_st7789.h"
-#elif CONFIG_LCD_TYPE_SSD1963
-#include "lcd_ssd1963.h"
 #elif CONFIG_LCD_TYPE_SIPEED
 #include "lcd_sipeed.h"
 #endif
@@ -29,6 +27,7 @@ uint8_t sKey_dir = 0;
 volatile board_cfg_t g_board_cfg;
 
 ///////////////////////////////////////////////////////////////////////////////
+uint8_t kpu_image_tmp[IMG_W * IMG_H * 3] __attribute__((aligned(128)));
 uint8_t kpu_image[2][IMG_W * IMG_H * 3] __attribute__((aligned(128)));
 uint8_t display_image[IMG_W * IMG_H * 2] __attribute__((aligned(64)));
 
@@ -38,14 +37,6 @@ uint8_t display_image_rgb888[IMG_W * IMG_H * 3] __attribute__((aligned(64)));
 
 #if CONFIG_LCD_TYPE_SIPEED
 uint8_t lcd_image[LCD_W * LCD_H * 2] __attribute__((aligned(64)));
-#endif
-
-#if CONFIG_LCD_TYPE_ST7789
-#if LCD_240240
-uint8_t lcd_image[LCD_W * LCD_H * 2] __attribute__((aligned(64)));
-#else
-const uint8_t *lcd_image = display_image;
-#endif
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
