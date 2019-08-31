@@ -242,7 +242,7 @@ int main(void)
         }
     }
 #endif
-    printf("aa\r\n");
+
     protocol_send_init_done();
     while (1)
     {
@@ -339,11 +339,9 @@ int main(void)
         /* if rcv jpg or scan qrcode, will stuck a period */
         if (!jpeg_recv_start_flag && !qrcode_get_info_flag)
         {
-            printf("aa\r\n");
             face_recognition_cfg.auto_out_fea = (uint8_t)g_board_cfg.auto_out_feature;
             face_recognition_cfg.compare_threshold = (float)g_board_cfg.face_gate;
             face_lib_run(&face_recognition_cfg);
-            printf("aa\r\n");
         }
 #endif
         /* get key state */

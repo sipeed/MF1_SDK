@@ -26,7 +26,7 @@ static uint16_t DisImageX_Off, DisImageY_Off;
 
 void face_cb_init(void)
 {
-#if CONFIG_DETECT_VERTICAL
+#if CONFIG_LCD_VERTICAL
     pDisImage = display_image_ver;
 
     DisImage_W = CONFIG_CAMERA_RESOLUTION_HEIGHT;
@@ -60,7 +60,7 @@ void face_cb_init(void)
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-#if LCD_240240
+#if (CONFIG_LCD_WIDTH == 240)
 static void convert_320x240_to_240x240(uint8_t *img_320, uint16_t x_offset)
 {
     for (uint8_t i = 0; i < 240; i++)
@@ -76,11 +76,11 @@ static void convert_320x240_to_240x240(uint8_t *img_320, uint16_t x_offset)
 
 void lcd_convert_cb(void)
 {
-#if CONFIG_DETECT_VERTICAL
+#if CONFIG_LCD_VERTICAL
     //5300us @ 400M
-    convert_rgb565_order((uint16_t *)display_image, IMG_W, IMG_H);
-    image_rgb565_roate_right90((uint16_t *)display_image_ver, (uint16_t *)display_image, IMG_W, IMG_H);
-    convert_rgb565_order((uint16_t *)display_image_ver, IMG_H, IMG_W);
+    convert_rgb565_order((uint16_t *)display_image, CONFIG_CAMERA_RESOLUTION_WIDTH, CONFIG_CAMERA_RESOLUTION_HEIGHT);
+    image_rgb565_roate_right90((uint16_t *)display_image_ver, (uint16_t *)display_image, CONFIG_CAMERA_RESOLUTION_WIDTH, CONFIG_CAMERA_RESOLUTION_HEIGHT);
+    convert_rgb565_order((uint16_t *)display_image_ver, CONFIG_CAMERA_RESOLUTION_HEIGHT, CONFIG_CAMERA_RESOLUTION_WIDTH);
 #endif
 
     /* 在这里遍历lcd显示链表*/
@@ -111,7 +111,7 @@ void lcd_convert_cb(void)
 ///////////////////////////////////////////////////////////////////////////////
 void lcd_refresh_cb(void)
 {
-#if LCD_240240
+#if (CONFIG_LCD_WIDTH == 240)
     convert_320x240_to_240x240(display_image, LCD_OFT);
 #endif
 
@@ -141,7 +141,7 @@ void lcd_draw_pass(void)
         image_rgb565_draw_string(pDisImage, "Face Pass...", DisX_Off, DisY_Off, WHITE, NULL, DisImage_W);
     }
 
-#if LCD_240240
+#if (CONFIG_LCD_WIDTH == 240)
     convert_320x240_to_240x240(display_image, LCD_OFT);
 #endif
 
@@ -199,14 +199,14 @@ void detected_face_cb(face_recognition_ret_t *face)
             {
                 face_fea_t face_fea;
 
-#if CONFI_SINGLE_CAMERA
-                face_fea.stat = 0;
-                memcpy(&(face_fea.fea_rgb), face_info->feature, 196);
-                memset(&(face_fea.fea_ir), 0, 196);
-#else
+#if CONFIG_CAMERA_GC0328_DUAL
                 face_fea.stat = 1;
                 memcpy(&(face_fea.fea_ir), face_info->feature, 196);
                 memset(&(face_fea.fea_rgb), 0, 196);
+#else
+                face_fea.stat = 0;
+                memcpy(&(face_fea.fea_rgb), face_info->feature, 196);
+                memset(&(face_fea.fea_ir), 0, 196);
 #endif
 
                 printf("#######save face\r\n");
@@ -227,7 +227,7 @@ void detected_face_cb(face_recognition_ret_t *face)
                     image_rgb565_draw_string(pDisImage, "Recording Face...", DisX_Off, DisY_Off, WHITE, NULL, DisImage_W);
                 }
 
-#if LCD_240240
+#if (CONFIG_LCD_WIDTH == 240)
                 convert_320x240_to_240x240(display_image, LCD_OFT);
 #endif
 
@@ -251,44 +251,7 @@ void detected_face_cb(face_recognition_ret_t *face)
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-#if CONFI_SINGLE_CAMERA
-void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
-{
-    uint64_t v_tick;
-    uint32_t face_num = 0;
-    face_obj_t *face_info = NULL;
-
-    v_tick = sysctl_get_time_us();
-
-    if (g_board_cfg.auto_out_feature == 1)
-    {
-        //不与数据库的人脸数据进行对比，直接输出识别到的
-        face_num = face->result->face_obj_info.obj_number;
-
-        for (uint32_t i = 0; i < face_num; i++)
-        {
-            face_info = (face_obj_t *)&(face->result->face_obj_info.obj[i]);
-            face_pass_callback(face_info, face_num, i, &v_tick);
-            image_rgb565_draw_edge(pDisImage, face_info->x1, face_info->y1, face_info->x2, face_info->y2, YELLOW, DisImage_W, DisImage_H);
-        }
-    }
-    else
-    {
-        //需要进行对比
-        face_num = face->result->face_compare_info.result_number;
-
-        for (uint32_t i = 0; i < face_num; i++)
-        {
-            face_info = (face_obj_t *)(face->result->face_compare_info.obj[i]);
-            face_pass_callback(face_info, face_num, i, &v_tick);
-            if (face_obj->pass)
-            {
-                image_rgb565_draw_edge(pDisImage, face_info->x1, face_info->y1, face_info->x2, face_info->y2, GREEN, DisImage_W, DisImage_H);
-            }
-        }
-    }
-}
-#else
+#if CONFIG_CAMERA_GC0328_DUAL
 /* ir check pass or auto pass */
 void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
 {
@@ -322,6 +285,43 @@ void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
             else
             {
                 printk("unknow\r\n");
+            }
+        }
+    }
+}
+#else
+void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
+{
+    uint64_t v_tick;
+    uint32_t face_num = 0;
+    face_obj_t *face_info = NULL;
+
+    v_tick = sysctl_get_time_us();
+
+    if (g_board_cfg.auto_out_feature == 1)
+    {
+        //不与数据库的人脸数据进行对比，直接输出识别到的
+        face_num = face->result->face_obj_info.obj_number;
+
+        for (uint32_t i = 0; i < face_num; i++)
+        {
+            face_info = (face_obj_t *)&(face->result->face_obj_info.obj[i]);
+            face_pass_callback(face_info, face_num, i, &v_tick);
+            image_rgb565_draw_edge(pDisImage, face_info->x1, face_info->y1, face_info->x2, face_info->y2, YELLOW, DisImage_W, DisImage_H);
+        }
+    }
+    else
+    {
+        //需要进行对比
+        face_num = face->result->face_compare_info.result_number;
+
+        for (uint32_t i = 0; i < face_num; i++)
+        {
+            face_info = (face_obj_t *)(face->result->face_compare_info.obj[i]);
+            face_pass_callback(face_info, face_num, i, &v_tick);
+            if (face_info->pass)
+            {
+                image_rgb565_draw_edge(pDisImage, face_info->x1, face_info->y1, face_info->x2, face_info->y2, GREEN, DisImage_W, DisImage_H);
             }
         }
     }

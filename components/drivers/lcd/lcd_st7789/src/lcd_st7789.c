@@ -1,8 +1,9 @@
 #include "lcd_st7789.h"
 
 #include "sleep.h"
-
 #include "nt35310.h"
+
+#include "global_config.h"
 
 /* clang-format off */
 #define NO_OPERATION            0x00
@@ -191,13 +192,8 @@ int lcd_st7789_init(lcd_t *lcd)
 {
     lcd->dir = 0x0;
 
-#if LCD_240240
-    lcd->width = 240;
-    lcd->height = 240;
-#else
-    lcd->width = 320;
-    lcd->height = 240;
-#endif
+    lcd->width = CONFIG_LCD_WIDTH;
+    lcd->height = CONFIG_LCD_HEIGHT;
 
     lcd->lcd_config = lcd_st7789_config;
     lcd->lcd_clear = lcd_st7789_clear;

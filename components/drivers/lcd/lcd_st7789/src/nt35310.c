@@ -1,7 +1,7 @@
-#include "gpiohs.h"
 #include "nt35310.h"
+
+#include "gpiohs.h"
 #include "spi.h"
-#include "unistd.h"
 
 #include "global_config.h"
 

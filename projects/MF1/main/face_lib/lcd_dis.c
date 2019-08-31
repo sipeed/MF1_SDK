@@ -18,13 +18,13 @@ static uint32_t list_id_table[LIST_MAX_SIZE / 32];
 
 static uint8_t lcd_dis_list_check_id(int id)
 {
-    if(id > LIST_MAX_SIZE)
+    if (id > LIST_MAX_SIZE)
     {
         printf("id too big\r\n");
         return 1;
     }
 
-    if(((list_id_table[id / 32] >> (id % 32)) & 0x1) == 0x1)
+    if (((list_id_table[id / 32] >> (id % 32)) & 0x1) == 0x1)
     {
         // printf("id already exist\r\n");
         return 1;
@@ -55,7 +55,7 @@ static void lcd_dis_list_draw_pic(uint8_t *image, uint16_t img_w, uint16_t img_h
     img_src.y = 0;
 
     uint32_t img_size = dis_pic->w * dis_pic->h * 2;
-#if CONFI_SINGLE_CAMERA
+#if (CONFIG_CAMERA_GC0328_DUAL == 0)
     img_dst.img_addr = (uint16_t *)kpu_image[1];
 #else
     img_dst.img_addr = (uint16_t *)kpu_image_tmp;
@@ -73,17 +73,17 @@ static void lcd_dis_list_draw_pic(uint8_t *image, uint16_t img_w, uint16_t img_h
 
 void lcd_dis_list_display(uint8_t *image, uint16_t img_w, uint16_t img_h, lcd_dis_t *lcd_dis)
 {
-    switch(lcd_dis->type)
+    switch (lcd_dis->type)
     {
-        case DIS_TYPE_STR:
-            lcd_dis_list_draw_str(image, img_w, img_h, (dis_str_t *)(lcd_dis->dis));
-            break;
-        case DIS_TYPE_PIC:
-            lcd_dis_list_draw_pic(image, img_w, img_h, (dis_str_t *)(lcd_dis->dis));
-            break;
-        default:
-            printf("unk dis type\r\n");
-            break;
+    case DIS_TYPE_STR:
+        lcd_dis_list_draw_str(image, img_w, img_h, (dis_str_t *)(lcd_dis->dis));
+        break;
+    case DIS_TYPE_PIC:
+        lcd_dis_list_draw_pic(image, img_w, img_h, (dis_str_t *)(lcd_dis->dis));
+        break;
+    default:
+        printf("unk dis type\r\n");
+        break;
     }
     return;
 }
@@ -94,19 +94,19 @@ lcd_dis_t *lcd_dis_list_add_str(int id, int auto_del,
 {
     lcd_dis_t *lcd_dis = (lcd_dis_t *)malloc(sizeof(lcd_dis_t));
 
-    if(lcd_dis)
+    if (lcd_dis)
     {
         lcd_dis->type = DIS_TYPE_STR;
         lcd_dis->auto_del = auto_del;
 
-        if(lcd_dis_list_check_id(id))
+        if (lcd_dis_list_check_id(id))
         {
             lcd_dis_list_del_by_id(id);
         }
         lcd_dis->id = id;
 
         dis_str_t *dis_str = (dis_str_t *)malloc(sizeof(dis_str_t));
-        if(dis_str)
+        if (dis_str)
         {
             dis_str->x = x;
             dis_str->y = y;
@@ -116,20 +116,22 @@ lcd_dis_t *lcd_dis_list_add_str(int id, int auto_del,
 
             lcd_dis->dis = (void *)dis_str;
 
-            if(list_rpush(lcd_dis_list, list_node_new(lcd_dis)) == NULL)
+            if (list_rpush(lcd_dis_list, list_node_new(lcd_dis)) == NULL)
             {
                 printf("list_rpush failed\r\n");
                 free(lcd_dis);
                 return NULL;
             }
             return lcd_dis;
-        } else
+        }
+        else
         {
             printf("failed\r\n");
             free(lcd_dis);
             return NULL;
         }
-    } else
+    }
+    else
     {
         printf("failed\r\n");
         return NULL;
@@ -144,18 +146,18 @@ lcd_dis_t *lcd_dis_list_add_pic(int id, int auto_del,
 {
     lcd_dis_t *lcd_dis = (lcd_dis_t *)malloc(sizeof(lcd_dis_t));
 
-    if(lcd_dis)
+    if (lcd_dis)
     {
         lcd_dis->type = DIS_TYPE_PIC;
         lcd_dis->auto_del = auto_del;
-        if(lcd_dis_list_check_id(id))
+        if (lcd_dis_list_check_id(id))
         {
             lcd_dis_list_del_by_id(id);
         }
         lcd_dis->id = id;
 
         dis_pic_t *dis_pic = (dis_pic_t *)malloc(sizeof(dis_pic_t));
-        if(dis_pic)
+        if (dis_pic)
         {
             dis_pic->x = x;
             dis_pic->y = y;
@@ -167,20 +169,22 @@ lcd_dis_t *lcd_dis_list_add_pic(int id, int auto_del,
 
             lcd_dis->dis = (void *)dis_pic;
 
-            if(list_rpush(lcd_dis_list, list_node_new(lcd_dis)) == NULL)
+            if (list_rpush(lcd_dis_list, list_node_new(lcd_dis)) == NULL)
             {
                 printf("list_rpush failed\r\n");
                 free(lcd_dis);
                 return NULL;
             }
             return lcd_dis;
-        } else
+        }
+        else
         {
             printf("failed\r\n");
             free(lcd_dis);
             return NULL;
         }
-    } else
+    }
+    else
     {
         printf("failed\r\n");
         return NULL;
@@ -193,7 +197,7 @@ uint8_t lcd_dis_list_init(void)
 {
     memset(list_id_table, 0, sizeof(list_id_table));
     lcd_dis_list = list_new();
-    if(lcd_dis_list == NULL)
+    if (lcd_dis_list == NULL)
     {
         printf("init list failed\r\n");
         return 1;
@@ -206,12 +210,12 @@ int lcd_dis_list_del_by_id(int id)
     list_node_t *node = NULL;
     list_iterator_t *lcd_dis_list_iterator = list_iterator_new(lcd_dis_list, LIST_HEAD);
 
-    if(lcd_dis_list_iterator)
+    if (lcd_dis_list_iterator)
     {
-        while((node = list_iterator_next(lcd_dis_list_iterator)))
+        while ((node = list_iterator_next(lcd_dis_list_iterator)))
         {
             lcd_dis_t *lcd_dis = (lcd_dis_t *)node->val;
-            if(lcd_dis->id == id)
+            if (lcd_dis->id == id)
             {
                 lcd_dis_list_free(lcd_dis);
                 list_remove(lcd_dis_list, node);
@@ -228,9 +232,9 @@ void lcd_dis_list_del_all(void)
     list_node_t *node = NULL;
     list_iterator_t *lcd_dis_list_iterator = list_iterator_new(lcd_dis_list, LIST_HEAD);
 
-    if(lcd_dis_list_iterator)
+    if (lcd_dis_list_iterator)
     {
-        while((node = list_iterator_next(lcd_dis_list_iterator)))
+        while ((node = list_iterator_next(lcd_dis_list_iterator)))
         {
             lcd_dis_t *lcd_dis = (lcd_dis_t *)node->val;
             lcd_dis_list_free(lcd_dis);
@@ -243,18 +247,19 @@ void lcd_dis_list_del_all(void)
 
 void lcd_dis_list_free(lcd_dis_t *lcd_dis)
 {
-    if(lcd_dis == NULL)
+    if (lcd_dis == NULL)
         return;
 
-    if(lcd_dis->type == DIS_TYPE_STR)
+    if (lcd_dis->type == DIS_TYPE_STR)
     {
         dis_str_t *dis_str = (dis_str_t *)lcd_dis->dis;
-        if(dis_str->str)
+        if (dis_str->str)
         {
             free(dis_str->str);
         }
         free(dis_str);
-    } else if(lcd_dis->type == DIS_TYPE_PIC)
+    }
+    else if (lcd_dis->type == DIS_TYPE_PIC)
     {
         free(lcd_dis->dis);
     }

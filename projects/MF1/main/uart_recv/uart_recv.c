@@ -132,7 +132,7 @@ static int protocol_port_recv_cb(void *ctx)
 int8_t protocol_init_device(board_cfg_t *brd_cfg)
 {
     //set lcd and cam dir
-    // #if(CONFIG_DETECT_VERTICAL || CONFI_SINGLE_CAMERA)
+    // #if(CONFIG_LCD_VERTICAL || CONFI_SINGLE_CAMERA)
     uint8_t lcd_dir = 0x00;
     // #else
     //     uint8_t lcd_dir = 0x20;

@@ -7,16 +7,16 @@
 #include "gpio.h"
 #include "gpiohs.h"
 #include "pwm.h"
-#include "rtc.h"
 #include "sleep.h"
 #include "sysctl.h"
 #include "uart.h"
 #include "uarths.h"
+
 #include "camera.h"
 #include "lcd.h"
-
 #include "flash.h"
 #include "face_lib.h"
+
 #include "system_config.h"
 #include "global_config.h"
 ///////////////////////////////////////////////////////////////////////////////
@@ -27,6 +27,10 @@ uint8_t sKey_dir = 0;
 ///////////////////////////////////////////////////////////////////////////////
 #if (CONFIG_CAMERA_GC0328_DUAL)
 uint8_t kpu_image_tmp[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 3] __attribute__((aligned(128)));
+#endif
+
+#if CONFIG_LCD_VERTICAL
+uint8_t display_image_ver[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2] __attribute__((aligned(64))); //显示
 #endif
 
 uint8_t kpu_image[2][CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 3] __attribute__((aligned(128)));
@@ -40,7 +44,6 @@ static volatile uint64_t g_gpio_time = 0;
 static void my_dvp_reset(void);
 static void my_dvp_init(uint8_t reg_len);
 static uint32_t my_dvp_set_xclk_rate(uint32_t xclk_rate);
-static void myuarths_init(uint32_t uart_freq);
 ///////////////////////////////////////////////////////////////////////////////
 int irq_gpiohs(void *ctx)
 {
@@ -60,7 +63,6 @@ void update_key_state(void)
         {
             if (gpiohs_get_pin(CONFIG_FUNCTION_KEY_GPIOHS_NUM) == !sKey_dir)
             {
-                // printk("key press!\n");
                 g_key_press = 1;
                 g_gpio_flag = 0;
             }
@@ -171,28 +173,12 @@ void set_IR_LED(int state)
 }
 ///////////////////////////////////////////////////////////////////////////////
 
-uint32_t rgb_state = 0;
 void set_RGB_LED(int state)
 {
-    rgb_state = state & 0x07;
-    gpiohs_set_pin(CONFIG_LED_R_GPIOHS_NUM, (rgb_state & RLED) ? 0 : 1);
-    gpiohs_set_pin(CONFIG_LED_G_GPIOHS_NUM, (rgb_state & GLED) ? 0 : 1);
-    gpiohs_set_pin(CONFIG_LED_B_GPIOHS_NUM, (rgb_state & BLED) ? 0 : 1);
-    return;
-}
-
-void change_RGB_LED(int led, int state)
-{
-    if (led == RLED)
-        gpiohs_set_pin(CONFIG_LED_R_GPIOHS_NUM, (state & RLED) ? 0 : 1);
-    if (led == GLED)
-        gpiohs_set_pin(CONFIG_LED_G_GPIOHS_NUM, (state & GLED) ? 0 : 1);
-    if (led == BLED)
-        gpiohs_set_pin(CONFIG_LED_B_GPIOHS_NUM, (state & BLED) ? 0 : 1);
-    if (state)
-        rgb_state = rgb_state | led;
-    else
-        rgb_state = rgb_state & (~led);
+    state = state & 0x07;
+    gpiohs_set_pin(CONFIG_LED_R_GPIOHS_NUM, (state & RLED) ? 0 : 1);
+    gpiohs_set_pin(CONFIG_LED_G_GPIOHS_NUM, (state & GLED) ? 0 : 1);
+    gpiohs_set_pin(CONFIG_LED_B_GPIOHS_NUM, (state & BLED) ? 0 : 1);
     return;
 }
 
@@ -298,21 +284,4 @@ static uint32_t my_dvp_set_xclk_rate(uint32_t xclk_rate)
     dvp->cmos_cfg |= DVP_CMOS_CLK_DIV(v_period) | DVP_CMOS_CLK_ENABLE;
     my_dvp_reset();
     return v_apb1_clk / ((v_period + 1) * 2);
-}
-
-static void myuarths_init(uint32_t uart_freq)
-{
-    uint32_t freq = sysctl_clock_get_freq(SYSCTL_CLOCK_CPU);
-    uint16_t div = freq / uart_freq - 1;
-
-    /* Set UART registers */
-    uarths->div.div = div;
-    uarths->txctrl.txen = 1;
-    uarths->rxctrl.rxen = 1;
-    uarths->txctrl.txcnt = 0;
-    uarths->rxctrl.rxcnt = 0;
-    uarths->ip.txwm = 1;
-    uarths->ip.rxwm = 1;
-    uarths->ie.txwm = 0;
-    uarths->ie.rxwm = 1;
 }

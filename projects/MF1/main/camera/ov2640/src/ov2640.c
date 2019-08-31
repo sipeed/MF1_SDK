@@ -1,7 +1,9 @@
+#include "ov2640.h"
+
 #include <stdio.h>
+
 #include "dvp.h"
 #include "fpioa.h"
-#include "ov2640.h"
 #include "system_config.h"
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -28,10 +30,11 @@ static int ov2640_set_hmirror(camera_t *camera, uint8_t val)
     dvp_sccb_send_data(camera->slv_id, BANK_SEL, BANK_SEL_SENSOR);
     reg = dvp_sccb_receive_data(camera->slv_id, REG04);
 
-    if(val)
+    if (val)
     {
         reg |= REG04_HFLIP_IMG;
-    } else
+    }
+    else
     {
         reg &= ~REG04_HFLIP_IMG;
     }
@@ -47,11 +50,12 @@ static int ov2640_set_vflip(camera_t *camera, uint8_t val)
     dvp_sccb_send_data(camera->slv_id, BANK_SEL, BANK_SEL_SENSOR);
     reg = dvp_sccb_receive_data(camera->slv_id, REG04);
 
-    if(val)
+    if (val)
     {
         reg |= REG04_VFLIP_IMG;
         reg |= REG04_VREF_EN;
-    } else
+    }
+    else
     {
         reg &= ~REG04_VFLIP_IMG;
         reg &= ~REG04_VREF_EN;
@@ -78,7 +82,7 @@ static int ov2640_config(camera_t *camera)
     fpioa_set_function(CAM_SCL_PIN, FUNC_SCCB_SCLK);
     fpioa_set_function(CAM_SDA_650_PIN, FUNC_SCCB_SDA);
 
-    for(uint16_t index = 0; ov2640_reg_tables[index][0]; index++)
+    for (uint16_t index = 0; ov2640_reg_tables[index][0]; index++)
     {
         dvp_sccb_send_data(camera->slv_id, ov2640_reg_tables[index][0], ov2640_reg_tables[index][1]);
     }
@@ -87,7 +91,7 @@ static int ov2640_config(camera_t *camera)
 
 int ov2640_init(camera_t *camera)
 {
-    if(camera)
+    if (camera)
     {
         camera->slv_id = 0x60; //OV2640
 
