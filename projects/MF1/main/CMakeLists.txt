@@ -40,41 +40,44 @@ list(APPEND ADD_REQUIREMENTS kendryte_sdk drivers utils)
 ###############################################
 
 ############ Add static libs ##################
-list(APPEND ADD_STATIC_LIB "face_lib/lib_face.a")
 
-add_custom_command( PRE_BUILD
+# add_custom_command( PRE_BUILD
     if(CONFIG_LCD_VERTICAL AND 
     (CONFIG_CAMERA_OV2640 OR CONFIG_CAMERA_GC0328_SINGLE))
-    message("-- Use lib_face_single_ver.a")
+        message("-- Use lib_face_single_ver.a")
 
-    execute_process(
-        COMMAND cp lib_face_single_ver.a ../lib_face.a
-        WORKING_DIRECTORY ${PROJECT_PATH}/main/face_lib/lib
-        )
+    # execute_process(
+    #     COMMAND cp lib_face_single_ver.a ../lib_face.a
+    #     WORKING_DIRECTORY ${PROJECT_PATH}/main/face_lib/lib
+    #     )
+        list(APPEND ADD_STATIC_LIB "face_lib/lib/lib_face_single_ver.a")
     elseif(CONFIG_LCD_VERTICAL AND CONFIG_CAMERA_GC0328_DUAL)
-    message("-- Use lib_face_dual_ver.a")
+        message("-- Use lib_face_dual_ver.a")
 
-    execute_process(
-        COMMAND cp lib_face_dual_ver.a ../lib_face.a
-        WORKING_DIRECTORY ${PROJECT_PATH}/main/face_lib/lib
-        )
+    # execute_process(
+    #     COMMAND cp lib_face_dual_ver.a ../lib_face.a
+    #     WORKING_DIRECTORY ${PROJECT_PATH}/main/face_lib/lib
+    #     )
+        list(APPEND ADD_STATIC_LIB "face_lib/lib/lib_face_dual_ver.a")
     elseif(NOT CONFIG_LCD_VERTICAL AND 
     (CONFIG_CAMERA_OV2640 OR CONFIG_CAMERA_GC0328_SINGLE))
-    message("-- Use lib_face_single_hor.a")
+        message("-- Use lib_face_single_hor.a")
 
-    execute_process(
-        COMMAND cp lib_face_single_hor.a ../lib_face.a
-        WORKING_DIRECTORY ${PROJECT_PATH}/main/face_lib/lib
-        )
+    # execute_process(
+    #     COMMAND cp lib_face_single_hor.a ../lib_face.a
+    #     WORKING_DIRECTORY ${PROJECT_PATH}/main/face_lib/lib
+    #     )
+        list(APPEND ADD_STATIC_LIB "face_lib/lib/lib_face_single_hor.a")
     elseif(NOT CONFIG_LCD_VERTICAL AND CONFIG_CAMERA_GC0328_DUAL)
-    message("-- Use lib_face_dual_hor.a")
+        message("-- Use lib_face_dual_hor.a")
 
-    execute_process(
-        COMMAND cp lib_face_dual_hor.a ../lib_face.a
-        WORKING_DIRECTORY ${PROJECT_PATH}/main/face_lib/lib
-        )
+    # execute_process(
+    #     COMMAND cp lib_face_dual_hor.a ../lib_face.a
+    #     WORKING_DIRECTORY ${PROJECT_PATH}/main/face_lib/lib
+    #     )
+        list(APPEND ADD_STATIC_LIB "face_lib/lib/lib_face_dual_hor.a")
     endif()
-    )
+    # )
 
 ###############################################
 

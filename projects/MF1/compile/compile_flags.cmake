@@ -75,11 +75,6 @@ set(LINK_FLAGS ${LINK_FLAGS}
             -Wl,--gc-sections
             -Wl,-EL
             -T ${PROJECT_SOURCE_DIR}/compile/kendryte.ld
-            -Wl,--start-group
-            -Wl,--whole-archive
-            kendryte_sdk/libkendryte_sdk.a  main/libmain.a ../main/face_lib/lib_face.a
-            -Wl,--no-whole-archive
-            -Wl,--end-group
             )
 set(CMAKE_C_LINK_FLAGS ${CMAKE_C_LINK_FLAGS}
                         ${LINK_FLAGS}
