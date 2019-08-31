@@ -1,7 +1,7 @@
 
 if(CONFIG_COMPONENT_KENDRYTE_SDK_ENABLE)
     ################# Add include #################
-    list(APPEND ADD_INCLUDE "include"
+    list(APPEND ADD_INCLUDE 
                             "kendryte-standalone-sdk/lib/bsp/include"
                             "kendryte-standalone-sdk/lib/drivers/include"
                             "kendryte-standalone-sdk/lib/nncase/include"
