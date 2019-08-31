@@ -1,5 +1,5 @@
-#ifndef _FONT_H_
-#define _FONT_H_
+#ifndef __ASCII_FONT_H
+#define __ASCII_FONT_H
 
 #include <stdint.h>
 

@@ -7,5 +7,51 @@ menu "Application configuration"
         bool "Long press button to reset system"
         default y
 
+	menu "Camera( Sensor ) configuration"
+		choice CAMERA_TYPE
+			bool "Camera type"
+			default CAMERA_GC0328_DUAL
+
+			config CAMERA_OV2640
+				bool "single ov2640"
+			config CAMERA_GC0328_SINGLE
+				bool "single gc0328"
+			config CAMERA_GC0328_DUAL
+				bool "dual gc0328, IR+RGB"
+		endchoice
+
+		config CAMERA_RESOLUTION_WIDTH
+			int "Camera resolution width"
+			default 320
+		config CAMERA_RESOLUTION_HEIGHT
+			int "Camera resolution height"
+			default 240
+		menu "DONT MODIFY CAMERA_RESOLUTION"
+
+		endmenu
+	endmenu
+
+	menu "Lcd ( Display ) configuration"
+
+		config LCD_WIDTH
+			depends on LCD_TYPE_ST7789
+			int "Lcd display size width"
+			default 320
+		config LCD_HEIGHT
+			depends on LCD_TYPE_ST7789
+			int "Lcd display size height"
+			default 240
+
+		config LCD_CLK_FREQ_MHZ
+			int "lcd clk frequency MHZ"
+			default 15
+
+		config LCD_VERTICAL
+			depends on LCD_TYPE_ST7789
+			bool "lcd display vertical"
+			default n
+
+	endmenu
+
 endmenu
 

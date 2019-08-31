@@ -183,9 +183,9 @@ uint8_t spi_8266_init_device(void)
     //not connect to network
     g_net_status = 0;
     //hard reset
-    gpiohs_set_pin(WIFI_EN_HS_NUM, 0); //disable WIFI
+    gpiohs_set_pin(CONFIG_WIFI_GPIOHS_NUM_ENABLE, 0); //disable WIFI
     msleep(50);
-    gpiohs_set_pin(WIFI_EN_HS_NUM, 1); //enable WIFI
+    gpiohs_set_pin(CONFIG_WIFI_GPIOHS_NUM_ENABLE, 1); //enable WIFI
     msleep(500);
 
     my_spi_init();

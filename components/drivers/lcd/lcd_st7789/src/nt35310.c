@@ -1,61 +1,37 @@
-/* Copyright 2018 Canaan Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 #include "gpiohs.h"
 #include "nt35310.h"
 #include "spi.h"
 #include "unistd.h"
 
-#if CONFIG_LCD_TYPE_ST7789
+#include "global_config.h"
+
 /* clang-format off */
 #define SPI_CHANNEL             0
 #define SPI_SLAVE_SELECT        3
 /* clang-format on */
 
-static void init_dcx(void)
-{
-    gpiohs_set_drive_mode(LCD_DCX_HS_NUM, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(LCD_DCX_HS_NUM, GPIO_PV_HIGH);
-}
-
 static void set_dcx_control(void)
 {
-    gpiohs_set_pin(LCD_DCX_HS_NUM, GPIO_PV_LOW);
+    gpiohs_set_pin(CONFIG_LCD_GPIOHS_DCX, GPIO_PV_LOW);
 }
 
 static void set_dcx_data(void)
 {
-    gpiohs_set_pin(LCD_DCX_HS_NUM, GPIO_PV_HIGH);
-}
-
-static void init_rst(void)
-{
-    gpiohs_set_drive_mode(LCD_RST_HS_NUM, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(LCD_RST_HS_NUM, GPIO_PV_HIGH);
+    gpiohs_set_pin(CONFIG_LCD_GPIOHS_DCX, GPIO_PV_HIGH);
 }
 
 void tft_hard_init(void)
 {
-    init_dcx();
-    spi_init(SPI_CHANNEL, SPI_WORK_MODE_0, SPI_FF_OCTAL, 8, 0);
+    /* setup lcd_dcx pin */
+    gpiohs_set_drive_mode(CONFIG_LCD_GPIOHS_DCX, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_LCD_GPIOHS_DCX, GPIO_PV_HIGH);
 
-    init_rst();
-#if LCD_240240
-    spi_set_clk_rate(SPI_CHANNEL, 20000000);
-#else
-    spi_set_clk_rate(SPI_CHANNEL, 15000000);
-#endif
+    /* setup lcd_rst pin */
+    gpiohs_set_drive_mode(CONFIG_LCD_GPIOHS_RST, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_LCD_GPIOHS_RST, GPIO_PV_HIGH);
+
+    spi_init(SPI_CHANNEL, SPI_WORK_MODE_0, SPI_FF_OCTAL, 8, 0);
+    spi_set_clk_rate(SPI_CHANNEL, CONFIG_LCD_CLK_FREQ_MHZ * 1000000);
 }
 
 void tft_write_command(uint8_t cmd)
@@ -103,4 +79,3 @@ void tft_fill_data(uint32_t *data_buf, uint32_t length)
                           SPI_AITM_AS_FRAME_FORMAT /*spi address trans mode*/);
     spi_fill_data_dma(DMAC_CHANNEL0, SPI_CHANNEL, SPI_SLAVE_SELECT, data_buf, length);
 }
-#endif

@@ -18,30 +18,34 @@
 #include "syscalls.h"
 #include "utils.h"
 
-#include "bsp.h"
 #include "dmac.h"
 #include "dvp.h"
-#include "flash.h"
 #include "fpioa.h"
 #include "gpiohs.h"
 #include "i2c.h"
 #include "plic.h"
 #include "printf.h"
+#include "sha256.h"
 #include "sysctl.h"
 
+#include "flash.h"
 #include "base64.h"
+#include "board.h"
 #include "cJSON.h"
+#include "camera.h"
+
+#include "lcd.h"
 #include "picojpeg.h"
 #include "picojpeg_util.h"
-#include "sha256.h"
 
-#include "board.h"
-
-#include "global_config.h"
+#include "system_config.h"
 
 /* clang-format off */
 #define DBG_TIME_INIT()
 #define DBG_TIME()
+
+#define FTR_850                             (1)
+#define FTR_650                             (0)
 
 #define FEATURE_DIMENSION                   (196UL)
 #define FACE_MAX_NUMBER                     (10UL)
@@ -85,7 +89,7 @@ typedef struct
     uint32_t class_id;
     float prob;
     key_point_t key_point;
-    float *feature;
+    int8_t *feature;
     uint32_t index;
     float score;
     bool pass;
@@ -117,17 +121,24 @@ typedef struct
 
 typedef struct
 {
-    uint8_t check_ir_face; //1 check, 0 not check
+    uint8_t check_ir_face; //1 check, 0 not check, not support now
     uint8_t auto_out_fea;  //1 yes, 0 no
 
     float detect_threshold;
     float compare_threshold;
 } face_recognition_cfg_t;
 
+/*
+    detected_face_cb: 检测到人脸的回调，即原lcd_draw_false_face的位置  record_face_cb: 录入人脸的回调
+    fake_face_cb：检测到已录入的，但是活体检测不过的人脸（也可能是已录入但角度不对的）
+    pass_face_cb：检测到已录入且通过活体（如果设置了需要活体的话）的回调，即原来的pass回调
+    lcd_refresh_cb: 刷屏回调
+ */
+
 typedef struct
 {
     //protocol send
-    void (*proto_send)(char*buf, size_t len);
+    void (*proto_send)(char *buf, size_t len);
 
     //detect face, user can record face
     void (*detected_face_cb)(face_recognition_ret_t *face);
@@ -137,6 +148,8 @@ typedef struct
     void (*pass_face_cb)(face_recognition_ret_t *face, uint8_t ir_check);
 
     void (*lcd_refresh_cb)(void);
+
+    void (*lcd_convert_cb)(void);
 } face_lib_callback_t;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -154,11 +167,10 @@ uint8_t face_lib_regisiter_callback(face_lib_callback_t *cfg_cb);
 void face_lib_run(face_recognition_cfg_t *cfg);
 
 //compare two face
-float face_compare_score(int8_t *feature0, int8_t *feature1);
+float face_lib_compare_score(int8_t *feature0, int8_t *feature1);
 ///////////////////////////////////////////////////////////////////////////////
 /* uart protocol */
 /* clang-format off */
-#define IR_BOARD                (1)
 #define PROTOCOL_BUF_LEN        (3 * 1024)
 #define JPEG_BUF_LEN            (30 * 1024) //jpeg max 30K
 /* clang-format on */
@@ -185,21 +197,23 @@ typedef struct
     void (*cmd_cb)(cJSON *root);
 } protocol_custom_cb_t;
 
+#include "image_op.h"
 #include "uart_recv.h"
 
 uint8_t protocol_send_init_done(void);
 
 void protocol_prase(unsigned char *protocol_buf);
 void protocol_cal_pic_fea(uint8_t *jpeg_buf, uint32_t jpeg_len);
-uint8_t protocol_send_cal_pic_result(uint8_t code, char *msg, float feature[FEATURE_DIMENSION], uint8_t *uid, float prob);
+uint8_t protocol_send_cal_pic_result(uint8_t code, char *msg, int8_t feature[FEATURE_DIMENSION], uint8_t *uid, float prob);
 
 uint8_t protocol_send_face_info(face_obj_t *obj,
-                                float score, uint8_t uid[UID_LEN], float feature[FEATURE_DIMENSION],
+                                float score, uint8_t uid[UID_LEN], int8_t feature[FEATURE_DIMENSION],
                                 uint32_t total, uint32_t current, uint64_t *time);
 
 cJSON *protocol_gen_header(char *cmd, uint8_t code, char *msg);
 uint8_t protocol_send(const cJSON *const send);
 uint8_t protocol_regesiter_user_cb(protocol_custom_cb_t *cb_list, uint32_t ncb);
+
 ///////////////////////////////////////////////////////////////////////////////
 /* w25qxx */
 typedef enum _w25qxx_status
@@ -228,10 +242,11 @@ w25qxx_status_t my_w25qxx_read_data(uint32_t addr, uint8_t *data_buf, uint32_t l
 ///////////////////////////////////////////////////////////////////////////////
 /* camera */
 int dvp_irq(void *ctx);
-int gc0328_init(void); //sleep time in ms
+int gc0328_dual_init(camera_t *camera);
+int gc0328_single_init(camera_t *camera);
 void open_gc0328_650();
 extern volatile uint8_t g_dvp_finish_flag;
 ///////////////////////////////////////////////////////////////////////////////
-void sipeed_spi_send_data_dma(uint8_t spi_num, uint8_t chip_select,uint8_t dma_chn, const uint8_t *data_buf, size_t buf_len);
+void sipeed_spi_send_data_dma(uint8_t spi_num, uint8_t chip_select, uint8_t dma_chn, const uint8_t *data_buf, size_t buf_len);
 ///////////////////////////////////////////////////////////////////////////////
 #endif

@@ -2,23 +2,14 @@
 
 #include "global_build_info_version.h"
 
-
 #include "face_cb.h"
-#include "img_op.h"
-// #include "sd_op.h"
 #include "camera.h"
 
 #include "net_8285.h"
-
-#if CONFIG_LCD_TYPE_ST7789
-#include "lcd_st7789.h"
-#elif CONFIG_LCD_TYPE_SSD1963
-#include "lcd_ssd1963.h"
-#elif CONFIG_LCD_TYPE_SIPEED
-#include "lcd_sipeed.h"
-#endif
-
 #include "http_file.h"
+
+#include "lcd.h"
+#include "lcd_dis.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 static uint64_t last_open_relay_time_in_s = 0;
@@ -33,7 +24,8 @@ face_recognition_cfg_t face_recognition_cfg = {
     .compare_threshold = 0.0,
 };
 
-face_lib_callback_t face_recognition_cb = {
+face_lib_callback_t face_recognition_cb = (face_lib_callback_t)
+{
 #if CONFIG_PROTO_OVER_NET
     .proto_send = spi_8266_mqtt_send,
 #else
@@ -43,6 +35,7 @@ face_lib_callback_t face_recognition_cb = {
     .fake_face_cb = fake_face_cb,
     .pass_face_cb = pass_face_cb,
     .lcd_refresh_cb = lcd_refresh_cb,
+    .lcd_convert_cb = lcd_convert_cb,
 };
 
 static void uart_send(char *buf, size_t len)
@@ -54,8 +47,8 @@ static void open_relay(void)
 {
     uint64_t tim = sysctl_get_time_us();
 
-    gpiohs_set_pin(RELAY_LOWX_HS_NUM, RELAY_LOWX_OPEN);
-    gpiohs_set_pin(RELAY_HIGH_HS_NUM, RELAY_HIGH_OPEN);
+    gpiohs_set_pin(CONFIG_RELAY_LOWX_GPIOHS_NUM, 1);
+    gpiohs_set_pin(CONFIG_RELAY_HIGH_GPIOHS_NUM, 0);
 
     last_open_relay_time_in_s = tim / 1000 / 1000;
     relay_open_flag = 1;
@@ -63,8 +56,8 @@ static void open_relay(void)
 
 static void close_relay(void)
 {
-    gpiohs_set_pin(RELAY_LOWX_HS_NUM, !RELAY_LOWX_OPEN);
-    gpiohs_set_pin(RELAY_HIGH_HS_NUM, !RELAY_HIGH_OPEN);
+    gpiohs_set_pin(CONFIG_RELAY_LOWX_GPIOHS_NUM, 0);
+    gpiohs_set_pin(CONFIG_RELAY_HIGH_GPIOHS_NUM, 1);
 }
 
 static uint64_t last_pass_time = 0;
@@ -77,9 +70,9 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
 
     tim = sysctl_get_time_us();
 
-    if(g_board_cfg.out_interval_in_ms != 0)
+    if (g_board_cfg.out_interval_in_ms != 0)
     {
-        if(((tim - last_pass_time) / 1000) < g_board_cfg.out_interval_in_ms)
+        if (((tim - last_pass_time) / 1000) < g_board_cfg.out_interval_in_ms)
         {
             printk("last face pass time too short\r\n");
             return;
@@ -88,46 +81,52 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
 
     last_pass_time = tim;
 
-    if(g_board_cfg.auto_out_feature != 1)
-    {
-        lcd_draw_pass();
-    }
-
-    open_relay();
-
     /* output feature */
-    if( (g_board_cfg.auto_out_feature & 0x1) == 0x1)
+    if ((g_board_cfg.auto_out_feature & 0x1) == 0x1)
     {
         protocol_send_face_info(obj,
                                 0, NULL, obj->feature,
                                 total, current, time);
-        // open_relay(); //open when have face
-    } else
+        open_relay(); //open when have face
+    }
+    else
     {
-        if(flash_get_saved_faceinfo(&info, obj->index) == 0)
+        if (obj->score > g_board_cfg.face_gate)
         {
-            if((g_board_cfg.auto_out_feature >> 1) & 1)
+            open_relay(); //open when score > gate
+            if (flash_get_saved_faceinfo(&info, obj->index) == 0)
             {
-                //output real time feature
-                protocol_send_face_info(obj,
-                                        obj->score, info.uid, obj->feature,
-                                        total, current, time);
-            } else
-            {
-                //output feature in flash
-                protocol_send_face_info(obj,
-                                        obj->score, info.uid, info.info,
-                                        total, current, time);
+                if ((g_board_cfg.auto_out_feature >> 1) & 1)
+                {
+                    //output real time feature
+                    protocol_send_face_info(obj,
+                                            obj->score, info.uid, g_board_cfg.recong_out_feature ? obj->feature : NULL,
+                                            total, current, time);
+                }
+                else
+                {
+                    //output stored in flash face feature
+                    face_fea_t *face_fea = (face_fea_t *)&(info.info);
+                    protocol_send_face_info(obj,
+                                            obj->score, info.uid,
+                                            g_board_cfg.recong_out_feature ? (face_fea->stat == 1) ? face_fea->fea_ir : face_fea->fea_rgb : NULL,
+                                            total, current, time);
+                }
             }
-
-            // if(obj->score >= g_board_cfg.face_gate)
-            // {
-            //     open_relay(); //open when score > gate
-            // }
-        } else
-        {
-            printk("index error!\r\n");
+            else
+            {
+                printk("index error!\r\n");
+            }
         }
+        else
+        {
+            printf("face score not pass\r\n");
+        }
+    }
+
+    if (g_board_cfg.auto_out_feature != 1)
+    {
+        lcd_draw_pass();
     }
     return;
 }
@@ -137,7 +136,7 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
 void test_cmd(cJSON *root)
 {
     cJSON *ret = protocol_gen_header("test", 0, "test");
-    if(ret)
+    if (ret)
     {
         protocol_send(ret);
     }
@@ -153,16 +152,17 @@ void test2_cmd(cJSON *root)
     cJSON *tmp = NULL;
 
     tmp = cJSON_GetObjectItem(root, "log_tx");
-    if(tmp == NULL)
+    if (tmp == NULL)
     {
         printk("no log_tx recv\r\n");
-    } else
+    }
+    else
     {
         printk("log_tx:%d\r\n", tmp->valueint);
     }
 
     ret = protocol_gen_header("test2", 0, "test2");
-    if(ret)
+    if (ret)
     {
         protocol_send(ret);
     }
@@ -183,17 +183,20 @@ int main(void)
     // sd_init_fatfs();
     face_lib_init_module();
 
+    face_cb_init();
+    lcd_dis_list_init();
+
     printk("firmware version:\r\n%d.%d.%d\r\n", BUILD_VERSION_MAJOR, BUILD_VERSION_MINOR, BUILD_VERSION_MICRO);
     printk("face_lib_version:\r\n%s\r\n", face_lib_version());
 
     /*load cfg from flash*/
-    if(flash_load_cfg(&g_board_cfg) == 0)
+    if (flash_load_cfg(&g_board_cfg) == 0)
     {
         printk("load cfg failed,save default config\r\n");
 
         flash_cfg_set_default(&g_board_cfg);
 
-        if(flash_save_cfg(&g_board_cfg) == 0)
+        if (flash_save_cfg(&g_board_cfg) == 0)
         {
             printk("save g_board_cfg failed!\r\n");
         }
@@ -202,7 +205,7 @@ int main(void)
     face_lib_regisiter_callback(&face_recognition_cb);
 
     /* init device */
-#if(CONFIG_PROTO_OVER_NET == 0)
+#if (CONFIG_PROTO_OVER_NET == 0)
     protocol_regesiter_user_cb(&user_custom_cmd[0], sizeof(user_custom_cmd) / sizeof(user_custom_cmd[0]));
 
     protocol_init_device(&g_board_cfg);
@@ -221,32 +224,33 @@ int main(void)
     /* init 8285 */
     spi_8266_init_device();
 
-    if(strlen(g_board_cfg.wifi_ssid) > 0 && strlen(g_board_cfg.wifi_passwd) >= 8)
+    if (strlen(g_board_cfg.wifi_ssid) > 0 && strlen(g_board_cfg.wifi_passwd) >= 8)
     {
         display_lcd_img_addr(IMG_CONNING_ADDR);
         g_net_status = spi_8266_connect_ap(g_board_cfg.wifi_ssid, g_board_cfg.wifi_passwd, 2);
-        if(g_net_status)
+        if (g_net_status)
         {
             display_lcd_img_addr(IMG_CONN_SUCC_ADDR);
 #if CONFIG_NET_DEMO_MQTT
             spi_8266_mqtt_init();
 #endif
-        } else
+        }
+        else
         {
             display_lcd_img_addr(IMG_CONN_FAILED_ADDR);
             printk("wifi config maybe error,we can not connect to it!\r\n");
         }
     }
 #endif
-
+    printf("aa\r\n");
     protocol_send_init_done();
-    while(1)
+    while (1)
     {
 #if CONFIG_NET_DEMO_HTTP_GET
 
         uint8_t http_header[1024];
 
-        if(g_net_status)
+        if (g_net_status)
         {
             dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 0);
 
@@ -272,16 +276,16 @@ int main(void)
             printk("get_recv_len:%d\r\n", get_recv_len);
             printk("get recv hdr:%s\r\n", http_header);
 
-            if(get_recv_len > 0)
+            if (get_recv_len > 0)
             {
                 jpeg_decode_image_t *jpeg = NULL;
 
                 jpeg = pico_jpeg_decode(kpu_image[0], display_image, get_recv_len, 1);
 
-                if(jpeg)
+                if (jpeg)
                 {
                     printk("img width:%d\theight:%d\r\n", jpeg->width, jpeg->height);
-                    if(jpeg->width == 240 && jpeg->height == 240)
+                    if (jpeg->width == 240 && jpeg->height == 240)
                     {
                         convert_jpeg_img_order(jpeg);
 
@@ -311,7 +315,7 @@ int main(void)
 
                 tt = sysctl_get_time_us() - tm;
 
-                if(post_recv_len > 0)
+                if (post_recv_len > 0)
                 {
                     printk("post_recv_len %d \r\n", post_recv_len);
                     printk("http_header:%s\r\n", http_header);
@@ -326,18 +330,20 @@ int main(void)
                 }
 #endif
             }
-            while(1)
+            while (1)
                 ;
         }
 
         lcd_draw_string(0, 0, "please touch key", RED);
 #else
         /* if rcv jpg or scan qrcode, will stuck a period */
-        if(!jpeg_recv_start_flag && !qrcode_get_info_flag)
+        if (!jpeg_recv_start_flag && !qrcode_get_info_flag)
         {
+            printf("aa\r\n");
             face_recognition_cfg.auto_out_fea = (uint8_t)g_board_cfg.auto_out_feature;
             face_recognition_cfg.compare_threshold = (float)g_board_cfg.face_gate;
             face_lib_run(&face_recognition_cfg);
+            printf("aa\r\n");
         }
 #endif
         /* get key state */
@@ -345,7 +351,7 @@ int main(void)
 
 #if CONFIG_KEY_SHORT_QRCODE
         /* key short to scan qrcode */
-        if(g_key_press)
+        if (g_key_press)
         {
             g_key_press = 0;
             qrcode_get_info_flag = 1;
@@ -357,9 +363,9 @@ int main(void)
             dvp_set_output_enable(1, 1); //enable to lcd
         }
 
-        if(qrcode_get_info_flag)
+        if (qrcode_get_info_flag)
         {
-            while(!g_dvp_finish_flag)
+            while (!g_dvp_finish_flag)
                 ;
 
                 /* here display pic */
@@ -369,62 +375,64 @@ int main(void)
 #endif
 
             qr_wifi_info_t *wifi_info = qrcode_get_wifi_cfg();
-            if(NULL == wifi_info)
+            if (NULL == wifi_info)
             {
                 printk("no memory!\r\n");
-            } else
+            }
+            else
             {
-                switch(wifi_info->ret)
+                switch (wifi_info->ret)
                 {
-                    case QRCODE_RET_CODE_OK:
-                    {
-                        printk("get qrcode\r\n");
-                        printk("ssid:%s\tpasswd:%s\r\n", wifi_info->ssid, wifi_info->passwd);
+                case QRCODE_RET_CODE_OK:
+                {
+                    printk("get qrcode\r\n");
+                    printk("ssid:%s\tpasswd:%s\r\n", wifi_info->ssid, wifi_info->passwd);
 
-                        if(g_net_status)
-                        {
-                            printk("already connect net, but want to reconfig, so reboot 8266\r\n");
-                            spi_8266_init_device();
-                            g_net_status = 0;
-                        }
+                    if (g_net_status)
+                    {
+                        printk("already connect net, but want to reconfig, so reboot 8266\r\n");
+                        spi_8266_init_device();
+                        g_net_status = 0;
+                    }
 
-                        //connect to network
-                        display_lcd_img_addr(IMG_CONNING_ADDR);
-                        g_net_status = spi_8266_connect_ap(wifi_info->ssid, wifi_info->passwd, 2);
-                        if(g_net_status)
+                    //connect to network
+                    display_lcd_img_addr(IMG_CONNING_ADDR);
+                    g_net_status = spi_8266_connect_ap(wifi_info->ssid, wifi_info->passwd, 2);
+                    if (g_net_status)
+                    {
+                        display_lcd_img_addr(IMG_CONN_SUCC_ADDR);
+                        spi_8266_mqtt_init();
+                        memcpy(g_board_cfg.wifi_ssid, wifi_info->ssid, 32);
+                        memcpy(g_board_cfg.wifi_passwd, wifi_info->passwd, 32);
+                        if (flash_save_cfg(&g_board_cfg) == 0)
                         {
-                            display_lcd_img_addr(IMG_CONN_SUCC_ADDR);
-                            spi_8266_mqtt_init();
-                            memcpy(g_board_cfg.wifi_ssid, wifi_info->ssid, 32);
-                            memcpy(g_board_cfg.wifi_passwd, wifi_info->passwd, 32);
-                            if(flash_save_cfg(&g_board_cfg) == 0)
-                            {
-                                printk("save g_board_cfg failed!\r\n");
-                            }
-                        } else
-                        {
-                            display_lcd_img_addr(IMG_CONN_FAILED_ADDR);
-                            printk("wifi config maybe error,we can not connect to it!\r\n");
+                            printk("save g_board_cfg failed!\r\n");
                         }
-                        qrcode_get_info_flag = 0;
                     }
-                    break;
-                    case QRCODE_RET_CODE_PRASE_ERR:
+                    else
                     {
-                        printk("get error qrcode\r\n");
+                        display_lcd_img_addr(IMG_CONN_FAILED_ADDR);
+                        printk("wifi config maybe error,we can not connect to it!\r\n");
                     }
+                    qrcode_get_info_flag = 0;
+                }
+                break;
+                case QRCODE_RET_CODE_PRASE_ERR:
+                {
+                    printk("get error qrcode\r\n");
+                }
+                break;
+                case QRCODE_RET_CODE_TIMEOUT:
+                {
+                    printk("scan qrcode timeout\r\n");
+                    /* here display pic */
+                    display_lcd_img_addr(IMG_QR_TIMEOUT_ADDR);
+                    qrcode_get_info_flag = 0;
+                }
+                break;
+                case QRCODE_RET_CODE_NO_DATA:
+                default:
                     break;
-                    case QRCODE_RET_CODE_TIMEOUT:
-                    {
-                        printk("scan qrcode timeout\r\n");
-                        /* here display pic */
-                        display_lcd_img_addr(IMG_QR_TIMEOUT_ADDR);
-                        qrcode_get_info_flag = 0;
-                    }
-                    break;
-                    case QRCODE_RET_CODE_NO_DATA:
-                    default:
-                        break;
                 }
                 free(wifi_info);
             }
@@ -433,7 +441,7 @@ int main(void)
         }
 #endif /* CONFIG_KEY_SHORT_QRCODE */
 
-        if(g_key_long_press)
+        if (g_key_long_press)
         {
             g_key_long_press = 0;
             /* key long press */
@@ -444,7 +452,7 @@ int main(void)
 #if CONFIG_LCD_TYPE_ST7789
 
 #elif CONFIG_LCD_TYPE_SSD1963
-#define LCD_OFT                               ((CONFIG_CAMERA_RESOLUTION_WIDTH - LCD_W) / 2)
+#define LCD_OFT ((CONFIG_CAMERA_RESOLUTION_WIDTH - LCD_W) / 2)
             lcd_draw_string(LCD_OFT, CONFIG_CAMERA_RESOLUTION_HEIGHT - 16, "Del All feature!", lcd_color(0xff, 0, 0));
 #endif
             set_RGB_LED(RLED);
@@ -462,7 +470,7 @@ int main(void)
 
             flash_cfg_set_default(&board_cfg);
 
-            if(flash_save_cfg(&board_cfg) == 0)
+            if (flash_save_cfg(&board_cfg) == 0)
             {
                 printk("save board_cfg failed!\r\n");
             }
@@ -474,17 +482,17 @@ int main(void)
 
 #if CONFIG_NET_DEMO_MQTT
         /******Process mqtt ********/
-        if(g_net_status && !qrcode_get_info_flag)
+        if (g_net_status && !qrcode_get_info_flag)
         {
             /* mqtt loop */
-            if(PubSubClient_loop() == false)
+            if (PubSubClient_loop() == false)
             { /* disconnect */
                 mqtt_reconnect();
             }
 
-            if(last_mqtt_check_tim < tim)
+            if (last_mqtt_check_tim < tim)
             {
-                if(!PubSubClient_connected())
+                if (!PubSubClient_connected())
                     mqtt_reconnect();
                 last_mqtt_check_tim += 1000 * 1000; //1000ms
             }
@@ -495,24 +503,24 @@ int main(void)
         tim = sysctl_get_time_us();
         tim = tim / 1000 / 1000;
 
-        if(relay_open_flag && ((tim - last_open_relay_time_in_s) >= g_board_cfg.relay_open_in_s))
+        if (relay_open_flag && ((tim - last_open_relay_time_in_s) >= g_board_cfg.relay_open_in_s))
         {
             close_relay();
             relay_open_flag = 0;
         }
 
-#if(CONFIG_PROTO_OVER_NET == 0)
+#if (CONFIG_PROTO_OVER_NET == 0)
         /******Process uart protocol********/
-        if(recv_over_flag)
+        if (recv_over_flag)
         {
             protocol_prase(cJSON_prase_buf);
             recv_over_flag = 0;
         }
 
-        if(jpeg_recv_start_flag)
+        if (jpeg_recv_start_flag)
         {
             tim = sysctl_get_time_us();
-            if(tim - jpeg_recv_start_time >= 10 * 1000 * 1000) //FIXME: 10s or 5s timeout
+            if (tim - jpeg_recv_start_time >= 10 * 1000 * 1000) //FIXME: 10s or 5s timeout
             {
                 printk("abort to recv jpeg file\r\n");
                 jpeg_recv_start_flag = 0;
@@ -521,7 +529,7 @@ int main(void)
             }
 
             /* recv over */
-            if(jpeg_recv_len != 0)
+            if (jpeg_recv_len != 0)
             {
                 protocol_cal_pic_fea(jpeg_recv_buf, jpeg_recv_len);
                 jpeg_recv_len = 0;

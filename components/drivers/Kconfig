@@ -15,20 +15,10 @@ menu "Drivers configuration"
 
 			config LCD_TYPE_ST7789
 				bool "LCD use ST7789"
-			config LCD_TYPE_SSD1963
-				bool "LCD use ssd1963"
 			config LCD_TYPE_SIPEED
 				bool "LCD use sipeed board"
 		endchoice
-	endmenu
 
-	menu "Camera( Sensor ) configuration"
-		config CAMERA_RESOLUTION_WIDTH
-			int "Camera resolution width"
-			default 320
-		config CAMERA_RESOLUTION_HEIGHT
-			int "Camera resolution height"
-			default 240
 	endmenu
 
 	config WIFI_ENABLE
@@ -122,9 +112,6 @@ menu "Drivers configuration"
 			config RELAY_HIGH_PIN
 				int "Relay hight pin"
 				default 13
-			config RELAY_LOWX_OPEN
-				bool "Relay open with low voltage level"
-				default y
 		endmenu
 
 		menu "WiFi configuration"
@@ -209,9 +196,6 @@ menu "Drivers configuration"
 			config RELAY_HIGH_GPIOHS_NUM
 				int "Relay hight gpiohs num"
 				default 8
-			config RELAY_LOWX_OPEN
-				bool "Relay open with low voltage level"
-				default y
 		endmenu
 
 		menu "WiFi configuration"

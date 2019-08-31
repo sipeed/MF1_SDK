@@ -3,10 +3,6 @@
 
 #include <stdint.h>
 
-#include "lcd_config.h"
-
-#if CONFIG_LCD_TYPE_SIPEED
-
 #include "spi.h"
 
 /* clang-format off */
@@ -40,5 +36,4 @@ void copy_image_cma_to_lcd(uint8_t *cam_img, uint8_t *lcd_img);
 /* flush img_buf to lcd */
 void lcd_sipeed_display(uint8_t *img_buf, uint8_t block);
 
-#endif /* CONFIG_LCD_TYPE_SIPEED */
-#endif /* __LCD_SPIEED_H */
+#endif

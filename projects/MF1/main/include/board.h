@@ -21,7 +21,12 @@ extern volatile uint8_t g_key_long_press;
 
 extern uint8_t sKey_dir;
 
+#if(!CONFIG_CAMERA_OV2640 || !CONFIG_CAMERA_GC0328_SINGLE)
+extern uint8_t kpu_image_tmp[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 3];
+#endif
 
+extern uint8_t kpu_image[2][CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 3];
+extern uint8_t display_image[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2];
 
 
 

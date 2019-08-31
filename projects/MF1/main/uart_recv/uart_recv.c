@@ -1,10 +1,8 @@
 #include "uart_recv.h"
-
 #include "board.h"
 #include "face_lib.h"
-
-#include "global_config.h"
-#include "system_config.h"
+#include "flash.h"
+#include "lcd.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 volatile uint8_t recv_over_flag = 0;
@@ -35,43 +33,46 @@ static int protocol_port_recv_cb(void *ctx)
     uint8_t tmp;
     do
     {
-        if(uart_channel_getchar(PROTOCOL_UART_NUM, &tmp) == 0)
+        if (uart_channel_getchar(PROTOCOL_UART_NUM, &tmp) == 0)
             return 0;
 
         /* recv jpeg */
-        if(recv_jpeg_flag)
+        if (recv_jpeg_flag)
         {
             //接受jpeg图片
-            if(start_recv_flag)
+            if (start_recv_flag)
             {
                 jpeg_recv_buf[recv_cur_pos++] = tmp;
 
-                if( ((tmp == g_pkt_head.pkt_jpeg_end_2) && (jpeg_recv_buf[recv_cur_pos - 2] == g_pkt_head.pkt_jpeg_end_1)) || (recv_cur_pos > JPEG_BUF_LEN - 1))
+                if ((tmp == g_pkt_head.pkt_jpeg_end_2) && ((jpeg_recv_buf[recv_cur_pos - 2] == g_pkt_head.pkt_jpeg_end_1) || (recv_cur_pos > JPEG_BUF_LEN - 1)))
                 {
                     start_recv_flag = 0;
                     recv_jpeg_flag = 0;
-                    if(g_board_cfg.pkt_sum_header)
+                    if (g_board_cfg.pkt_sum_header)
                     {
                         jpeg_recv_len = recv_cur_pos - 2;
-                    } else
+                    }
+                    else
                     {
                         jpeg_recv_len = recv_cur_pos;
                     }
                     return 0;
                 }
-            } else
+            }
+            else
             {
-                if((tmp == g_pkt_head.pkt_jpeg_start_2) && (last_data == g_pkt_head.pkt_jpeg_start_1))
+                if ((tmp == g_pkt_head.pkt_jpeg_start_2) && (last_data == g_pkt_head.pkt_jpeg_start_1))
                 {
                     recv_cur_pos = 0;
-                    if(!g_board_cfg.pkt_sum_header)
+                    if (!g_board_cfg.pkt_sum_header)
                     {
                         jpeg_recv_buf[recv_cur_pos++] = 0xff;
                         jpeg_recv_buf[recv_cur_pos++] = 0xd8;
                     }
                     start_recv_flag = 1;
                     last_data = 0;
-                } else
+                }
+                else
                 {
                     last_data = tmp;
                 }
@@ -80,11 +81,11 @@ static int protocol_port_recv_cb(void *ctx)
         /* recv json */
         else
         {
-            if(start_recv_flag)
+            if (start_recv_flag)
             {
                 cJSON_recv_buf[recv_cur_pos++] = tmp;
 
-                if(((tmp == g_pkt_head.pkt_json_end_2) && (cJSON_recv_buf[recv_cur_pos - 2] == g_pkt_head.pkt_json_end_1)) || (recv_cur_pos > PROTOCOL_BUF_LEN - 1))
+                if ((tmp == g_pkt_head.pkt_json_end_2) && ((cJSON_recv_buf[recv_cur_pos - 2] == g_pkt_head.pkt_json_end_1) || (recv_cur_pos > PROTOCOL_BUF_LEN - 1)))
                 {
                     memcpy(cJSON_prase_buf, cJSON_recv_buf, recv_cur_pos - 2);
                     cJSON_recv_buf[recv_cur_pos - 2] = 0;
@@ -92,24 +93,27 @@ static int protocol_port_recv_cb(void *ctx)
                     start_recv_flag = 0;
                     return 0;
                 }
-            } else
+            }
+            else
             {
-                if(g_board_cfg.pkt_sum_header)
+                if (g_board_cfg.pkt_sum_header)
                 {
-                    if((tmp == g_pkt_head.pkt_json_start_2) && (last_data == g_pkt_head.pkt_json_start_1))
+                    if ((tmp == g_pkt_head.pkt_json_start_2) && (last_data == g_pkt_head.pkt_json_start_1))
                     {
                         recv_cur_pos = 0;
                         cJSON_recv_buf[recv_cur_pos++] = g_pkt_head.pkt_json_start_1;
                         cJSON_recv_buf[recv_cur_pos++] = g_pkt_head.pkt_json_start_2;
                         start_recv_flag = 1;
                         last_data = 0;
-                    } else
+                    }
+                    else
                     {
                         last_data = tmp;
                     }
-                } else
+                }
+                else
                 {
-                    if(tmp == '{')
+                    if (tmp == '{')
                     {
                         recv_cur_pos = 0;
                         cJSON_recv_buf[recv_cur_pos++] = tmp;
@@ -119,7 +123,7 @@ static int protocol_port_recv_cb(void *ctx)
             }
         }
         /* recv end */
-    } while(1);
+    } while (1);
 
     return 0;
 }
@@ -128,11 +132,12 @@ static int protocol_port_recv_cb(void *ctx)
 int8_t protocol_init_device(board_cfg_t *brd_cfg)
 {
     //set lcd and cam dir
-#if !IR_BOARD
-    uint8_t lcd_dir = 0x20;
-#else
+    // #if(CONFIG_DETECT_VERTICAL || CONFI_SINGLE_CAMERA)
     uint8_t lcd_dir = 0x00;
-#endif
+    // #else
+    //     uint8_t lcd_dir = 0x20;
+    // #endif
+
     uint8_t lcd_v, lcd_h, cam_v, cam_h;
 
     cam_h = (brd_cfg->lcd_cam_dir & 1);
@@ -143,15 +148,22 @@ int8_t protocol_init_device(board_cfg_t *brd_cfg)
     lcd_dir |= (lcd_h << 7);
     lcd_dir |= (lcd_v << 6);
 
-#if !IR_BOARD
+    //31-4 3        2       1       0
+    //---- lcd_v    lcd_h   cam_v   cam_h
+
+    /* lcd dir */
+    //  7   6   5   4   3   2   1   0
+    //  MY  MX  MV  ML  RGB MH  -   -
+
     lcd_set_direction(lcd_dir);
-    ov2640_set_hmirror_vflip(cam_h, cam_v);
-#endif
+
+    camera_set_hmirror(cam_h);
+    camera_set_vflip(cam_v);
 
     /*load cfg from flash end*/
     init_board_uart_port(brd_cfg->port_cfg);
 
-    if(brd_cfg->pkt_sum_header)
+    if (brd_cfg->pkt_sum_header)
     {
         g_pkt_head.pkt_json_start_1 = 0xaa;
         g_pkt_head.pkt_json_start_2 = 0x55;
@@ -164,7 +176,8 @@ int8_t protocol_init_device(board_cfg_t *brd_cfg)
 
         g_pkt_head.pkt_jpeg_end_1 = 0x55;
         g_pkt_head.pkt_jpeg_end_2 = 0xaa;
-    } else
+    }
+    else
     {
         g_pkt_head.pkt_json_start_1 = 0; //start no sense
         g_pkt_head.pkt_json_start_2 = 0;
@@ -210,6 +223,16 @@ void init_board_uart_port(uint32_t port_cfg)
 
     fpioa_set_function(log_tx, FUNC_UART1_TX + DBG_UART_NUM * 2);
     fpioa_set_function(log_rx, FUNC_UART1_RX + DBG_UART_NUM * 2);
+
+#if 0
+    uart_config(DBG_UART_NUM, 921600, 8, UART_STOP_1, UART_PARITY_NONE);
+
+    fpioa_set_function(5, FUNC_UART1_TX + PROTOCOL_UART_NUM * 2);
+    fpioa_set_function(4, FUNC_UART1_RX + PROTOCOL_UART_NUM * 2);
+
+    fpioa_set_function(10, FUNC_UART1_TX + DBG_UART_NUM * 2);
+    fpioa_set_function(11, FUNC_UART1_RX + DBG_UART_NUM * 2);
+#endif
 }
 
 void init_relay_key_pin(uint32_t cfg)
@@ -222,27 +245,28 @@ void init_relay_key_pin(uint32_t cfg)
     relay_0_pin = (cfg)&0xFF;
 
     //setup key low
-    fpioa_set_function(relay_0_pin, FUNC_GPIOHS0 + RELAY_LOWX_HS_NUM);
-    gpiohs_set_drive_mode(RELAY_LOWX_HS_NUM, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(RELAY_LOWX_HS_NUM, !RELAY_LOWX_OPEN);
+    fpioa_set_function(relay_0_pin, FUNC_GPIOHS0 + CONFIG_RELAY_LOWX_GPIOHS_NUM);
+    gpiohs_set_drive_mode(CONFIG_RELAY_LOWX_GPIOHS_NUM, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_RELAY_LOWX_GPIOHS_NUM, 0);
 
     //setup key high
-    fpioa_set_function(relay_1_pin, FUNC_GPIOHS0 + RELAY_HIGH_HS_NUM);
-    gpiohs_set_drive_mode(RELAY_HIGH_HS_NUM, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(RELAY_HIGH_HS_NUM, !RELAY_HIGH_OPEN);
+    fpioa_set_function(relay_1_pin, FUNC_GPIOHS0 + CONFIG_RELAY_HIGH_GPIOHS_NUM);
+    gpiohs_set_drive_mode(CONFIG_RELAY_HIGH_GPIOHS_NUM, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_RELAY_HIGH_GPIOHS_NUM, 1);
 
     //set up key
-    fpioa_set_function(key_pin, FUNC_GPIOHS0 + KEY_HS_NUM); //KEY
-    if(key_dir)
+    fpioa_set_function(key_pin, FUNC_GPIOHS0 + CONFIG_FUNCTION_KEY_GPIOHS_NUM); //KEY
+    if (key_dir)
     {
-        gpiohs_set_drive_mode(KEY_HS_NUM, GPIO_DM_INPUT_PULL_DOWN);
-        gpiohs_set_pin_edge(KEY_HS_NUM, GPIO_PE_RISING);
-    } else
-    {
-        gpiohs_set_drive_mode(KEY_HS_NUM, GPIO_DM_INPUT_PULL_UP);
-        gpiohs_set_pin_edge(KEY_HS_NUM, GPIO_PE_FALLING);
+        gpiohs_set_drive_mode(CONFIG_FUNCTION_KEY_GPIOHS_NUM, GPIO_DM_INPUT_PULL_DOWN);
+        gpiohs_set_pin_edge(CONFIG_FUNCTION_KEY_GPIOHS_NUM, GPIO_PE_RISING);
     }
-    gpiohs_irq_register(KEY_HS_NUM, 2, irq_gpiohs, NULL);
+    else
+    {
+        gpiohs_set_drive_mode(CONFIG_FUNCTION_KEY_GPIOHS_NUM, GPIO_DM_INPUT_PULL_UP);
+        gpiohs_set_pin_edge(CONFIG_FUNCTION_KEY_GPIOHS_NUM, GPIO_PE_FALLING);
+    }
+    gpiohs_irq_register(CONFIG_FUNCTION_KEY_GPIOHS_NUM, 2, irq_gpiohs, NULL);
 
     sKey_dir = key_dir;
 
@@ -281,7 +305,7 @@ extern volatile uart_t *const uart[3];
 static uint8_t uart_channel_getchar(uart_device_number_t channel, uint8_t *data)
 {
     /* If received empty */
-    if(!(uart[channel]->LSR & 1))
+    if (!(uart[channel]->LSR & 1))
     {
         return 0;
     }

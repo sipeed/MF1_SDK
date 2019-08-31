@@ -15,25 +15,22 @@
 #include "camera.h"
 #include "lcd.h"
 
-#if CONFIG_LCD_TYPE_ST7789
-#include "lcd_st7789.h"
-#elif CONFIG_LCD_TYPE_SSD1963
-#include "lcd_ssd1963.h"
-#elif CONFIG_LCD_TYPE_SIPEED
-#include "lcd_sipeed.h"
-#endif
 #include "flash.h"
 #include "face_lib.h"
-
+#include "system_config.h"
+#include "global_config.h"
 ///////////////////////////////////////////////////////////////////////////////
 volatile uint8_t g_key_press = 0;
 volatile uint8_t g_key_long_press = 0;
 uint8_t sKey_dir = 0;
 
-volatile board_cfg_t g_board_cfg;
-
 ///////////////////////////////////////////////////////////////////////////////
+#if (CONFIG_CAMERA_GC0328_DUAL)
+uint8_t kpu_image_tmp[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 3] __attribute__((aligned(128)));
+#endif
 
+uint8_t kpu_image[2][CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 3] __attribute__((aligned(128)));
+uint8_t display_image[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2] __attribute__((aligned(64)));
 
 ///////////////////////////////////////////////////////////////////////////////
 static volatile uint8_t g_gpio_flag = 0;
@@ -55,13 +52,13 @@ int irq_gpiohs(void *ctx)
 void update_key_state(void)
 {
     g_key_press = 0;
-    if(g_gpio_flag)
+    if (g_gpio_flag)
     {
         uint64_t v_time_now = sysctl_get_time_us();
 
-        if(v_time_now - g_gpio_time > 10 * 1000) /* press 10 ms  scan qrcode */
+        if (v_time_now - g_gpio_time > 10 * 1000) /* press 10 ms  scan qrcode */
         {
-            if(gpiohs_get_pin(KEY_HS_NUM) == !sKey_dir)
+            if (gpiohs_get_pin(CONFIG_FUNCTION_KEY_GPIOHS_NUM) == !sKey_dir)
             {
                 // printk("key press!\n");
                 g_key_press = 1;
@@ -69,9 +66,9 @@ void update_key_state(void)
             }
         }
 
-        if(v_time_now - g_gpio_time > 2 * 1000 * 1000) /* long press 2s */
+        if (v_time_now - g_gpio_time > 2 * 1000 * 1000) /* long press 2s */
         {
-            if(gpiohs_get_pin(KEY_HS_NUM) == sKey_dir)
+            if (gpiohs_get_pin(CONFIG_FUNCTION_KEY_GPIOHS_NUM) == sKey_dir)
             {
                 g_key_long_press = 1;
                 g_gpio_flag = 0;
@@ -102,10 +99,10 @@ static void io_mux_init(void)
     fpioa_set_function(43, FUNC_CMOS_VSYNC);
 
     /* LCD */
-    fpioa_set_function(LCD_RST_PIN, FUNC_GPIOHS0 + LCD_RST_HS_NUM);
-    fpioa_set_function(LCD_DCX_PIN, FUNC_GPIOHS0 + LCD_DCX_HS_NUM);
-    fpioa_set_function(LCD_WRX_PIN, FUNC_SPI0_SS3);
-    fpioa_set_function(LCD_SCK_PIN, FUNC_SPI0_SCLK);
+    fpioa_set_function(CONFIG_LCD_PIN_RST, FUNC_GPIOHS0 + CONFIG_LCD_GPIOHS_RST);
+    fpioa_set_function(CONFIG_LCD_PIN_DCX, FUNC_GPIOHS0 + CONFIG_LCD_GPIOHS_DCX);
+    fpioa_set_function(CONFIG_LCD_PIN_WRX, FUNC_SPI0_SS3);
+    fpioa_set_function(CONFIG_LCD_PIN_SCK, FUNC_SPI0_SCLK);
 
 #if CONFIG_LCD_TYPE_SIPEED
     fpioa_set_io_driving(LCD_SCK_PIN, FPIOA_DRIVING_7);
@@ -115,39 +112,39 @@ static void io_mux_init(void)
     sysctl_set_spi0_dvp_data(1);
 
     //LCD BL
-    fpioa_set_function(LCD_BL_PIN, FUNC_TIMER1_TOGGLE1);
+    fpioa_set_function(CONFIG_LCD_PIN_BL, FUNC_TIMER1_TOGGLE1);
     pwm_init(TIMER_PWM);
     pwm_set_frequency(TIMER_PWM, TIMER_PWM_CHN, 1000, 0.95); //neg, 1 dark
     pwm_set_enable(TIMER_PWM, TIMER_PWM_CHN, 1);
 
     //IR LED
-    fpioa_set_function(CONFIG_INFRARED_LED_PIN, FUNC_GPIOHS0 + IR_LED_HS_NUM);
-    gpiohs_set_drive_mode(IR_LED_HS_NUM, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(IR_LED_HS_NUM, 1);
+    fpioa_set_function(CONFIG_INFRARED_LED_PIN, FUNC_GPIOHS0 + CONFIG_INFRARED_GPIOHS_NUM);
+    gpiohs_set_drive_mode(CONFIG_INFRARED_GPIOHS_NUM, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_INFRARED_GPIOHS_NUM, 1);
 
     //RGB LED
-    fpioa_set_function(RGB_LED_R_PIN, FUNC_GPIOHS0 + RGB_LED_R_HS_NUM);
-    gpiohs_set_drive_mode(RGB_LED_R_HS_NUM, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(RGB_LED_R_HS_NUM, 1);
+    fpioa_set_function(CONFIG_LED_R_PIN, FUNC_GPIOHS0 + CONFIG_LED_R_GPIOHS_NUM);
+    gpiohs_set_drive_mode(CONFIG_LED_R_GPIOHS_NUM, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_LED_R_GPIOHS_NUM, 1);
 
-    fpioa_set_function(RGB_LED_G_PIN, FUNC_GPIOHS0 + RGB_LED_G_HS_NUM);
-    gpiohs_set_drive_mode(RGB_LED_G_HS_NUM, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(RGB_LED_G_HS_NUM, 1);
+    fpioa_set_function(CONFIG_LED_G_PIN, FUNC_GPIOHS0 + CONFIG_LED_G_GPIOHS_NUM);
+    gpiohs_set_drive_mode(CONFIG_LED_G_GPIOHS_NUM, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_LED_G_GPIOHS_NUM, 1);
 
-    fpioa_set_function(RGB_LED_B_PIN, FUNC_GPIOHS0 + RGB_LED_B_HS_NUM);
-    gpiohs_set_drive_mode(RGB_LED_B_HS_NUM, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(RGB_LED_B_HS_NUM, 1);
+    fpioa_set_function(CONFIG_LED_B_PIN, FUNC_GPIOHS0 + CONFIG_LED_B_GPIOHS_NUM);
+    gpiohs_set_drive_mode(CONFIG_LED_B_GPIOHS_NUM, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_LED_B_GPIOHS_NUM, 1);
 
     //SPI WIFI
-    fpioa_set_function(WIFI_TX_PIN, FUNC_GPIO0 + WIFI_TX_IO_NUM);
-    gpio_set_drive_mode(WIFI_TX_IO_NUM, GPIO_DM_INPUT);
+    fpioa_set_function(CONFIG_WIFI_PIN_TX, FUNC_GPIO0 + CONFIG_WIFI_GPIO_NUM_UART_TX);
+    gpio_set_drive_mode(CONFIG_WIFI_GPIO_NUM_UART_TX, GPIO_DM_INPUT);
 
-    fpioa_set_function(WIFI_RX_PIN, FUNC_GPIO0 + WIFI_RX_IO_NUM);
-    gpio_set_drive_mode(WIFI_RX_IO_NUM, GPIO_DM_INPUT);
+    fpioa_set_function(CONFIG_WIFI_PIN_TX, FUNC_GPIO0 + CONFIG_WIFI_GPIO_NUM_UART_RX);
+    gpio_set_drive_mode(CONFIG_WIFI_GPIO_NUM_UART_RX, GPIO_DM_INPUT);
 
-    fpioa_set_function(WIFI_EN_PIN, FUNC_GPIOHS0 + WIFI_EN_HS_NUM);
-    gpiohs_set_drive_mode(WIFI_EN_HS_NUM, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(WIFI_EN_HS_NUM, 0); //disable WIFI
+    fpioa_set_function(CONFIG_WIFI_PIN_ENABLE, FUNC_GPIOHS0 + CONFIG_WIFI_GPIOHS_NUM_ENABLE);
+    gpiohs_set_drive_mode(CONFIG_WIFI_GPIOHS_NUM_ENABLE, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_WIFI_GPIOHS_NUM_ENABLE, 0); //disable WIFI
 
 #if CONFIG_WIFI_ENABLE
     /*
@@ -158,18 +155,18 @@ static void io_mux_init(void)
       14    |   SCK     |   1
       15    |   SS      |   0
     */
-    gpiohs_set_pin(WIFI_EN_HS_NUM, 1); //enable WIFI
+    gpiohs_set_pin(CONFIG_WIFI_GPIOHS_NUM_ENABLE, 1); //enable WIFI
 
-    fpioa_set_function(WIFI_SPI_CSXX_PIN, FUNC_GPIOHS0 + WIFI_SPI_SS_HS_NUM); //CS
-    fpioa_set_function(WIFI_SPI_MISO_PIN, FUNC_SPI1_D1);                      //MISO
-    fpioa_set_function(WIFI_SPI_MOSI_PIN, FUNC_SPI1_D0);                      //MOSI
-    fpioa_set_function(WIFI_SPI_SCLK_PIN, FUNC_SPI1_SCLK);                    //CLK
+    fpioa_set_function(CONFIG_WIFI_PIN_SPI_CS, FUNC_GPIOHS0 + CONFIG_WIFI_GPIOHS_NUM_CS); //CS
+    fpioa_set_function(CONFIG_WIFI_PIN_SPI_MISO, FUNC_SPI1_D1);                           //MISO
+    fpioa_set_function(CONFIG_WIFI_PIN_SPI_MOSI, FUNC_SPI1_D0);                           //MOSI
+    fpioa_set_function(CONFIG_WIFI_PIN_SPI_SCLK, FUNC_SPI1_SCLK);                         //CLK
 #endif
 }
 ///////////////////////////////////////////////////////////////////////////////
 void set_IR_LED(int state)
 {
-    gpiohs_set_pin(IR_LED_HS_NUM, state);
+    gpiohs_set_pin(CONFIG_INFRARED_GPIOHS_NUM, state);
     return;
 }
 ///////////////////////////////////////////////////////////////////////////////
@@ -178,41 +175,28 @@ uint32_t rgb_state = 0;
 void set_RGB_LED(int state)
 {
     rgb_state = state & 0x07;
-    gpiohs_set_pin(RGB_LED_R_HS_NUM, (rgb_state & RLED) ? 0 : 1);
-    gpiohs_set_pin(RGB_LED_G_HS_NUM, (rgb_state & GLED) ? 0 : 1);
-    gpiohs_set_pin(RGB_LED_B_HS_NUM, (rgb_state & BLED) ? 0 : 1);
+    gpiohs_set_pin(CONFIG_LED_R_GPIOHS_NUM, (rgb_state & RLED) ? 0 : 1);
+    gpiohs_set_pin(CONFIG_LED_G_GPIOHS_NUM, (rgb_state & GLED) ? 0 : 1);
+    gpiohs_set_pin(CONFIG_LED_B_GPIOHS_NUM, (rgb_state & BLED) ? 0 : 1);
     return;
 }
 
 void change_RGB_LED(int led, int state)
 {
-    if(led == RLED)
-        gpiohs_set_pin(RGB_LED_R_HS_NUM, (state & RLED) ? 0 : 1);
-    if(led == GLED)
-        gpiohs_set_pin(RGB_LED_G_HS_NUM, (state & GLED) ? 0 : 1);
-    if(led == BLED)
-        gpiohs_set_pin(RGB_LED_B_HS_NUM, (state & BLED) ? 0 : 1);
-    if(state)
+    if (led == RLED)
+        gpiohs_set_pin(CONFIG_LED_R_GPIOHS_NUM, (state & RLED) ? 0 : 1);
+    if (led == GLED)
+        gpiohs_set_pin(CONFIG_LED_G_GPIOHS_NUM, (state & GLED) ? 0 : 1);
+    if (led == BLED)
+        gpiohs_set_pin(CONFIG_LED_B_GPIOHS_NUM, (state & BLED) ? 0 : 1);
+    if (state)
         rgb_state = rgb_state | led;
     else
         rgb_state = rgb_state & (~led);
     return;
 }
-///////////////////////////////////////////////////////////////////////////////
 
-void get_date_time(void)
-{
-    int year;
-    int month;
-    int day;
-    int hour;
-    int minute;
-    int second;
-    rtc_timer_get(&year, &month, &day, &hour, &minute, &second);
-    // printk("%4d-%02d-%02d %02d:%02d:%02d\n", year, month, day, hour, minute, second);
-}
 ///////////////////////////////////////////////////////////////////////////////
-
 void board_init(void)
 {
     /* Set CPU and dvp clk */
@@ -233,7 +217,16 @@ void board_init(void)
     dvp_set_output_enable(1, 1);
     dvp_set_image_format(DVP_CFG_RGB_FORMAT);
     dvp_set_image_size(CONFIG_CAMERA_RESOLUTION_WIDTH, CONFIG_CAMERA_RESOLUTION_HEIGHT);
-    gc0328_init();
+
+#if CONFIG_CAMERA_OV2640
+    camera_init(CAM_OV2640);
+#elif CONFIG_CAMERA_GC0328_SINGLE
+    camera_init(CAM_GC0328_SINGLE);
+#elif CONFIG_CAMERA_GC0328_DUAL
+    camera_init(CAM_GC0328_DUAL);
+#else
+    printf("unknown camera type!!!\r\n");
+#endif
 
     dvp_set_ai_addr((uint32_t)kpu_image, (uint32_t)(kpu_image + CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT), (uint32_t)(kpu_image + CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2));
     dvp_set_display_addr((uint32_t)display_image);
@@ -243,20 +236,12 @@ void board_init(void)
     /* Flash init */
     flash_init();
 
-    /* RTC init */
-    rtc_init();
-    rtc_timer_set(2019, 5, 1, 12, 00, 00);
-
     /* LCD init */
 #if CONFIG_LCD_TYPE_ST7789
-    lcd_init();
-    lcd_clear(BLUE);
-#elif CONFIG_LCD_TYPE_SSD1963
-    /* CONFIG_LCD_TYPE_SSD1963 */
-    lcd_init(&lcd_480x272_4_3inch);
-    lcd_clear(lcd_color(0x00, 0x00, 0x00)); /* slow */
+    lcd_init(LCD_ST7789);
+    lcd_clear(RED);
 #elif CONFIG_LCD_TYPE_SIPEED
-    lcd_init(); //delay 500ms...
+    printf("unsupport lcd type!!!\r\n");
 #endif
 
     /* DVP interrupt config */
@@ -270,7 +255,7 @@ void board_init(void)
     /* system start */
     dvp_clear_interrupt(DVP_STS_FRAME_START | DVP_STS_FRAME_FINISH);
     dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 1);
-    
+
     return;
 }
 ///////////////////////////////////////////////////////////////////////////////
@@ -303,11 +288,11 @@ static uint32_t my_dvp_set_xclk_rate(uint32_t xclk_rate)
 {
     uint32_t v_apb1_clk = sysctl_clock_get_freq(SYSCTL_CLOCK_APB1);
     uint32_t v_period;
-    if(v_apb1_clk > xclk_rate * 2)
+    if (v_apb1_clk > xclk_rate * 2)
         v_period = round(v_apb1_clk / (xclk_rate * 2.0)) - 1;
     else
         v_period = 0;
-    if(v_period > 255)
+    if (v_period > 255)
         v_period = 255;
     dvp->cmos_cfg &= (~DVP_CMOS_CLK_DIV_MASK);
     dvp->cmos_cfg |= DVP_CMOS_CLK_DIV(v_period) | DVP_CMOS_CLK_ENABLE;

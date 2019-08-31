@@ -1,19 +1,87 @@
 #include "lcd.h"
 
+#include <stddef.h>
+#include <stdio.h>
 
-#if CONFIG_LCD_TYPE_SSD1963
-uint8_t display_image_rgb888[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 3] __attribute__((aligned(64)));
-#endif
-
-#if CONFIG_LCD_TYPE_SIPEED
-uint8_t lcd_image[LCD_W * LCD_H * 2] __attribute__((aligned(64)));
-#endif
+#include "global_config.h"
 
 #if CONFIG_LCD_TYPE_ST7789
-#if LCD_240240
-uint8_t lcd_image[LCD_W * LCD_H * 2] __attribute__((aligned(64)));
-#else
-const uint8_t *lcd_image = display_image;
-#endif
+#include "lcd_st7789.h"
 #endif
 
+static lcd_t lcd = {
+    .dir = 0x0,
+    .width = 0,
+    .height = 0,
+
+    .lcd_config = NULL,
+    .lcd_clear = NULL,
+    .lcd_set_direction = NULL,
+    .lcd_set_area = NULL,
+    .lcd_draw_picture = NULL,
+};
+
+int lcd_set_direction(lcd_dir_t dir)
+{
+    printf("lcd_set_direction: %02X\r\n", dir);
+
+    if (lcd.lcd_set_direction)
+    {
+        lcd.lcd_set_direction(&lcd, dir);
+        return 0;
+    }
+    return 1;
+}
+
+int lcd_set_area(uint16_t x, uint16_t y,
+                 uint16_t w, uint16_t h)
+{
+    if (lcd.lcd_set_area)
+    {
+        lcd.lcd_set_area(&lcd, x, y, w, h);
+        return 0;
+    }
+    return 1;
+}
+
+int lcd_draw_picture(uint16_t x, uint16_t y,
+                     uint16_t w, uint16_t h,
+                     uint32_t *imamge)
+{
+    if (lcd.lcd_draw_picture)
+    {
+        lcd.lcd_draw_picture(&lcd, x, y, w, h, imamge);
+        return 0;
+    }
+    return 1;
+}
+
+int lcd_clear(uint16_t rgb565_color)
+{
+    if (lcd.lcd_clear)
+    {
+        lcd.lcd_clear(&lcd, rgb565_color);
+        return 0;
+    }
+    return 1;
+}
+
+int lcd_init(lcd_type_t lcd_type)
+{
+    switch (lcd_type)
+    {
+#if CONFIG_LCD_TYPE_ST7789
+    case LCD_ST7789:
+    {
+        lcd_st7789_init(&lcd);
+        lcd.lcd_config(&lcd);
+        return 0;
+    }
+    break;
+#endif
+    case LCD_SIPEED:
+    default:
+        break;
+    }
+    return 1;
+}
