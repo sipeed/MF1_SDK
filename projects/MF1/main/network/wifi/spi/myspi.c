@@ -23,8 +23,8 @@ void my_spi_init(void)
 {
     printk("hard spi\r\n");
     //cs
-    gpiohs_set_drive_mode(WIFI_SPI_SS_HS_NUM, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(WIFI_SPI_SS_HS_NUM, 1);
+    gpiohs_set_drive_mode(CONFIG_WIFI_GPIOHS_NUM_CS, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_WIFI_GPIOHS_NUM_CS, 1);
     //init SPI_DEVICE_1
     spi_init(SPI_DEVICE_1, SPI_WORK_MODE_1, SPI_FF_STANDARD, 8, 0);
     printk("set spi clk:%d\r\n", spi_set_clk_rate(SPI_DEVICE_1, 1000000 * 8)); /*set clk rate*/
@@ -32,12 +32,12 @@ void my_spi_init(void)
 
 void my_spi_cs_set(void)
 {
-    gpiohs_set_pin(WIFI_SPI_SS_HS_NUM, GPIO_PV_HIGH);
+    gpiohs_set_pin(CONFIG_WIFI_GPIOHS_NUM_CS, GPIO_PV_HIGH);
 }
 
 void my_spi_cs_clr(void)
 {
-    gpiohs_set_pin(WIFI_SPI_SS_HS_NUM, GPIO_PV_LOW);
+    gpiohs_set_pin(CONFIG_WIFI_GPIOHS_NUM_CS, GPIO_PV_LOW);
 }
 
 uint8_t my_spi_rw(uint8_t data)

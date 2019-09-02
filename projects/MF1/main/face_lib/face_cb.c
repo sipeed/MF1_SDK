@@ -61,7 +61,7 @@ void face_cb_init(void)
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 #if (CONFIG_LCD_WIDTH == 240)
-static void convert_320x240_to_240x240(uint8_t *img_320, uint16_t x_offset)
+void convert_320x240_to_240x240(uint8_t *img_320, uint16_t x_offset)
 {
     for (uint8_t i = 0; i < 240; i++)
     {
@@ -69,6 +69,28 @@ static void convert_320x240_to_240x240(uint8_t *img_320, uint16_t x_offset)
     }
 }
 #endif
+
+void lcd_display_image_alpha(uint32_t pic_addr, uint32_t alpha)
+{
+    lcd_dis_t *lcd_dis = lcd_dis_list_add_pic(255, 1, pic_addr, alpha, DisImageX_Off, DisImageY_Off, 240, 240);
+
+    if (lcd_dis)
+    {
+        lcd_dis_list_display(pDisImage, DisImage_W, DisImage_H, lcd_dis);
+        lcd_dis_list_del_by_id(255);
+    }
+    else
+    {
+        image_rgb565_draw_string(pDisImage, "NO MEMRORY...", DisX_Off, DisY_Off, WHITE, NULL, DisImage_W);
+    }
+
+#if (CONFIG_LCD_WIDTH == 240)
+    convert_320x240_to_240x240(display_image, LCD_OFT);
+#endif
+
+    lcd_draw_picture(0, 0, DisLcd_W, DisLcd_H, (uint32_t *)pDisImage);
+    return;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -129,23 +151,7 @@ void lcd_refresh_cb(void)
 ///////////////////////////////////////////////////////////////////////////////
 void lcd_draw_pass(void)
 {
-    lcd_dis_t *lcd_dis = lcd_dis_list_add_pic(255, 1, IMG_FACE_PASS_ADDR, 128, DisImageX_Off, DisImageY_Off, 240, 240);
-
-    if (lcd_dis)
-    {
-        lcd_dis_list_display(pDisImage, DisImage_W, DisImage_H, lcd_dis);
-        lcd_dis_list_del_by_id(255);
-    }
-    else
-    {
-        image_rgb565_draw_string(pDisImage, "Face Pass...", DisX_Off, DisY_Off, WHITE, NULL, DisImage_W);
-    }
-
-#if (CONFIG_LCD_WIDTH == 240)
-    convert_320x240_to_240x240(display_image, LCD_OFT);
-#endif
-
-    lcd_draw_picture(0, 0, DisLcd_W, DisLcd_H, (uint32_t *)pDisImage);
+    lcd_display_image_alpha(IMG_FACE_PASS_ADDR, 80);
 
     face_lib_draw_flag = 1;
     set_RGB_LED(RLED);
@@ -216,22 +222,7 @@ void detected_face_cb(face_recognition_ret_t *face)
                     break;
                 }
 
-                lcd_dis_t *lcd_dis = lcd_dis_list_add_pic(255, 1, IMG_RECORD_FACE_ADDR, 128, DisImageX_Off, DisImageY_Off, 240, 240);
-                if (lcd_dis)
-                {
-                    lcd_dis_list_display(pDisImage, DisImage_W, DisImage_H, lcd_dis);
-                    lcd_dis_list_del_by_id(255);
-                }
-                else
-                {
-                    image_rgb565_draw_string(pDisImage, "Recording Face...", DisX_Off, DisY_Off, WHITE, NULL, DisImage_W);
-                }
-
-#if (CONFIG_LCD_WIDTH == 240)
-                convert_320x240_to_240x240(display_image, LCD_OFT);
-#endif
-
-                lcd_draw_picture(0, 0, DisLcd_W, DisLcd_H, (uint32_t *)pDisImage);
+                lcd_display_image_alpha(IMG_RECORD_FACE_ADDR, 128);
 
                 face_lib_draw_flag = 1;
                 set_RGB_LED(GLED);

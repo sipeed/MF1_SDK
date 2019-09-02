@@ -140,6 +140,6 @@ typedef struct _jpeg_encode
 
 bool jpeg_compress(jpeg_encode_t *src, jpeg_encode_t *dst, int quality, bool realloc);
 
-uint8_t reverse_u32pixel(uint32_t *addr, uint32_t length);
+// uint8_t reverse_u32pixel(uint32_t *addr, uint32_t length);
 
 #endif

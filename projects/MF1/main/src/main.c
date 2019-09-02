@@ -226,18 +226,18 @@ int main(void)
 
     if (strlen(g_board_cfg.wifi_ssid) > 0 && strlen(g_board_cfg.wifi_passwd) >= 8)
     {
-        display_lcd_img_addr(IMG_CONNING_ADDR);
+        lcd_display_image_alpha(IMG_CONNING_ADDR, 0);
         g_net_status = spi_8266_connect_ap(g_board_cfg.wifi_ssid, g_board_cfg.wifi_passwd, 2);
         if (g_net_status)
         {
-            display_lcd_img_addr(IMG_CONN_SUCC_ADDR);
+            lcd_display_image_alpha(IMG_CONN_SUCC_ADDR, 0);
 #if CONFIG_NET_DEMO_MQTT
             spi_8266_mqtt_init();
 #endif
         }
         else
         {
-            display_lcd_img_addr(IMG_CONN_FAILED_ADDR);
+            lcd_display_image_alpha(IMG_CONN_FAILED_ADDR, 0);
             printk("wifi config maybe error,we can not connect to it!\r\n");
         }
     }
@@ -289,7 +289,7 @@ int main(void)
                     {
                         convert_jpeg_img_order(jpeg);
 
-                        lcd_draw_picture(0, 0, LCD_W, LCD_H, (uint32_t *)jpeg->img_data);
+                        lcd_draw_picture(0, 0, 240, 240, (uint32_t *)jpeg->img_data);
                     }
                 }
 #if CONFIG_NET_DEMO_HTTP_POST
@@ -334,7 +334,19 @@ int main(void)
                 ;
         }
 
-        lcd_draw_string(0, 0, "please touch key", RED);
+        printf("should config wifi ssid and passwd \r\n");
+
+        if (!qrcode_get_info_flag)
+        {
+            memset(display_image, 0, sizeof(display_image));
+            image_rgb565_draw_string(display_image, "TOUCH KEY TO CONFIG WiFi...", 40, 0, RED, NULL, 320);
+#if (CONFIG_LCD_WIDTH == 240)
+            convert_320x240_to_240x240(display_image, 40);
+            lcd_draw_picture(0, 0, 240, 240, (uint32_t *)display_image);
+#else
+            lcd_draw_picture(0, 0, 320, 240, (uint32_t *)display_image);
+#endif
+        }
 #else
         /* if rcv jpg or scan qrcode, will stuck a period */
         if (!jpeg_recv_start_flag && !qrcode_get_info_flag)
@@ -366,12 +378,6 @@ int main(void)
             while (!g_dvp_finish_flag)
                 ;
 
-                /* here display pic */
-#if CONFIG_LCD_TYPE_ST7789
-            display_fit_lcd_with_alpha(IMG_SCAN_QR_ADDR, lcd_image, 160);
-            lcd_draw_picture(0, 0, LCD_W, LCD_H, (uint32_t *)lcd_image); //7.5ms
-#endif
-
             qr_wifi_info_t *wifi_info = qrcode_get_wifi_cfg();
             if (NULL == wifi_info)
             {
@@ -394,11 +400,11 @@ int main(void)
                     }
 
                     //connect to network
-                    display_lcd_img_addr(IMG_CONNING_ADDR);
+                    lcd_display_image_alpha(IMG_CONNING_ADDR, 0);
                     g_net_status = spi_8266_connect_ap(wifi_info->ssid, wifi_info->passwd, 2);
                     if (g_net_status)
                     {
-                        display_lcd_img_addr(IMG_CONN_SUCC_ADDR);
+                        lcd_display_image_alpha(IMG_CONN_SUCC_ADDR, 0);
                         spi_8266_mqtt_init();
                         memcpy(g_board_cfg.wifi_ssid, wifi_info->ssid, 32);
                         memcpy(g_board_cfg.wifi_passwd, wifi_info->passwd, 32);
@@ -409,7 +415,7 @@ int main(void)
                     }
                     else
                     {
-                        display_lcd_img_addr(IMG_CONN_FAILED_ADDR);
+                        lcd_display_image_alpha(IMG_CONN_FAILED_ADDR, 0);
                         printk("wifi config maybe error,we can not connect to it!\r\n");
                     }
                     qrcode_get_info_flag = 0;
@@ -424,7 +430,7 @@ int main(void)
                 {
                     printk("scan qrcode timeout\r\n");
                     /* here display pic */
-                    display_lcd_img_addr(IMG_QR_TIMEOUT_ADDR);
+                    lcd_display_image_alpha(IMG_QR_TIMEOUT_ADDR, 0);
                     qrcode_get_info_flag = 0;
                 }
                 break;
@@ -435,6 +441,9 @@ int main(void)
                 free(wifi_info);
             }
 
+            /* here display pic */
+            lcd_display_image_alpha(IMG_SCAN_QR_ADDR, 160);
+
             g_dvp_finish_flag = 0;
         }
 #endif /* CONFIG_KEY_SHORT_QRCODE */
@@ -444,20 +453,6 @@ int main(void)
             g_key_long_press = 0;
             /* key long press */
             printk("key long press\r\n");
-#if CONFIG_LONG_PRESS_FUNCTION_KEY_CLEAR_FEATURE
-            printk("Del All feature!\n");
-            flash_delete_face_all();
-#if CONFIG_LCD_TYPE_ST7789
-
-#elif CONFIG_LCD_TYPE_SSD1963
-#define LCD_OFT ((CONFIG_CAMERA_RESOLUTION_WIDTH - LCD_W) / 2)
-            lcd_draw_string(LCD_OFT, CONFIG_CAMERA_RESOLUTION_HEIGHT - 16, "Del All feature!", lcd_color(0xff, 0, 0));
-#endif
-            set_RGB_LED(RLED);
-            msleep(500);
-            msleep(500);
-            set_RGB_LED(0);
-#endif
 
 #if CONFIG_LONG_PRESS_FUNCTION_KEY_RESTORE
             /* set cfg to default */
@@ -473,6 +468,17 @@ int main(void)
                 printk("save board_cfg failed!\r\n");
             }
             /* set cfg to default end */
+#if CONFIG_LONG_PRESS_FUNCTION_KEY_CLEAR_FEATURE
+            printk("Del All feature!\n");
+            flash_delete_face_all();
+#endif
+            char *str_del = (char *)malloc(sizeof(char) * 32);
+            sprintf(str_del, "Factory Reset...");
+            if (lcd_dis_list_add_str(1, 1, str_del, 40, CONFIG_LCD_WIDTH - 16, RED, 1) == NULL)
+            {
+                printf("add dis str failed\r\n");
+            }
+            delay_flag = 1;
 #endif
         }
 

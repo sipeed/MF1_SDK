@@ -235,10 +235,15 @@ static void image_rgb565_ram_draw_char(uint32_t *ptr, char c,
     uint8_t i, j, data;
     uint16_t *addr;
 
+    if (c < ' ' || c > '~')
+    {
+        return;
+    }
+
     for (i = 0; i < 16; i++)
     {
         addr = ((uint16_t *)ptr) + y * (img_w + 0) + x;
-        data = ascii0816[c * 16 + i];
+        data = ascii0816[c - ' '][i];
         for (j = 0; j < 8; j++)
         {
             if (data & 0x80)

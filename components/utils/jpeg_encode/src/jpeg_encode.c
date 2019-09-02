@@ -1038,7 +1038,7 @@ void jpeg_get_mcu(jpeg_encode_t *img, int mcu_w, int mcu_h, int x_offs, int y_of
     }
 }
 
-uint8_t reverse_u32pixel(uint32_t *addr, uint32_t length)
+static uint8_t reverse_u32pixel(uint32_t *addr, uint32_t length)
 {
     if (NULL == addr)
         return -1;
@@ -1145,6 +1145,8 @@ bool jpeg_compress(jpeg_encode_t *src, jpeg_encode_t *dst, int quality, bool rea
         .overflow = false,
     };
 
+    reverse_u32pixel(src->data,(src->w*src->h)/2);
+
     // Initialize quantization tables
     jpeg_init(quality);
     jpeg_subsample_t jpeg_subsample;
@@ -1233,6 +1235,7 @@ bool jpeg_compress(jpeg_encode_t *src, jpeg_encode_t *dst, int quality, bool rea
                 }
                 if (jpeg_buf.overflow)
                 {
+                    printf("%d\r\n",__LINE__);
                     goto jpeg_overflow;
                 }
             }
@@ -1530,6 +1533,7 @@ bool jpeg_compress(jpeg_encode_t *src, jpeg_encode_t *dst, int quality, bool rea
     dst->data = jpeg_buf.buf;
 
 jpeg_overflow:
+    reverse_u32pixel(src->data,(src->w*src->h)/2);
     return jpeg_buf.overflow;
 }
 

@@ -3027,6 +3027,22 @@ static void dump_info(struct quirc *q)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+static void qrcode_convert_image(qrcode_image_t *img)
+{
+    uint16_t t[2];
+    uint16_t *ptr = img->data;
+
+    for (uint32_t i = 0; i < (img->w * img->h); i += 2)
+    {
+        t[0] = *(ptr + 1);
+        t[1] = *(ptr);
+        *(ptr) = SWAP_16(t[0]);
+        *(ptr + 1) = SWAP_16(t[1]);
+        ptr += 2;
+    }
+    return;
+}
+
 uint8_t find_qrcodes(qrcode_result_t *out, qrcode_image_t *img)
 {
     uint8_t qrcode_num = 0;
@@ -3039,17 +3055,7 @@ uint8_t find_qrcodes(qrcode_result_t *out, qrcode_image_t *img)
     memcpy(grayscale_image, img, width * height);
 #else
     //摄像头的图像需要交换16BIt高低8位
-    uint16_t t[2];
-    uint16_t *ptr = img->data;
-
-    for (uint32_t i = 0; i < (img->w * img->h); i += 2)
-    {
-        t[0] = *(ptr + 1);
-        t[1] = *(ptr);
-        *(ptr) = SWAP_16(t[0]);
-        *(ptr + 1) = SWAP_16(t[1]);
-        ptr += 2;
-    }
+    qrcode_convert_image(img);
 
     for (int y = 0, yy = img->h; y < yy; y++)
     {
@@ -3113,5 +3119,7 @@ uint8_t find_qrcodes(qrcode_result_t *out, qrcode_image_t *img)
     dump_info(controller);
     quirc_destroy(controller);
 
+    //如果不转换，显示图像就不正确了。
+    qrcode_convert_image(img);
     return qrcode_num;
 }

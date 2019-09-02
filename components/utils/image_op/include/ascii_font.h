@@ -3,6 +3,6 @@
 
 #include <stdint.h>
 
-extern uint8_t ascii0816[];
+extern const char ascii0816[95][16];
 
 #endif
