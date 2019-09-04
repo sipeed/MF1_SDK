@@ -228,8 +228,8 @@ void image_rgb565_draw_edge(uint32_t *gram,
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //取模方式： 阴码，逐列式，顺向
-static void image_rgb565_ram_draw_font_mat(uint16_t *ptr, uint8_t *font_mat, uint8_t zhCN,
-                                           uint8_t size,
+static void image_rgb565_ram_draw_font_mat(uint16_t *ptr, uint8_t zhCN,
+                                           uint8_t *font_mat, uint8_t size,
                                            uint16_t x, uint16_t y,
                                            uint16_t color, uint16_t *bg_color,
                                            uint16_t img_w)
@@ -292,10 +292,10 @@ static void image_rgb565_ram_draw_char(uint16_t *ptr, char c, uint8_t size,
     switch (size)
     {
     case 16:
-        image_rgb565_ram_draw_font_mat(ptr, ascii0816 + (offset * 16), size, 0, x, y, color, bg_color, img_w);
+        image_rgb565_ram_draw_font_mat(ptr, 0, ascii0816 + (offset * 16), size, x, y, color, bg_color, img_w);
         break;
     case 32:
-        image_rgb565_ram_draw_font_mat(ptr, ascii_1632 + (offset * 64), size, 0, x, y, color, bg_color, img_w);
+        image_rgb565_ram_draw_font_mat(ptr, 0, ascii_1632 + (offset * 64), size, x, y, color, bg_color, img_w);
         break;
     default:
         break;
@@ -360,7 +360,7 @@ static void image_rgb565_draw_zhCN_char(uint16_t *ptr, uint8_t *zhCN_char, uint8
         get_font_data(zhCN_char, zhCN_dat, size);
     }
 
-    image_rgb565_ram_draw_font_mat(ptr, zhCN_dat, size, 1, x, y, color, bg_color, img_w);
+    image_rgb565_ram_draw_font_mat(ptr, 1, zhCN_dat, size, x, y, color, bg_color, img_w);
 
     return;
 }
