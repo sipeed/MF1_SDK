@@ -2,7 +2,7 @@
 
 #include "board.h"
 #include "face_lib.h"
-
+#include "lcd.h"
 #include "system_config.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -127,11 +127,12 @@ static int protocol_port_recv_cb(void *ctx)
 int8_t protocol_init_device(board_cfg_t *brd_cfg)
 {
     //set lcd and cam dir
-#if !IR_BOARD
-    uint8_t lcd_dir = 0x20;
-#else
+#if(CONFIG_DETECT_VERTICAL || CONFI_SINGLE_CAMERA)
     uint8_t lcd_dir = 0x00;
+#else
+    uint8_t lcd_dir = 0x20;
 #endif
+
     uint8_t lcd_v, lcd_h, cam_v, cam_h;
 
     cam_h = (brd_cfg->lcd_cam_dir & 1);
@@ -142,10 +143,17 @@ int8_t protocol_init_device(board_cfg_t *brd_cfg)
     lcd_dir |= (lcd_h << 7);
     lcd_dir |= (lcd_v << 6);
 
-#if !IR_BOARD
+    //31-4 3        2       1       0
+    //---- lcd_v    lcd_h   cam_v   cam_h
+
+    /* lcd dir */
+    //  7   6   5   4   3   2   1   0
+    //  MY  MX  MV  ML  RGB MH  -   -
+
     lcd_set_direction(lcd_dir);
-    ov2640_set_hmirror_vflip(cam_h, cam_v);
-#endif
+
+    camera_set_hmirror(cam_h);
+    camera_set_vflip(cam_v);
 
     /*load cfg from flash end*/
     init_board_uart_port(brd_cfg->port_cfg);

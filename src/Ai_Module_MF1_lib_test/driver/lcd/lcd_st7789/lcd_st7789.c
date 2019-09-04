@@ -1,26 +1,9 @@
-/* Copyright 2018 Canaan Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-#include <string.h>
-#include <unistd.h>
-#include "../font.h"
 #include "lcd_st7789.h"
 
-#include "nt35310.h"
-#include "stdio.h"
+#include "sleep.h"
 
-#if CONFIG_LCD_TYPE_ST7789
+#include "nt35310.h"
+
 /* clang-format off */
 #define NO_OPERATION            0x00
 #define SOFTWARE_RESET          0x01
@@ -100,9 +83,7 @@
 #define INTERFACE_CTL           0xF6
 /* clang-format on */
 
-static lcd_ctl_t lcd_ctl;
-
-void lcd_init(void)
+static int lcd_st7789_config(lcd_t *lcd)
 {
     uint8_t data = 0;
 
@@ -117,104 +98,104 @@ void lcd_init(void)
     tft_write_command(PIXEL_FORMAT_SET);
     data = 0x05;
     tft_write_byte(&data, 1);
-
-#if LCD_320240
-    lcd_set_direction(DIR_YX_LRDU);
-#endif
-
 #if LCD_240240
-#if LCD_ROTATE
-    lcd_set_direction(DIR_XY_RLUD);
-#else
-    lcd_set_direction(DIR_YX_LRUD);
-#endif
-
     tft_write_command(INVERSION_DISPALY_ON);
+#endif
     tft_write_command(WRITE_BRIGHTNESS_CTL); //CACB
     data = 0xb3;
     tft_write_byte(&data, 1);
     tft_write_command(WRITE_MIN_BRIGHTNESS);
     data = 0x80;
     tft_write_byte(&data, 1);
-#endif
-
     tft_write_command(DISPALY_ON);
 }
 
-void lcd_set_direction(lcd_dir_t dir)
+static int lcd_st7789_clear(lcd_t *lcd, uint16_t rgb565_color)
+{
+    uint32_t data = ((uint32_t)rgb565_color << 16) | (uint32_t)rgb565_color;
+
+    lcd->lcd_set_area(lcd, 0, 0, lcd->width, lcd->height);
+    tft_fill_data(&data, lcd->width * lcd->height / 2);
+}
+
+static int lcd_st7789_set_direction(lcd_t *lcd, lcd_dir_t dir)
 {
     uint16_t tmp = 0;
 
-    lcd_ctl.dir = dir;
+    lcd->dir = dir;
     if(dir & DIR_XY_MASK)
     {
-        lcd_ctl.width = LCD_Y_MAX - 1;
-        lcd_ctl.height = LCD_X_MAX - 1;
-        if(lcd_ctl.width < lcd_ctl.height)
+        if(lcd->width < lcd->height)
         {
-            tmp = lcd_ctl.width;
-            lcd_ctl.width = lcd_ctl.height;
-            lcd_ctl.height = tmp;
+            tmp = lcd->width;
+            lcd->width = lcd->height;
+            lcd->height = tmp;
         }
     } else
     {
-        lcd_ctl.width = LCD_X_MAX - 1;
-        lcd_ctl.height = LCD_Y_MAX - 1;
-        if(lcd_ctl.width > lcd_ctl.height)
+        if(lcd->width > lcd->height)
         {
-            tmp = lcd_ctl.width;
-            lcd_ctl.width = lcd_ctl.height;
-            lcd_ctl.height = tmp;
+            tmp = lcd->width;
+            lcd->width = lcd->height;
+            lcd->height = tmp;
         }
     }
     tft_write_command(MEMORY_ACCESS_CTL);
     tft_write_byte((uint8_t *)&dir, 1);
 }
 
-void lcd_set_area(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
+static int lcd_st7789_set_area(lcd_t *lcd,
+                               uint16_t x, uint16_t y,
+                               uint16_t w, uint16_t h)
 {
     uint8_t data[4] = {0};
-    uint16_t ly1, ly2;
 
-    data[0] = (uint8_t)(x1 >> 8);
-    data[1] = (uint8_t)(x1);
-    data[2] = (uint8_t)(x2 >> 8);
-    data[3] = (uint8_t)(x2);
+    data[0] = (uint8_t)(x >> 8);
+    data[1] = (uint8_t)(x);
+    data[2] = (uint8_t)((x + w - 1) >> 8);
+    data[3] = (uint8_t)((x + w - 1));
     tft_write_command(HORIZONTAL_ADDRESS_SET);
     tft_write_byte(data, 4);
 
-    ly1 = y1;
-    ly2 = y2;
+    // if(lcd->dir & 0x80)
+    // {
+    //     y += 80;
+    // }
 
-    // #if LCD_240240
-    // #if LCD_ROTATE
-    //     ly1 += 80;
-    //     ly2 += 80;
-    // #endif
-    // #endif
-
-    data[0] = (uint8_t)(ly1 >> 8);
-    data[1] = (uint8_t)(ly1);
-    data[2] = (uint8_t)(ly2 >> 8);
-    data[3] = (uint8_t)(ly2);
+    data[0] = (uint8_t)(y >> 8);
+    data[1] = (uint8_t)(y);
+    data[2] = (uint8_t)((y + h - 1) >> 8);
+    data[3] = (uint8_t)((y + h - 1));
     tft_write_command(VERTICAL_ADDRESS_SET);
     tft_write_byte(data, 4);
 
     tft_write_command(MEMORY_WRITE);
 }
 
-void lcd_clear(uint16_t color)
+static int lcd_st7789_draw_picture(lcd_t *lcd,
+                                   uint16_t x, uint16_t y,
+                                   uint16_t w, uint16_t h,
+                                   uint32_t *imamge)
 {
-    uint32_t data = ((uint32_t)color << 16) | (uint32_t)color;
-
-    lcd_set_area(0, 0, lcd_ctl.width, lcd_ctl.height);
-    tft_fill_data(&data, LCD_X_MAX * LCD_Y_MAX / 2);
+    lcd->lcd_set_area(lcd, x, y, w, h);
+    tft_write_word(imamge, w * h / 2, 0);
 }
 
-void lcd_draw_picture(uint16_t x1, uint16_t y1, uint16_t width, uint16_t height, uint32_t *ptr)
+int lcd_st7789_init(lcd_t *lcd)
 {
-    lcd_set_area(x1, y1, x1 + width - 1, y1 + height - 1);
-    tft_write_word(ptr, width * height / 2, 0);
-}
+    lcd->dir = 0x0;
 
+#if LCD_240240
+    lcd->width = 240;
+    lcd->height = 240;
+#else
+    lcd->width = 320;
+    lcd->height = 240;
 #endif
+
+    lcd->lcd_config = lcd_st7789_config;
+    lcd->lcd_clear = lcd_st7789_clear;
+    lcd->lcd_set_direction = lcd_st7789_set_direction;
+    lcd->lcd_set_area = lcd_st7789_set_area;
+    lcd->lcd_draw_picture = lcd_st7789_draw_picture;
+}

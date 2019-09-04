@@ -19,26 +19,24 @@
 #include "syscalls.h"
 #include "utils.h"
 
-#include "bsp.h"
 #include "dmac.h"
 #include "dvp.h"
-#include "flash.h"
 #include "fpioa.h"
 #include "gpiohs.h"
 #include "i2c.h"
 #include "plic.h"
 #include "printf.h"
+#include "sha256.h"
 #include "sysctl.h"
 
 #include "base64.h"
+#include "board.h"
 #include "cJSON.h"
+#include "camera.h"
+#include "flash.h"
+#include "lcd.h"
 #include "picojpeg.h"
 #include "picojpeg_util.h"
-#include "sha256.h"
-
-#include "board.h"
-
-#include "system_config.h"
 
 /* clang-format off */
 #define DBG_TIME_INIT()
@@ -141,6 +139,8 @@ typedef struct
     void (*pass_face_cb)(face_recognition_ret_t *face, uint8_t ir_check);
 
     void (*lcd_refresh_cb)(void);
+
+    void (*lcd_convert_cb)(void);
 } face_lib_callback_t;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -162,7 +162,6 @@ float face_lib_compare_score(int8_t *feature0, int8_t *feature1);
 ///////////////////////////////////////////////////////////////////////////////
 /* uart protocol */
 /* clang-format off */
-#define IR_BOARD                (1)
 #define PROTOCOL_BUF_LEN        (3 * 1024)
 #define JPEG_BUF_LEN            (30 * 1024) //jpeg max 30K
 /* clang-format on */
@@ -189,6 +188,7 @@ typedef struct
     void (*cmd_cb)(cJSON *root);
 } protocol_custom_cb_t;
 
+#include "image_op.h"
 #include "uart_recv.h"
 
 uint8_t protocol_send_init_done(void);
@@ -232,7 +232,8 @@ w25qxx_status_t my_w25qxx_read_data(uint32_t addr, uint8_t *data_buf, uint32_t l
 ///////////////////////////////////////////////////////////////////////////////
 /* camera */
 int dvp_irq(void *ctx);
-int gc0328_init(void); //sleep time in ms
+int gc0328_dual_init(camera_t *camera);
+int gc0328_single_init(camera_t *camera);
 void open_gc0328_650();
 extern volatile uint8_t g_dvp_finish_flag;
 ///////////////////////////////////////////////////////////////////////////////

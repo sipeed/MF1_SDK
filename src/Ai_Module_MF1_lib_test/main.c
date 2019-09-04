@@ -1,24 +1,13 @@
-#include "face_lib.h"
-
-#include "version.h"
-
-#include "ff.h"
-
 #include "face_cb.h"
-#include "sd_op.h"
-
-#include "image_op.h"
-#include "lcd_dis.h"
-
-#include "net_8285.h"
-
-#if CONFIG_LCD_TYPE_ST7789
-#include "lcd_st7789.h"
-#elif CONFIG_LCD_TYPE_SIPEED
-#include "lcd_sipeed.h"
-#endif
-
+#include "face_lib.h"
+#include "ff.h"
 #include "http_file.h"
+#include "image_op.h"
+#include "lcd.h"
+#include "lcd_dis.h"
+#include "net_8285.h"
+#include "sd_op.h"
+#include "version.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 static uint64_t last_open_relay_time_in_s = 0;
@@ -43,6 +32,7 @@ face_lib_callback_t face_recognition_cb = {
     .fake_face_cb = fake_face_cb,
     .pass_face_cb = pass_face_cb,
     .lcd_refresh_cb = lcd_refresh_cb,
+    .lcd_convert_cb = lcd_convert_cb,
 };
 
 static void uart_send(char *buf, size_t len)
@@ -461,14 +451,16 @@ int main(void)
             printk("Del All feature!\n");
             flash_delete_face_all();
 #if CONFIG_LCD_TYPE_ST7789
-
+            char *str_del = (char *)malloc(sizeof(char) * 32);
+            sprintf(str_del, "Factory Reset...");
+            if(lcd_dis_list_add_str(1, 1, str_del, LCD_OFT, LCD_W - 16, RED, 1) == NULL)
+            {
+                printf("add dis str failed\r\n");
+            }
+            delay_flag = 1;
 #elif CONFIG_LCD_TYPE_SSD1963
             lcd_draw_string(LCD_OFT, IMG_H - 16, "Del All feature!", lcd_color(0xff, 0, 0));
 #endif
-            set_RGB_LED(RLED);
-            msleep(500);
-            msleep(500);
-            set_RGB_LED(0);
 #endif
 
 #if CONFIG_KEY_LONG_RESTORE

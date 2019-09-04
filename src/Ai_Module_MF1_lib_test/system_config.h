@@ -9,6 +9,8 @@
 #define IMG_W                               (320)
 #define IMG_H                               (240)
 
+#define CONFI_SINGLE_CAMERA                 (1)
+#define CONFIG_DETECT_VERTICAL              (0)
 ///////////////////////////////////////////////////////////////////////////////
 #define CONFIG_LCD_TYPE_ST7789              (1)
 #define CONFIG_LCD_TYPE_SSD1963             (0)
@@ -55,26 +57,22 @@
 #if CONFIG_LCD_TYPE_ST7789
 #define LCD_240240                           (1)
 #define LCD_320240                           (0)
-#define LCD_ROTATE                           (1)
 
+#if LCD_240240
+#define LCD_ROTATE                           (1)
 #define LCD_W                                (240)
 #define LCD_H                                (240)
-#elif CONFIG_LCD_TYPE_SSD1963
-#define LCD_240240                            ()
-#define LCD_320240                            ()
-#define LCD_ROTATE                            ()
-
-#define LCD_W                                 ()
-#define LCD_H                                 ()
+#define LCD_OFT                              (40)
+#elif LCD_320240
+#define LCD_W                                (320)
+#define LCD_H                                (240)
+#endif
 #elif CONFIG_LCD_TYPE_SIPEED
 #define LCD_W                                (402)
 #define LCD_H                                (240)
-
 #define DAT_W                                (240)
 #define DAT_H                                (240)
 #endif
-
-#define LCD_OFT                               (40)
 ///////////////////////////////////////////////////////////////////////////////
 
 #if 1 /* MF1 */
@@ -194,10 +192,11 @@
 #define IMG_CONN_SUCC_ADDR                          (IMG_RECORD_FACE_ADDR + (116 * 1024 * 4))
 #define IMG_SCAN_QR_ADDR                            (IMG_RECORD_FACE_ADDR + (116 * 1024 * 5))
 #define IMG_QR_TIMEOUT_ADDR                         (IMG_RECORD_FACE_ADDR + (116 * 1024 * 6))
+#define IMG_QR_ERROR_ADDR                           (IMG_RECORD_FACE_ADDR + (116 * 1024 * 7))
+
 ///////////////////////////////////////////////////////////////////////////////
 // AUDIO DATA
-#define AUDIO_DATA_ADDR                             (0xE00000) 
-
+#define AUDIO_DATA_ADDR                             (0xE00000)
 
 /* clang-format on */
 

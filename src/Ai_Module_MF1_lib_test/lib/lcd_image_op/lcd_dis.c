@@ -55,7 +55,11 @@ static void lcd_dis_list_draw_pic(uint8_t *image, uint16_t img_w, uint16_t img_h
     img_src.y = 0;
 
     uint32_t img_size = dis_pic->w * dis_pic->h * 2;
+#if CONFI_SINGLE_CAMERA
+    img_dst.img_addr = (uint16_t *)kpu_image[1];
+#else
     img_dst.img_addr = (uint16_t *)kpu_image_tmp;
+#endif
     img_dst.x = dis_pic->x;
     img_dst.y = dis_pic->y;
     img_dst.w = dis_pic->w;

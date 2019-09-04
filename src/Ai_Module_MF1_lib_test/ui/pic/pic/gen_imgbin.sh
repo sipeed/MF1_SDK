@@ -28,7 +28,7 @@ then
 fi
 
 #compress bin to kfpkg
-zip pic.kfpkg flash-list.json 0.bin 1.bin 2.bin 3.bin 4.bin 5.bin 6.bin
+zip pic.kfpkg flash-list.json 0.bin 1.bin 2.bin 3.bin 4.bin 5.bin 6.bin 7.bin
 
 if [ "$1" ] ;then
     echo "merge kfpkg"

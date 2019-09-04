@@ -132,7 +132,7 @@ void image_r8g8b8_roate_left90(uint8_t *out, uint8_t *src, uint16_t w, uint16_t 
 void face_obj_info_roate_right_90(face_obj_info_t *face_obj, uint16_t w, uint16_t h)
 {
     face_obj_t *obj = NULL;
-    uint16_t x1, y1, x2, y2;
+    int16_t x1, y1, x2, y2;
 
     for(uint32_t i = 0; i < (face_obj->obj_number); i++)
     {
@@ -145,15 +145,17 @@ void face_obj_info_roate_right_90(face_obj_info_t *face_obj, uint16_t w, uint16_
         y2 = obj->y2;
 
         //roate right 90
-        obj->x1 = h - 1 - y2;
+        obj->x1 = (((int)(h - 1 - y2)) < 0) ? 0 : (h - 1 - y2);
         obj->y1 = x1;
-        obj->x2 = h - 1 - y1;
+        obj->x2 = (((int)(h - 1 - y1)) < 0) ? 0 : (h - 1 - y1);
         obj->y2 = x2;
     }
 }
 
 void face_obj_info_roate_left_90(face_obj_info_t *face_obj, uint16_t w, uint16_t h)
 {
+    // can not run
+    return;
     face_obj_t *obj = NULL;
     uint16_t x1, y1, x2, y2;
 

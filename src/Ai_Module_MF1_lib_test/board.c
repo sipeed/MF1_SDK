@@ -13,11 +13,9 @@
 #include "uart.h"
 #include "uarths.h"
 
-#if CONFIG_LCD_TYPE_ST7789
-#include "lcd_st7789.h"
-#elif CONFIG_LCD_TYPE_SIPEED
-#include "lcd_sipeed.h"
-#endif
+#include "camera.h"
+#include "lcd.h"
+#include "ov2640.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 volatile uint8_t g_key_press = 0;
@@ -27,16 +25,19 @@ uint8_t sKey_dir = 0;
 volatile board_cfg_t g_board_cfg;
 
 ///////////////////////////////////////////////////////////////////////////////
+#if(CONFI_SINGLE_CAMERA == 0)
 uint8_t kpu_image_tmp[IMG_W * IMG_H * 3] __attribute__((aligned(128)));
+#endif
+
 uint8_t kpu_image[2][IMG_W * IMG_H * 3] __attribute__((aligned(128)));
 uint8_t display_image[IMG_W * IMG_H * 2] __attribute__((aligned(64)));
 
-#if CONFIG_LCD_TYPE_SSD1963
-uint8_t display_image_rgb888[IMG_W * IMG_H * 3] __attribute__((aligned(64)));
+#if CONFIG_DETECT_VERTICAL
+uint8_t display_image_ver[IMG_W * IMG_H * 2] __attribute__((aligned(64))); //显示
 #endif
 
-#if CONFIG_LCD_TYPE_SIPEED
-uint8_t lcd_image[LCD_W * LCD_H * 2] __attribute__((aligned(64)));
+#if CONFIG_LCD_TYPE_SSD1963
+uint8_t display_image_rgb888[IMG_W * IMG_H * 3] __attribute__((aligned(64)));
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -104,6 +105,7 @@ static void io_mux_init(void)
     fpioa_set_function(45, FUNC_CMOS_HREF);
     fpioa_set_function(44, FUNC_CMOS_PWDN);
     fpioa_set_function(43, FUNC_CMOS_VSYNC);
+    fpioa_set_function(25, FUNC_CMOS_RST);
 
     /* LCD */
     fpioa_set_function(LCD_RST_PIN, FUNC_GPIOHS0 + LCD_RST_HS_NUM);
@@ -121,7 +123,13 @@ static void io_mux_init(void)
     //LCD BL
     fpioa_set_function(LCD_BL_PIN, FUNC_TIMER1_TOGGLE1);
     pwm_init(TIMER_PWM);
+
+#if CONFIG_DETECT_VERTICAL
+    pwm_set_frequency(TIMER_PWM, TIMER_PWM_CHN, 1000, 1); //neg, 1 dark
+#else
     pwm_set_frequency(TIMER_PWM, TIMER_PWM_CHN, 1000, 0.95); //neg, 1 dark
+#endif
+
     pwm_set_enable(TIMER_PWM, TIMER_PWM_CHN, 1);
 
     //IR LED
@@ -237,7 +245,8 @@ void board_init(void)
     dvp_set_output_enable(1, 1);
     dvp_set_image_format(DVP_CFG_RGB_FORMAT);
     dvp_set_image_size(IMG_W, IMG_H);
-    gc0328_init();
+
+    camera_init(CAM_GC0328_SINGLE);
 
     dvp_set_ai_addr((uint32_t)kpu_image, (uint32_t)(kpu_image + IMG_W * IMG_H), (uint32_t)(kpu_image + IMG_W * IMG_H * 2));
     dvp_set_display_addr((uint32_t)display_image);
@@ -253,7 +262,7 @@ void board_init(void)
 
     /* LCD init */
 #if CONFIG_LCD_TYPE_ST7789
-    lcd_init();
+    lcd_init(LCD_ST7789);
     lcd_clear(BLUE);
 #elif CONFIG_LCD_TYPE_SSD1963
     /* CONFIG_LCD_TYPE_SSD1963 */
@@ -274,7 +283,7 @@ void board_init(void)
     /* system start */
     dvp_clear_interrupt(DVP_STS_FRAME_START | DVP_STS_FRAME_FINISH);
     dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 1);
-    
+
     return;
 }
 ///////////////////////////////////////////////////////////////////////////////

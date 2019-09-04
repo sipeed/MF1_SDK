@@ -25,9 +25,16 @@ extern uint8_t sKey_dir;
 
 extern volatile board_cfg_t g_board_cfg;
 
+#if(CONFI_SINGLE_CAMERA == 0)
 extern uint8_t kpu_image_tmp[IMG_W * IMG_H * 3];
+#endif
+
 extern uint8_t kpu_image[2][IMG_W * IMG_H * 3];
 extern uint8_t display_image[IMG_W * IMG_H * 2];
+
+#if CONFIG_DETECT_VERTICAL
+extern uint8_t display_image_ver[IMG_W * IMG_H * 2]; //显示
+#endif
 
 #if CONFIG_LCD_TYPE_SIPEED
 extern uint8_t lcd_image[LCD_W * LCD_H * 2];

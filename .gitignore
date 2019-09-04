@@ -817,3 +817,4 @@ kendryte-standalone-demo-bak
 /build_i
 src/Ai_Module_MF1_lib_test/version.h
 src/Ai_Module_MF1_lib_test/prebuild
+.vscode/

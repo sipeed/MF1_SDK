@@ -216,17 +216,42 @@ int flash_get_saved_uid_feature(uint32_t index, uint8_t uid[16 + 1], float *feat
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+int flash_get_saved_feature_number(void)
+{
+    return g_face_save_info.number;
+}
+
+int flash_get_saved_feature(face_fea_t *feature, uint32_t index)
+{
+    uint32_t i;
+    uint32_t cnt = 0;
+    face_info_t v_face_info;
+    for(i = 0; i < FACE_DATA_MAX_COUNT; i++)
+    {
+        if((g_face_save_info.face_info_index[i / 32] >> (i % 32)) & 0x1)
+        {
+            if(cnt == index)
+            {
+                flash_get_face_info(&v_face_info, i);
+                memcpy(feature, &v_face_info.info, sizeof(v_face_info.info));
+                break;
+            } else
+            {
+                cnt++;
+            }
+        }
+    }
+    return 0;
+}
+///////////////////////////////////////////////////////////////////////////////
+
 uint32_t flash_get_wdt_reboot_count(void)
 {
     return 0;
     // uint32_t v_wdt_reboot_count;
     // w25qxx_read_data(DATA_REBOOT_COUNT, (uint8_t *)&v_wdt_reboot_count, 4);
     // return v_wdt_reboot_count;
-}
-
-int flash_get_saved_feature_number(void)
-{
-    return g_face_save_info.number;
 }
 
 static void flash_check_wdt_reboot_count(void)
@@ -307,93 +332,70 @@ void flash_init(void)
     return;
 }
 
-int flash_get_saved_feature(face_fea_t *feature, uint32_t index)
-{
-    uint32_t i;
-    uint32_t cnt = 0;
-    face_info_t v_face_info;
-    for(i = 0; i < FACE_DATA_MAX_COUNT; i++)
-    {
-        if((g_face_save_info.face_info_index[i / 32] >> (i % 32)) & 0x1)
-        {
-            if(cnt == index)
-            {
-                flash_get_face_info(&v_face_info, i);
-                memcpy(feature, &v_face_info.info, sizeof(v_face_info.info));
-                break;
-            } else
-            {
-                cnt++;
-            }
-        }
-    }
-    return 0;
-}
-
 //1 success
 //2 no feature store
 //0 error
 int flash_get_saved_feature_sha256(uint8_t sha256[32 + 1])
 {
-//     uint8_t cal_sha256[32 + 1];
-//     static uint8_t flag = 0;
-//     uint8_t feature[FEATURE_DIMENSION * 4 + 1], tmp[FEATURE_DIMENSION * 4 + 1];
-//     uint32_t i = 0, cnt = 0;
-//     face_info_t v_face_info;
+    //     uint8_t cal_sha256[32 + 1];
+    //     static uint8_t flag = 0;
+    //     uint8_t feature[FEATURE_DIMENSION * 4 + 1], tmp[FEATURE_DIMENSION * 4 + 1];
+    //     uint32_t i = 0, cnt = 0;
+    //     face_info_t v_face_info;
 
-//     flag = 0;
-//     cnt = 0;
-//     for(i = 0; i < FACE_DATA_MAX_COUNT; i++)
-//     {
-//         if((g_face_save_info.face_info_index[i / 32] >> (i % 32)) & 0x1)
-//         {
-//             if(flash_get_face_info(&v_face_info, i) == 0)
-//             {
-//                 memcpy(tmp, v_face_info.info, (FEATURE_DIMENSION * 4));
-//                 if(flag == 0)
-//                 {
-//                     memcpy(feature, tmp, (FEATURE_DIMENSION * 4));
-//                     flag = 1;
-//                 } else
-//                 {
-//                     for(uint16_t j = 0; j < (FEATURE_DIMENSION * 4); j++)
-//                     {
-//                         feature[j] ^= tmp[j];
-//                     }
-//                 }
-//             } else
-//             {
-//                 printk("flash_get_face_info failed\r\n");
-//                 return 0;
-//             }
-//             cnt++;
-//         }
-//     }
+    //     flag = 0;
+    //     cnt = 0;
+    //     for(i = 0; i < FACE_DATA_MAX_COUNT; i++)
+    //     {
+    //         if((g_face_save_info.face_info_index[i / 32] >> (i % 32)) & 0x1)
+    //         {
+    //             if(flash_get_face_info(&v_face_info, i) == 0)
+    //             {
+    //                 memcpy(tmp, v_face_info.info, (FEATURE_DIMENSION * 4));
+    //                 if(flag == 0)
+    //                 {
+    //                     memcpy(feature, tmp, (FEATURE_DIMENSION * 4));
+    //                     flag = 1;
+    //                 } else
+    //                 {
+    //                     for(uint16_t j = 0; j < (FEATURE_DIMENSION * 4); j++)
+    //                     {
+    //                         feature[j] ^= tmp[j];
+    //                     }
+    //                 }
+    //             } else
+    //             {
+    //                 printk("flash_get_face_info failed\r\n");
+    //                 return 0;
+    //             }
+    //             cnt++;
+    //         }
+    //     }
 
-//     if(cnt == 0)
-//     {
-//         printk("flash_get_saved_feature_sha256 cnt == 0\r\n");
-//         memset(sha256, 0xff, 32);
-//         return 1;
-//     }
+    //     if(cnt == 0)
+    //     {
+    //         printk("flash_get_saved_feature_sha256 cnt == 0\r\n");
+    //         memset(sha256, 0xff, 32);
+    //         return 1;
+    //     }
 
-//     sha256_hard_calculate(feature, (FEATURE_DIMENSION * 4), cal_sha256);
-//     memcpy(sha256, cal_sha256, 32);
-// #if 0
-//     printk("feature: \r\n");
-//     for (uint16_t i = 0; i < FEATURE_DIMENSION * 4; i++)
-//     {
-//         printk("%02x ", *(feature + i));
-//         if (i % 4 == 4)
-//             printk("\r\n");
-//     }
-//     printk("\r\n************************************\r\n");
+    //     sha256_hard_calculate(feature, (FEATURE_DIMENSION * 4), cal_sha256);
+    //     memcpy(sha256, cal_sha256, 32);
+    // #if 0
+    //     printk("feature: \r\n");
+    //     for (uint16_t i = 0; i < FEATURE_DIMENSION * 4; i++)
+    //     {
+    //         printk("%02x ", *(feature + i));
+    //         if (i % 4 == 4)
+    //             printk("\r\n");
+    //     }
+    //     printk("\r\n************************************\r\n");
 
-//     for (uint16_t i = 0; i < 32; i++)
-//     {
-//         printk("%02X", sha256[i]);
-//     }
-// #endif
+    //     for (uint16_t i = 0; i < 32; i++)
+    //     {
+    //         printk("%02X", sha256[i]);
+    //     }
+    // #endif
 
     return 1;
 }
@@ -496,7 +498,15 @@ uint8_t flash_cfg_set_default(board_cfg_t *cfg)
     cfg->pkt_sum_header = 0;
     cfg->auto_out_feature = 0;
     cfg->out_interval_in_ms = 500;
-    cfg->lcd_cam_dir = 0x08; //TODO: 默认值??
+
+#if CONFIG_DETECT_VERTICAL
+    cfg->lcd_cam_dir = 0x00;
+#elif CONFI_SINGLE_CAMERA
+    cfg->lcd_cam_dir = 0x01;
+#else
+    cfg->lcd_cam_dir = 0x08;
+#endif
+
     cfg->face_gate = FACE_RECGONITION_THRESHOLD;
     cfg->port_cfg = (uint32_t)((PROTOCOL_PORT_TX_PIN << 24) | (PROTOCOL_PORT_RX_PIN << 16) |
                                (DEBUE_TX_PIN << 8) | (DEBUE_RX_PIN));

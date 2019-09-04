@@ -8,11 +8,7 @@
 #include "image_op.h"
 #include "lcd_dis.h"
 
-#if CONFIG_LCD_TYPE_ST7789
-#include "lcd_st7789.h"
-#elif CONFIG_LCD_TYPE_SIPEED
-#include "lcd_sipeed.h"
-#endif
+#include "lcd.h"
 
 /* clang-format off */
 #define PASS_SAVE_PIC       (0)
@@ -27,6 +23,8 @@ uint8_t jpeg_buf[JPEG_LEN];
 uint8_t jpeg_tmp[IMG_W * IMG_H * 2];
 #endif
 
+uint8_t delay_flag = 0;
+
 extern void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint64_t *time);
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -38,6 +36,16 @@ void decompress_feature(float feature[FEATURE_DIMENSION], int8_t compress_featur
         feature[i] = (float)((float)compress_feature[i] / 512.0 /* /256 * 0.5 */);
     }
 }
+
+static uint8_t *pDisImage = NULL;
+static uint16_t DisImage_W, DisImage_H;
+static uint16_t DisLcd_W, DisLcd_H;
+static uint16_t DisX_Off, DisY_Off;
+
+void face_cb_init(void)
+{
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if CONFIG_LCD_TYPE_ST7789
@@ -52,21 +60,56 @@ static void convert_320x240_to_240x240(uint8_t *img_320, uint16_t x_offset)
 }
 #endif
 
+void lcd_convert_cb(void)
+{
+#if CONFIG_DETECT_VERTICAL
+    //5300us @ 400M
+    convert_rgb565_order((uint16_t *)display_image, LCD_W, LCD_H);
+    image_rgb565_roate_right90((uint16_t *)display_image_ver, (uint16_t *)display_image, LCD_W, LCD_H);
+    convert_rgb565_order((uint16_t *)display_image_ver, LCD_H, LCD_W);
+#endif
+
+    /* 在这里遍历lcd显示链表*/
+    if(lcd_dis_list->len)
+    {
+        list_node_t *node = NULL;
+        list_iterator_t *lcd_dis_list_iterator = list_iterator_new(lcd_dis_list, LIST_HEAD);
+
+        if(lcd_dis_list_iterator)
+        {
+            while((node = list_iterator_next(lcd_dis_list_iterator)))
+            {
+                lcd_dis_t *lcd_dis = (lcd_dis_t *)node->val;
+                lcd_dis_list_display(pDisImage, DisImage_W, DisImage_H, lcd_dis);
+                if(lcd_dis->auto_del)
+                {
+                    lcd_dis_list_free(lcd_dis);
+                    list_remove(lcd_dis_list, node);
+                }
+            }
+            list_iterator_destroy(lcd_dis_list_iterator);
+            lcd_dis_list_iterator = NULL;
+        }
+    }
+}
+
 void display_lcd_img_addr(uint32_t pic_addr)
 {
-    lcd_dis_t *lcd_dis = lcd_dis_list_add_pic(255, 1, pic_addr, 128, LCD_OFT, 0, 240, 240);
+    lcd_dis_t *lcd_dis = lcd_dis_list_add_pic(255, 1, pic_addr, 128, DisX_Off, DisY_Off, 240, 240);
     if(lcd_dis)
     {
-        lcd_dis_list_display(display_image, 320, 240, lcd_dis);
+        lcd_dis_list_display(pDisImage, DisImage_W, DisImage_H, lcd_dis);
         lcd_dis_list_del_by_id(255);
     } else
     {
-        image_rgb565_draw_string(display_image, "MEMRORY FULL", LCD_OFT, LCD_H - 16, WHITE, NULL, 320);
+        image_rgb565_draw_string(pDisImage, "MEMRORY FULL", 0, LCD_W - 16, WHITE, NULL, DisImage_W);
     }
+
 #if LCD_240240
-    convert_320x240_to_240x240(display_image, LCD_OFT);
+    convert_320x240_to_240x240(display_image, DisX_Off);
 #endif
-    lcd_draw_picture(0, 0, LCD_W, LCD_H, (uint32_t *)display_image);
+
+    lcd_draw_picture(0, 0, DisLcd_W, DisLcd_H, (uint32_t *)pDisImage);
 
     return;
 }
@@ -75,28 +118,36 @@ void display_lcd_img_addr(uint32_t pic_addr)
 void lcd_refresh_cb(void)
 {
 #if LCD_240240
-    convert_320x240_to_240x240(display_image, LCD_OFT);
+    convert_320x240_to_240x240(display_image, DisX_Off);
 #endif
-    lcd_draw_picture(0, 0, LCD_W, LCD_H, (uint32_t *)display_image);
+
+    lcd_draw_picture(0, 0, DisLcd_W, DisLcd_H, (uint32_t *)pDisImage);
+
+    if(delay_flag)
+    {
+        delay_flag = 0;
+        msleep(300);
+    }
     return;
 }
 
 void lcd_draw_pass(void)
 {
-    lcd_dis_t *lcd_dis = lcd_dis_list_add_pic(255, 1, IMG_FACE_PASS_ADDR, 128, LCD_OFT, 0, 240, 240);
+    lcd_dis_t *lcd_dis = lcd_dis_list_add_pic(255, 1, IMG_FACE_PASS_ADDR, 128, DisX_Off, DisY_Off, 240, 240);
     if(lcd_dis)
     {
-        lcd_dis_list_display(display_image, 320, 240, lcd_dis);
-
+        lcd_dis_list_display(pDisImage, DisImage_W, DisImage_H, lcd_dis);
         lcd_dis_list_del_by_id(255);
     } else
     {
-        image_rgb565_draw_string(display_image, "Recording Face...", LCD_OFT, LCD_H - 16, WHITE, NULL, 320);
+        image_rgb565_draw_string(pDisImage, "Face Pass...", 0, LCD_W - 16, WHITE, NULL, DisImage_W);
     }
+
 #if LCD_240240
     convert_320x240_to_240x240(display_image, LCD_OFT);
 #endif
-    lcd_draw_picture(0, 0, LCD_W, LCD_H, (uint32_t *)display_image);
+
+    lcd_draw_picture(0, 0, DisLcd_W, DisLcd_H, (uint32_t *)pDisImage);
 
     face_lib_draw_flag = 1;
     set_RGB_LED(RLED);
@@ -120,12 +171,13 @@ void detected_face_cb(face_recognition_ret_t *face)
         if(face_info->pass == false)
         {
             printk("false face\r\n");
-            image_rgb565_draw_edge(display_image, face_info, RED, 320, 240);
+
+            image_rgb565_draw_edge(pDisImage, face_info, RED, DisImage_W, DisImage_H);
 
             uint16_t bg = 0x0;
             char str[20];
             sprintf(str, "%.3f", face_info->score);
-            image_rgb565_draw_string(display_image, str, LCD_OFT, LCD_H - 16, WHITE, &bg, 320);
+            image_rgb565_draw_string(pDisImage, str, 0, LCD_W - 16, WHITE, &bg, DisImage_W);
         }
 
         if(g_key_press)
@@ -134,9 +186,15 @@ void detected_face_cb(face_recognition_ret_t *face)
             if(face_info->feature)
             {
                 face_fea_t face_fea;
+#if CONFI_SINGLE_CAMERA
+                face_fea.stat = 0;
+                memcpy(&(face_fea.fea_rgb), face_info->feature, 196);
+                memset(&(face_fea.fea_ir), 0, 196);
+#else
                 face_fea.stat = 1;
                 memcpy(&(face_fea.fea_ir), face_info->feature, 196);
                 memset(&(face_fea.fea_rgb), 0, 196);
+#endif
 
                 printf("#######save face\r\n");
                 if(flash_save_face_info(&face_fea, NULL, 1, NULL, NULL, NULL) < 0) //image, feature, uid, valid, name, note
@@ -145,20 +203,38 @@ void detected_face_cb(face_recognition_ret_t *face)
                     break;
                 }
 
+#if CONFIG_DETECT_VERTICAL
+                lcd_dis_t *lcd_dis = lcd_dis_list_add_pic(255, 1, IMG_RECORD_FACE_ADDR, 128, 0, 40, 240, 240);
+#else
                 lcd_dis_t *lcd_dis = lcd_dis_list_add_pic(255, 1, IMG_RECORD_FACE_ADDR, 128, LCD_OFT, 0, 240, 240);
+#endif
+
                 if(lcd_dis)
                 {
-                    lcd_dis_list_display(display_image, 320, 240, lcd_dis);
+#if CONFIG_DETECT_VERTICAL
+                    lcd_dis_list_display(display_image_ver, IMG_H, IMG_W, lcd_dis);
+#else
+                    lcd_dis_list_display(display_image, IMG_W, IMG_H, lcd_dis);
+#endif
 
                     lcd_dis_list_del_by_id(255);
                 } else
                 {
-                    image_rgb565_draw_string(display_image, "Recording Face...", LCD_OFT, LCD_H - 16, WHITE, NULL, 320);
+#if CONFIG_DETECT_VERTICAL
+                    image_rgb565_draw_string(display_image_ver, "Recording Face...", 0, LCD_W - 16, WHITE, NULL, IMG_H);
+#else
+                    image_rgb565_draw_string(display_image, "Recording Face...", LCD_OFT, LCD_H - 16, WHITE, NULL, IMG_W);
+#endif
                 }
 #if LCD_240240
                 convert_320x240_to_240x240(display_image, LCD_OFT);
 #endif
+
+#if CONFIG_DETECT_VERTICAL
+                lcd_draw_picture(0, 0, LCD_H, LCD_W, (uint32_t *)display_image_ver);
+#else
                 lcd_draw_picture(0, 0, LCD_W, LCD_H, (uint32_t *)display_image);
+#endif
 
                 face_lib_draw_flag = 1;
                 set_RGB_LED(GLED);
@@ -184,10 +260,59 @@ void fake_face_cb(face_recognition_ret_t *face)
     for(uint32_t i = 0; i < face_cnt; i++)
     {
         face_info = (face_obj_t *)&(face->result->face_obj_info.obj[i]);
-        image_rgb565_draw_edge(display_image, face_info, BLUE, 320, 240);
+#if CONFIG_DETECT_VERTICAL
+        image_rgb565_draw_edge(display_image_ver, face_info, BLUE, IMG_H, IMG_W);
+#else
+        image_rgb565_draw_edge(display_image, face_info, BLUE, IMG_W, IMG_H);
+#endif
     }
 }
 
+#if CONFI_SINGLE_CAMERA
+void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
+{
+    uint64_t v_tick;
+    uint32_t face_num = 0;
+    face_obj_t *face_obj = NULL;
+
+    v_tick = sysctl_get_time_us();
+
+    if(g_board_cfg.auto_out_feature == 1)
+    {
+        //不与数据库的人脸数据进行对比，直接输出识别到的
+        face_num = face->result->face_obj_info.obj_number;
+
+        for(uint32_t i = 0; i < face_num; i++)
+        {
+            face_obj = (face_obj_t *)&(face->result->face_obj_info.obj[i]);
+            face_pass_callback(face_obj, face_num, i, &v_tick);
+#if DETECT_VERTICAL
+            image_rgb565_draw_edge(display_image_ver, face_obj, YELLOW, LCD_H, LCD_W);
+#else
+            image_rgb565_draw_edge(display_image, face_obj, YELLOW, LCD_W, LCD_H);
+#endif
+        }
+    } else
+    {
+        //需要进行对比
+        face_num = face->result->face_compare_info.result_number;
+
+        for(uint32_t i = 0; i < face_num; i++)
+        {
+            face_obj = (face_obj_t *)(face->result->face_compare_info.obj[i]);
+            face_pass_callback(face_obj, face_num, i, &v_tick);
+            if(face_obj->pass)
+            {
+#if DETECT_VERTICAL
+                image_rgb565_draw_edge(display_image_ver, face_obj, GREEN, LCD_H, LCD_W);
+#else
+                image_rgb565_draw_edge(display_image, face_obj, GREEN, LCD_W, LCD_H);
+#endif
+            }
+        }
+    }
+}
+#else
 /* ir check pass or auto pass */
 void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
 {
@@ -230,9 +355,23 @@ void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
         for(uint32_t i = 0; i < face_cnt; i++)
         {
             face_info = (face_obj_t *)(face->result->face_compare_info.obj[i]);
-            face_pass_callback(face_info, face_cnt, i, &tim);
-
+#if CONFIG_DETECT_VERTICAL
+            image_rgb565_draw_edge(display_image_ver, face_info, GREEN, 240, 320);
+#else
             image_rgb565_draw_edge(display_image, face_info, GREEN, 320, 240);
+#endif
+
+            char str[20];
+            uint16_t bg = 0x0;
+            sprintf(str, "%d:%.3f", face_info->index, face_info->score);
+
+#if CONFIG_DETECT_VERTICAL
+            image_rgb565_draw_string(display_image_ver, str, 0, LCD_W - 16, WHITE, &bg, 240);
+#else
+            image_rgb565_draw_string(display_image, str, LCD_OFT, LCD_H - 16, WHITE, &bg, 320);
+#endif
+
+            face_pass_callback(face_info, face_cnt, i, &tim);
         }
     } else
     {
@@ -244,7 +383,11 @@ void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
             {
                 face_info = (face_obj_t *)&(face->result->face_obj_info.obj[i]);
                 face_pass_callback(face_info, face_cnt, i, &tim);
+#if CONFIG_DETECT_VERTICAL
+                image_rgb565_draw_edge(display_image_ver, face_info, WHITE, 240, 320);
+#else
                 image_rgb565_draw_edge(display_image, face_info, WHITE, 320, 240);
+#endif
             } else
             {
                 printk("unknow\r\n");
@@ -252,6 +395,7 @@ void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
         }
     }
 }
+#endif
 
 #elif CONFIG_LCD_TYPE_SSD1963
 void lcd_convert_cam_to_lcd(void)

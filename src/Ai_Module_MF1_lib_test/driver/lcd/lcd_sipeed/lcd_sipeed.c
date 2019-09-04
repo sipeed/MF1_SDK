@@ -8,15 +8,15 @@
 #include "font.h"
 #include "system_config.h"
 
-#include "printf.h"
-
 #include "board.h"
 #include "timer.h"
 
 #if CONFIG_LCD_TYPE_SIPEED
 
 extern void gpiohs_irq_disable(size_t pin);
-extern void spi_send_data_normal(spi_device_num_t spi_num, spi_chip_select_t chip_select, const uint8_t *tx_buff, size_t tx_len);
+extern void spi_send_data_normal(spi_device_num_t spi_num,
+                                 spi_chip_select_t chip_select,
+                                 const uint8_t *tx_buff, size_t tx_len);
 
 ///////////////////////////////////////////////////////////////////////////////
 static uint32_t PageCount = 0;
@@ -51,7 +51,6 @@ static void lcd_sipeed_send_cmd(uint8_t CMDData)
 
 static void lcd_sipeed_send_dat(uint8_t *DataBuf, uint32_t Length)
 {
-    // spi_send_data_normal_dma(DMAC_CHANNEL2, LCD_SIPEED_SPI_DEV, LCD_SIPEED_SPI_SS, DataBuf-0x40000000, Length / 4, SPI_TRANS_INT);
     sipeed_spi_send_data_dma(LCD_SIPEED_SPI_DEV, LCD_SIPEED_SPI_SS, DMAC_CHANNEL2, DataBuf - 0x40000000, Length);
 }
 
@@ -162,7 +161,7 @@ void copy_image_cma_to_lcd(uint8_t *cam_img, uint8_t *lcd_img)
     uint32_t x = 0, y = 0;
     for(y = 0; y < LCD_H; y++)
     {
-        memcpy(lcd_img + (y * LCD_W * 2) - 0x40000000, cam_img + (y * IMG_W + x) * 2, IMG_W * 2);
+        memcpy(lcd_img + y * LCD_W * 2 - 0x40000000, cam_img + (y * IMG_W + x) * 2, IMG_W * 2);
     }
     return;
 }
@@ -186,11 +185,10 @@ void lcd_sipeed_display(uint8_t *img_buf, uint8_t block)
 
     if(block)
     {
-        //等待的同时可以做其实事情	//50ms
         while(PageCount < LCD_SIPEED_FRAME_END_LINE)
         {
             msleep(1);
-        };
+        }; //等待的同时可以做其实事情	//50ms
     }
 }
 
