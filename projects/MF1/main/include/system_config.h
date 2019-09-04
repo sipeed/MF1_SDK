@@ -37,6 +37,9 @@
 
 //Note: Address must 4KB align
 ///////////////////////////////////////////////////////////////////////////////
+#define FONT_16x16_ADDR                             (0x70C000)
+#define FONT_32x32_ADDR                             (0xA00000)
+
 #define BOARD_CFG_ADDR                              (0x7FF000)  //8M-4K
 #define BOARD_CFG_LEN                               (4 * 1024)
 #define WATCH_DOG_TIMEOUT                           (20000) //ms

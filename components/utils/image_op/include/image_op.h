@@ -28,9 +28,18 @@ void image_rgb565_draw_edge(uint32_t *gram,
                             uint16_t x2, uint16_t y2,
                             uint16_t color, uint16_t img_w, uint16_t img_h);
 
-void image_rgb565_draw_string(uint32_t *ptr, char *str, uint16_t x, uint16_t y,
+void image_rgb565_draw_string(uint16_t *ptr, char *str, uint8_t size,
+                              uint16_t x, uint16_t y,
                               uint16_t color, uint16_t *bg_color,
-                              uint16_t img_w);
+                              uint16_t img_w, uint16_t img_h);
+
+typedef uint8_t (*get_zhCN_dat)(uint8_t *zhCN_char, uint8_t *zhCN_dat, uint8_t size);
+
+void image_rgb565_draw_zhCN_string(uint16_t *ptr, uint8_t *zhCN_string, uint8_t size,
+                                   uint16_t x, uint16_t y,
+                                   uint16_t color, uint16_t *bg_color,
+                                   uint16_t img_w, uint16_t img_h,
+                                   get_zhCN_dat get_font_data);
 
 typedef struct
 {

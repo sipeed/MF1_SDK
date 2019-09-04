@@ -3,6 +3,7 @@
 #include "ascii_font.h"
 
 #include <stdio.h>
+#include <string.h>
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -226,29 +227,28 @@ void image_rgb565_draw_edge(uint32_t *gram,
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-static void image_rgb565_ram_draw_char(uint32_t *ptr, char c,
-                                       uint16_t x, uint16_t y,
-                                       uint16_t color, uint16_t *bg_color,
-                                       uint16_t img_w)
+//取模方式： 阴码，逐列式，顺向
+static void image_rgb565_ram_draw_font_mat(uint16_t *ptr, uint8_t *font_mat, uint8_t size,
+                                           uint16_t x, uint16_t y,
+                                           uint16_t color, uint16_t *bg_color,
+                                           uint16_t img_w)
 {
-    uint8_t i, j, data;
-    uint16_t *addr;
+    uint8_t data, csize;
+    uint16_t *addr = NULL;
+    uint16_t oy = y;
 
-    if (c < ' ' || c > '~')
-    {
-        return;
-    }
+    csize = (size / 8 + ((size % 8) ? 1 : 0)) * (size);
 
-    for (i = 0; i < 16; i++)
+    for (uint8_t i = 0; i < csize; i++)
     {
-        addr = ((uint16_t *)ptr) + y * (img_w + 0) + x;
-        data = ascii0816[c - ' '][i];
-        for (j = 0; j < 8; j++)
+        data = *(font_mat + i);
+        for (uint8_t j = 0; j < 8; j++)
         {
+            addr = ((uint16_t *)ptr) + y * img_w + x;
+
             if (data & 0x80)
             {
-                if ((x + j) & 1)
+                if (x & 1)
                     *(addr - 1) = color;
                 else
                     *(addr + 1) = color;
@@ -257,31 +257,178 @@ static void image_rgb565_ram_draw_char(uint32_t *ptr, char c,
             {
                 if (bg_color)
                 {
-                    if ((x + j) & 1)
+                    if (x & 1)
                         *(addr - 1) = *bg_color;
                     else
                         *(addr + 1) = *bg_color;
                 }
             }
-
             data <<= 1;
-            addr++;
+            y++;
+            if ((y - oy) == size)
+            {
+                y = oy;
+                x++;
+                break;
+            }
         }
-        y++;
     }
+    return;
 }
 
-void image_rgb565_draw_string(uint32_t *ptr, char *str,
+static void image_rgb565_ram_draw_char(uint16_t *ptr, char c, uint8_t size,
+                                       uint16_t x, uint16_t y,
+                                       uint16_t color, uint16_t *bg_color,
+                                       uint16_t img_w)
+{
+    if (c < ' ' || c > '~')
+    {
+        return;
+    }
+
+    uint8_t offset = c - ' ';
+
+    switch (size)
+    {
+    case 16:
+        image_rgb565_ram_draw_font_mat(ptr, ascii0816 + (offset * 16), size, x, y, color, bg_color, img_w);
+        break;
+    case 32:
+        image_rgb565_ram_draw_font_mat(ptr, ascii_1632 + (offset * 64), size, x, y, color, bg_color, img_w);
+        break;
+    default:
+        break;
+    }
+    return;
+}
+
+void image_rgb565_draw_string(uint16_t *ptr, char *str, uint8_t size,
                               uint16_t x, uint16_t y,
                               uint16_t color, uint16_t *bg_color,
-                              uint16_t img_w)
+                              uint16_t img_w, uint16_t img_h)
 {
+    uint16_t ox = x;
+    uint16_t oy = y;
+
+    if (size != 32 && size != 16)
+    {
+        return;
+    }
+
     while (*str)
     {
-        image_rgb565_ram_draw_char(ptr, *str, x, y, color, bg_color, img_w);
+        if (x > (ox + img_w - size / 2))
+        {
+            y += size;
+            x = ox;
+        }
+        if (y > (oy + img_h - size))
+            break;
+
+        if ((*str == 0xd) ||
+            (*str == 0xa))
+        {
+            y += size;
+            x = ox;
+            str++;
+        }
+        else
+        {
+            image_rgb565_ram_draw_char(ptr, *str, size, x, y, color, bg_color, img_w);
+        }
         str++;
-        x += 8;
+        x += size / 2;
     }
+    return;
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+static void image_rgb565_draw_zhCN_char(uint16_t *ptr, uint8_t *zhCN_char, uint8_t size,
+                                        uint16_t x, uint16_t y,
+                                        uint16_t color, uint16_t *bg_color,
+                                        uint16_t img_w, get_zhCN_dat get_font_data)
+{
+    uint8_t zhCN_dat[128]; //max 32x32 font
+
+    memset(zhCN_dat, 0xff, sizeof(zhCN_dat));
+
+    if (get_font_data)
+    {
+        get_font_data(zhCN_char, zhCN_dat, size);
+    }
+
+    image_rgb565_ram_draw_font_mat(ptr, zhCN_dat, size, x, y, color, bg_color, img_w);
+
+    return;
+}
+
+void image_rgb565_draw_zhCN_string(uint16_t *ptr, uint8_t *zhCN_string, uint8_t size,
+                                   uint16_t x, uint16_t y,
+                                   uint16_t color, uint16_t *bg_color,
+                                   uint16_t img_w, uint16_t img_h,
+                                   get_zhCN_dat get_font_data)
+{
+    uint8_t have_zhCN = 0;
+    uint16_t ox = x;
+    uint16_t oy = y;
+
+    if ((size != 32 && size != 16) || (get_font_data == NULL))
+    {
+        return;
+    }
+
+    while (*zhCN_string != 0)
+    {
+        if (have_zhCN == 0)
+        {
+            if (*zhCN_string > 0x80)
+            {
+                have_zhCN = 1;
+            }
+            else
+            {
+                if (x > (ox + img_w - size / 2))
+                {
+                    y += size;
+                    x = ox;
+                }
+                if (y > (oy + img_h - size))
+                    break;
+
+                if ((*zhCN_string == 0xd) ||
+                    (*zhCN_string == 0xa))
+                {
+                    y += size;
+                    x = ox;
+                    zhCN_string++;
+                }
+                else
+                {
+                    image_rgb565_ram_draw_char(ptr, *zhCN_string, size, x, y, color, bg_color, img_w);
+                }
+                zhCN_string++;
+                x += size / 2;
+            }
+        }
+        else
+        {
+            have_zhCN = 0;
+            if (x > (ox + img_w - size))
+            {
+                y += size;
+                x = ox;
+            }
+            if (y > (oy + img_h - size))
+                break;
+
+            image_rgb565_draw_zhCN_char(ptr, zhCN_string, size, x, y, color, bg_color, img_w, get_font_data);
+            zhCN_string += 2;
+            x += size;
+        }
+    }
+    return;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -328,5 +475,3 @@ void image_rgb565_mix_pic_with_alpha(mix_image_t *img_src, mix_image_t *img_dst,
     }
     return;
 }
-
-//等待添加显示中文字符串，以及字号选择

@@ -339,7 +339,7 @@ int main(void)
         if (!qrcode_get_info_flag)
         {
             memset(display_image, 0, sizeof(display_image));
-            image_rgb565_draw_string(display_image, "TOUCH KEY TO CONFIG WiFi...", 40, 0, RED, NULL, 320);
+            image_rgb565_draw_string(display_image, "TOUCH KEY TO CONFIG WiFi...", 16, 40, 0, RED, NULL, 320, 240);
 #if (CONFIG_LCD_WIDTH == 240)
             convert_320x240_to_240x240(display_image, 40);
             lcd_draw_picture(0, 0, 240, 240, (uint32_t *)display_image);
@@ -474,7 +474,7 @@ int main(void)
 #endif
             char *str_del = (char *)malloc(sizeof(char) * 32);
             sprintf(str_del, "Factory Reset...");
-            if (lcd_dis_list_add_str(1, 1, str_del, 40, CONFIG_LCD_WIDTH - 16, RED, 1) == NULL)
+            if (lcd_dis_list_add_str(1, 1, 16, 0, str_del, 40, CONFIG_LCD_WIDTH - 16, RED, 1) == NULL)
             {
                 printf("add dis str failed\r\n");
             }

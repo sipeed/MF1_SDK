@@ -37,11 +37,90 @@ static uint8_t lcd_dis_list_check_id(int id)
     return 0;
 }
 
+//字体：新宋体
+//取模方式： 阴码，逐列式，顺向
+#if 1 //GB2312 字库
+uint8_t lcd_dis_get_zhCN_dat(uint8_t *zhCN_char, uint8_t *zhCN_dat, uint8_t size)
+{
+    uint8_t ch, cl;
+    uint32_t font_offset;
+
+    uint8_t csize = (size / 8 + ((size % 8) ? 1 : 0)) * (size);
+
+    ch = *zhCN_char;
+    cl = *(++zhCN_char);
+
+    if (ch < 0xa1 || cl < 0xa0 ||
+        ch > 0xf7 ||
+        (ch >= 0xaa && ch <= 0xaf))
+    {
+        return 0;
+    }
+
+    ch -= 0xa1;
+    cl -= 0xa0;
+
+    font_offset = (ch * 96 + cl) * csize;
+    switch (size)
+    {
+    case 16:
+        my_w25qxx_read_data((uint32_t)(FONT_16x16_ADDR + font_offset), zhCN_dat, csize, W25QXX_STANDARD);
+        break;
+    case 32:
+        my_w25qxx_read_data((uint32_t)(FONT_32x32_ADDR + font_offset), zhCN_dat, csize, W25QXX_STANDARD);
+        break;
+    default:
+        return 0;
+        break;
+    }
+
+    return 1;
+}
+#else //GBK 字库
+uint8_t lcd_dis_get_zhCN_dat(uint8_t *zhCN_char, uint8_t *zhCN_dat, uint8_t size)
+{
+    uint8_t ch, cl;
+    uint32_t font_offset;
+
+    uint8_t csize = (size / 8 + ((size % 8) ? 1 : 0)) * (size);
+
+    ch = *zhCN_char;
+    cl = *(++zhCN_char);
+
+    if (ch < 0x81 || cl < 0x40 || ch == 0xff || cl == 0xff)
+    {
+        return 0;
+    }
+
+    if (cl < 0x7f)
+        cl -= 0x40;
+    else
+        cl -= 0x41;
+    ch -= 0x81;
+
+    font_offset = (190 * ch + cl) * csize;
+
+    my_w25qxx_read_data((uint32_t)(FONT_GBK16_ADDR + font_offset), zhCN_dat, csize, W25QXX_STANDARD);
+
+    return 1;
+}
+#endif
+
 static void lcd_dis_list_draw_str(uint8_t *image, uint16_t img_w, uint16_t img_h, dis_str_t *dis_str)
 {
-    image_rgb565_draw_string(image, dis_str->str,
-                             dis_str->x, dis_str->y,
-                             dis_str->color, (dis_str->bg_color == 1) ? NULL : &(dis_str->bg_color), img_w);
+    if (dis_str->zh_CN)
+    {
+        image_rgb565_draw_zhCN_string(image, dis_str->str, dis_str->size, dis_str->x, dis_str->y,
+                                      dis_str->color, (dis_str->bg_color == 1) ? NULL : &(dis_str->bg_color),
+                                      img_w, img_h,
+                                      lcd_dis_get_zhCN_dat);
+    }
+    else
+    {
+        image_rgb565_draw_string(image, dis_str->str, dis_str->size, dis_str->x, dis_str->y,
+                                 dis_str->color, (dis_str->bg_color == 1) ? NULL : &(dis_str->bg_color), img_w, img_h);
+    }
+    return;
 }
 
 static void lcd_dis_list_draw_pic(uint8_t *image, uint16_t img_w, uint16_t img_h, dis_pic_t *dis_pic)
@@ -88,7 +167,7 @@ void lcd_dis_list_display(uint8_t *image, uint16_t img_w, uint16_t img_h, lcd_di
     return;
 }
 
-lcd_dis_t *lcd_dis_list_add_str(int id, int auto_del,
+lcd_dis_t *lcd_dis_list_add_str(int id, int auto_del, uint16_t size, uint16_t zh_CN,
                                 char *str, uint16_t x, uint16_t y,
                                 uint16_t color, uint16_t bg_color)
 {
@@ -113,6 +192,8 @@ lcd_dis_t *lcd_dis_list_add_str(int id, int auto_del,
             dis_str->color = color;
             dis_str->bg_color = bg_color;
             dis_str->str = str;
+            dis_str->size = size;
+            dis_str->zh_CN = zh_CN;
 
             lcd_dis->dis = (void *)dis_str;
 

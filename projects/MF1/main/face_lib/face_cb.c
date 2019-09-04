@@ -81,7 +81,7 @@ void lcd_display_image_alpha(uint32_t pic_addr, uint32_t alpha)
     }
     else
     {
-        image_rgb565_draw_string(pDisImage, "NO MEMRORY...", DisX_Off, DisY_Off, WHITE, NULL, DisImage_W);
+        image_rgb565_draw_string(pDisImage, "NO MEMRORY...", 16, DisX_Off, DisY_Off, WHITE, NULL, DisImage_W, DisImage_H);
     }
 
 #if (CONFIG_LCD_WIDTH == 240)
@@ -195,7 +195,7 @@ void detected_face_cb(face_recognition_ret_t *face)
             char str[20];
             sprintf(str, "%.3f", face_info->score);
 
-            image_rgb565_draw_string(pDisImage, str, DisX_Off, DisY_Off, WHITE, &bg, DisImage_W);
+            image_rgb565_draw_string(pDisImage, str, 16, DisX_Off, DisY_Off, WHITE, &bg, DisImage_W, DisImage_H);
         }
 
         if (g_key_press)
