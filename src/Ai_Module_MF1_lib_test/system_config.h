@@ -9,7 +9,7 @@
 #define IMG_W                               (320)
 #define IMG_H                               (240)
 
-#define CONFI_SINGLE_CAMERA                 (1)
+#define CONFI_SINGLE_CAMERA                 (0)
 #define CONFIG_DETECT_VERTICAL              (0)
 ///////////////////////////////////////////////////////////////////////////////
 #define CONFIG_LCD_TYPE_ST7789              (1)
