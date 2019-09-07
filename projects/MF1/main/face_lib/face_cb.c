@@ -14,6 +14,13 @@
 
 extern void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint64_t *time);
 ///////////////////////////////////////////////////////////////////////////////
+/* protocol record face */
+static proto_record_face_cfg_t record_cfg;
+
+static uint8_t proto_record_flag = 0;
+static uint64_t proto_record_start_time = 0;
+
+///////////////////////////////////////////////////////////////////////////////
 uint8_t delay_flag = 0;
 
 static uint8_t *pDisImage = NULL;
@@ -144,6 +151,18 @@ void lcd_refresh_cb(void)
         delay_flag = 0;
         msleep(300);
     }
+
+    if (proto_record_flag)
+    {
+        uint64_t tim = sysctl_get_time_us();
+        tim = (tim - proto_record_start_time) / 1000 / 1000;
+
+        if (tim > record_cfg.time_out_s)
+        {
+            record_cfg.send_ret(1, "timeout to record face", NULL);
+            proto_record_flag = 0;
+        }
+    }
     return;
 }
 ///////////////////////////////////////////////////////////////////////////////
@@ -179,6 +198,16 @@ void fake_face_cb(face_recognition_ret_t *face)
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+/* 依赖detected_face_cb */
+void protocol_record_face(proto_record_face_cfg_t *cfg)
+{
+    proto_record_flag = 1;
+    proto_record_start_time = sysctl_get_time_us();
+
+    memcpy(&record_cfg, cfg, sizeof(proto_record_face_cfg_t));
+    return;
+}
+///////////////////////////////////////////////////////////////////////////////
 void detected_face_cb(face_recognition_ret_t *face)
 {
     uint32_t face_cnt = face->result->face_obj_info.obj_number;
@@ -197,45 +226,101 @@ void detected_face_cb(face_recognition_ret_t *face)
 
             image_rgb565_draw_string(pDisImage, str, 16, DisX_Off, DisY_Off, WHITE, &bg, DisImage_W, DisImage_H);
         }
+        printf("face prob:%.4f\r\n", face_info->prob);
 
-        if (g_key_press)
+        if (proto_record_flag)
         {
-            /* only one person then record face ???? */
-            if (face_info->feature)
+            uint64_t tim = sysctl_get_time_us();
+            tim = (tim - proto_record_start_time) / 1000 / 1000;
+
+            if (tim > record_cfg.time_out_s)
             {
+                record_cfg.send_ret(1, "timeout to record face", NULL);
+                proto_record_flag = 0;
+                goto _exit;
+            }
+
+            if (judge_face_by_keypoint(&(face_info->key_point)) && (face_info->prob >= 0.92f))
+            {
+                printf("record face\r\n");
+
                 face_fea_t face_fea;
 
-#if CONFIG_CAMERA_GC0328_DUAL
-                face_fea.stat = 1;
-                memcpy(&(face_fea.fea_ir), face_info->feature, 196);
-                memset(&(face_fea.fea_rgb), 0, 196);
-#else
+#if CONFI_SINGLE_CAMERA
                 face_fea.stat = 0;
                 memcpy(&(face_fea.fea_rgb), face_info->feature, 196);
                 memset(&(face_fea.fea_ir), 0, 196);
+#else
+                face_fea.stat = 1;
+                memcpy(&(face_fea.fea_ir), face_info->feature, 196);
+                memset(&(face_fea.fea_rgb), 0, 196);
 #endif
-
                 printf("#######save face\r\n");
-                if (flash_save_face_info(&face_fea, NULL, 1, NULL, NULL, NULL) < 0) //image, feature, uid, valid, name, note
+                if (flash_save_face_info(&face_fea, record_cfg.uid, 1, NULL, NULL, NULL) < 0) //image, feature, uid, valid, name, note
                 {
                     printk("Feature Full\n");
+                    record_cfg.send_ret(1, "flash is full", NULL);
                     break;
                 }
 
-                lcd_display_image_alpha(IMG_RECORD_FACE_ADDR, 128);
+                record_cfg.send_ret(0, "record face success", record_cfg.uid);
 
+                proto_record_flag = 0;
+
+                lcd_display_image_alpha(IMG_RECORD_FACE_ADDR, 128);
                 face_lib_draw_flag = 1;
+
                 set_RGB_LED(GLED);
                 msleep(500); //this delay can modify
                 set_RGB_LED(0);
             }
         }
-    }
+        else
+        {
+#if CONFIG_SHORT_PRESS_FUNCTION_KEY_RECORD_FACE
+            /* 按键录入的功能可以删除 */
+            if (g_key_press)
+            {
+                /* only one person then record face ???? */
+                if (face_info->feature)
+                {
+                    face_fea_t face_fea;
 
-    if (g_key_press)
-    {
-        g_key_press = 0;
+#if CONFIG_CAMERA_GC0328_DUAL
+                    face_fea.stat = 1;
+                    memcpy(&(face_fea.fea_ir), face_info->feature, 196);
+                    memset(&(face_fea.fea_rgb), 0, 196);
+#else
+                    face_fea.stat = 0;
+                    memcpy(&(face_fea.fea_rgb), face_info->feature, 196);
+                    memset(&(face_fea.fea_ir), 0, 196);
+#endif
+
+                    printf("#######save face\r\n");
+                    if (flash_save_face_info(&face_fea, NULL, 1, NULL, NULL, NULL) < 0) //image, feature, uid, valid, name, note
+                    {
+                        printk("Feature Full\n");
+                        break;
+                    }
+
+                    lcd_display_image_alpha(IMG_RECORD_FACE_ADDR, 128);
+
+                    face_lib_draw_flag = 1;
+                    set_RGB_LED(GLED);
+                    msleep(500); //this delay can modify
+                    set_RGB_LED(0);
+                }
+            }
+        }
+
+        if (g_key_press)
+        {
+            g_key_press = 0;
+        }
+#endif
     }
+_exit:
+    return;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -267,7 +352,7 @@ void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
 
         for (uint32_t i = 0; i < face_cnt; i++)
         {
-            if ((g_board_cfg.auto_out_feature & 1) == 1)
+            if (g_board_cfg.brd_soft_cfg.cfg.out_fea == 2)
             {
                 face_info = (face_obj_t *)&(face->result->face_obj_info.obj[i]);
                 face_pass_callback(face_info, face_cnt, i, &tim);
@@ -281,44 +366,142 @@ void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
     }
 }
 #else
-void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
-{
-    uint64_t v_tick;
-    uint32_t face_num = 0;
-    face_obj_t *face_info = NULL;
-
-    v_tick = sysctl_get_time_us();
-
-    if (g_board_cfg.auto_out_feature == 1)
+    void pass_face_cb(face_recognition_ret_t * face, uint8_t ir_check)
     {
-        //不与数据库的人脸数据进行对比，直接输出识别到的
-        face_num = face->result->face_obj_info.obj_number;
+        uint64_t v_tick;
+        uint32_t face_num = 0;
+        face_obj_t *face_info = NULL;
 
-        for (uint32_t i = 0; i < face_num; i++)
-        {
-            face_info = (face_obj_t *)&(face->result->face_obj_info.obj[i]);
-            face_pass_callback(face_info, face_num, i, &v_tick);
-            image_rgb565_draw_edge(pDisImage, face_info->x1, face_info->y1, face_info->x2, face_info->y2, YELLOW, DisImage_W, DisImage_H);
-        }
-    }
-    else
-    {
-        //需要进行对比
-        face_num = face->result->face_compare_info.result_number;
+        v_tick = sysctl_get_time_us();
 
-        for (uint32_t i = 0; i < face_num; i++)
+        if (g_board_cfg.brd_soft_cfg.cfg.auto_out_fea)
         {
-            face_info = (face_obj_t *)(face->result->face_compare_info.obj[i]);
-            face_pass_callback(face_info, face_num, i, &v_tick);
-            if (face_info->pass)
+            //不与数据库的人脸数据进行对比，直接输出识别到的
+            face_num = face->result->face_obj_info.obj_number;
+
+            for (uint32_t i = 0; i < face_num; i++)
             {
-                image_rgb565_draw_edge(pDisImage, face_info->x1, face_info->y1, face_info->x2, face_info->y2, GREEN, DisImage_W, DisImage_H);
+                face_info = (face_obj_t *)&(face->result->face_obj_info.obj[i]);
+                face_pass_callback(face_info, face_num, i, &v_tick);
+                image_rgb565_draw_edge(pDisImage, face_info->x1, face_info->y1, face_info->x2, face_info->y2, YELLOW, DisImage_W, DisImage_H);
+            }
+        }
+        else
+        {
+            //需要进行对比
+            face_num = face->result->face_compare_info.result_number;
+
+            for (uint32_t i = 0; i < face_num; i++)
+            {
+                face_info = (face_obj_t *)(face->result->face_compare_info.obj[i]);
+                face_pass_callback(face_info, face_num, i, &v_tick);
+                if (face_info->pass)
+                {
+                    image_rgb565_draw_edge(pDisImage, face_info->x1, face_info->y1, face_info->x2, face_info->y2, GREEN, DisImage_W, DisImage_H);
+                }
             }
         }
     }
-}
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+//1、计算鼻子的坐标与双眼坐标中点的差值，大于10，认为没有正视
+//2、计算鼻子和眼镜的 `y` 轴的差值，如果占整个人脸的比例小于xx，认为没有正视
+uint8_t judge_face_by_keypoint(key_point_t *kp)
+{
+    uint8_t ret = 0;
+    int32_t tmp = 0;
+    uint32_t witdh, height;
+    float percent = 0.0f;
+
+    char str[32];
+
+    witdh = kp->width;
+    height = kp->height;
+
+    ///////////////////////////////////////////////////////////////////////////////
+    tmp = (kp->point[1].x - kp->point[0].x) / 2;
+    tmp += kp->point[0].x;
+    tmp = kp->point[2].x - tmp;
+
+    if (tmp < 0)
+        tmp = -tmp;
+
+    printf("th1:%d\r\n", tmp);
+
+    //阈值1
+    if (tmp > 8)
+    {
+        printf("th2 not pass\r\n");
+        ret++;
+    }
+
+    sprintf(str, "1:%d", tmp);
+#if DETECT_VERTICAL
+    image_rgb565_draw_string(display_image_ver, str, 16, 0, 16,
+                             RED, NULL,
+                             240, 320);
+#else
+        image_rgb565_draw_string(display_image, str, 16, 0, 16,
+                                 RED, NULL,
+                                 320, 240);
+#endif
+
+    ///////////////////////////////////////////////////////////////////////////////
+    tmp = (kp->point[0].y + kp->point[1].y) / 2;
+    tmp = kp->point[2].y - tmp;
+
+    if (tmp < 0)
+        tmp = -tmp;
+
+    percent = (float)((float)tmp / (float)height);
+    printf("th2:%.3f\r\n", percent);
+
+    //阈值2
+    if (percent < 0.14f) //0.14f
+    {
+        printf("th2 not pass\r\n");
+        ret++;
+    }
+
+    sprintf(str, "2:%.4f", percent);
+#if DETECT_VERTICAL
+    image_rgb565_draw_string(display_image_ver, str, 16, 0, 32,
+                             RED, NULL,
+                             240, 320);
+#else
+        image_rgb565_draw_string(display_image, str, 16, 0, 32,
+                                 RED, NULL,
+                                 320, 240);
+#endif
+
+    ///////////////////////////////////////////////////////////////////////////////
+    tmp = (kp->point[3].y + kp->point[4].y) / 2;
+    tmp = tmp - kp->point[2].y;
+
+    if (tmp < 0)
+        tmp = -tmp;
+
+    percent = (float)((float)tmp / (float)height);
+    printf("th3:%.3f\r\n", percent);
+    //阈值3
+    if (percent < 0.18f) //0.18f
+    {
+        printf("th3 not pass\r\n");
+        ret++;
+    }
+    sprintf(str, "3:%.4f", percent);
+#if DETECT_VERTICAL
+    image_rgb565_draw_string(display_image_ver, str, 16, 0, 48,
+                             RED, NULL,
+                             240, 320);
+#else
+        image_rgb565_draw_string(display_image, str, 16, 0, 48,
+                                 RED, NULL,
+                                 320, 240);
+#endif
+    ///////////////////////////////////////////////////////////////////////////////
+    return (ret > 0) ? 0 : 1;
+}

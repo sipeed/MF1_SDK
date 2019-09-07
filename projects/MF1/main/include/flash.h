@@ -13,30 +13,51 @@ typedef struct _board_cfg
 {
     uint32_t header;
     uint32_t cfg_right_flag;
+    struct
+    {
+        struct
+        {
+            uint64_t lcd_dir : 8;
+            uint64_t lcd_flip : 1;
+            uint64_t lcd_hmirror : 1;
+            uint64_t resv1 : 6;
+            uint64_t cam_flip : 1;
+            uint64_t cam_hmirror : 1;
+            uint64_t resv : 46;
+        } lcd_cam;
 
-    uint32_t uart_baud;
+        struct
+        {
+            uint64_t port_tx : 8;
+            uint64_t port_rx : 8;
+            uint64_t log_tx : 8;
+            uint64_t log_rx : 8;
+            uint64_t relay_low : 8;
+            uint64_t relay_high : 8;
+            uint64_t key : 8;
+            uint64_t key_dir : 1;
+            uint64_t resv : 5;
+        } uart_relay_key;
+    } brd_hard_cfg;
 
-    uint32_t recong_out_feature;
+    struct
+    {
+        float out_threshold;
 
-    uint32_t relay_open_in_s;
+        struct
+        {
+            uint64_t out_fea : 2;
+            uint64_t auto_out_fea : 1;
+            uint64_t pkt_fix : 1;
+            uint64_t relay_open_s : 8;
+            uint64_t out_interval_ms : 16;
+            uint64_t port_baud : 32;
+            uint64_t resv : 4;
+        } cfg;
+    } brd_soft_cfg;
 
-    uint32_t pkt_sum_header;
+    void *user_custom_cfg;
 
-    uint32_t auto_out_feature;
-
-    uint32_t out_interval_in_ms;
-
-    uint32_t lcd_cam_dir;
-
-    uint32_t face_gate;
-
-    uint32_t port_cfg;
-
-    uint32_t key_relay_pin_cfg;
-
-    uint8_t wifi_ssid[32];
-    uint8_t wifi_passwd[32];
-    
     uint8_t cfg_sha256[32];
 } board_cfg_t __attribute__((aligned(8)));
 

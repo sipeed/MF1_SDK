@@ -19,198 +19,51 @@ menu "Drivers configuration"
 				bool "LCD use sipeed board"
 		endchoice
 
-	endmenu
+		menu "Lcd ( Display ) configuration"
 
-	config WIFI_ENABLE
-		bool "Enable WiFi"
-		default n
-	
-	config FUNCTION_KEY_PRESS_VOLTAGE_HIGH
-		bool "Voltage is high when key pressed"
-		default y
+			config LCD_WIDTH
+				depends on LCD_TYPE_ST7789
+				int "Lcd display size width"
+				default 240
+			config LCD_HEIGHT
+				depends on LCD_TYPE_ST7789
+				int "Lcd display size height"
+				default 240
 
-	menu "Pin configuration"
-		menu "LCD Pin configuration"
-			config LCD_PIN_BL
-				int "LCD Pin BL"
-				default 9
-			config LCD_PIN_RST
-				int "LCD Pin RST"
-				default 37
-			config LCD_PIN_DCX
-				int "LCD Pin DCX"
-				default 38
-			config LCD_PIN_WRX
-				int "LCD Pin WRX"
-				default 36
-			config LCD_PIN_SCK
-				int "LCD Pin SCK"
-				default 39
-		endmenu
-
-		menu "SPI TF card configuration"
-			config TF_SPI_PIN_SCLK
-				int "SPI TF card SCLK pin number"
-				default 27
-			config TF_SPI_PIN_MOSI
-				int "SPI TF card MOSI pin number"
-				default 28
-			config TF_SPI_PIN_MISO
-				int "SPI TF card MISO pin number"
-				default 26
-			config TF_SPI_PIN_CS
-				int "SPI TF card CS pin number"
-				default 29
-		endmenu
-
-		menu "UART PORT configuration"
-			config PROTOCOL_UART_PORT_TX_PIN
-				int "Protocol uart port TX pin"
-				default 10
-			config PROTOCOL_UART_PORT_RX_PIN
-				int "Protocol uart port RX pin"
-				default 11
-			config DEBUG_UART_PORT_TX_PIN
-				int "Debug uart port TX pin"
-				default 5
-			config DEBUG_UART_PORT_RX_PIN
-				int "Debug uart port RX pin"
-				default 4
-			config PROTOCOL_DEBUG_UART_PIN_SWAP
-				bool "Swap protocol uart pin and debug pin"
-				default n
-		endmenu
-
-		menu "Key configuration"
-			config FUNCTION_KEY_PIN
-				int "Function key pin number"
-				default 24
-		endmenu
-
-		menu "Infrared LED configuration"
-			config INFRARED_LED_PIN
-				int "Infrared LED pin number"
-				default 32
-		endmenu
-
-		menu "LED configuration"
-			config LED_R_PIN
-				int "LED red pin number"
-				default 21
-			config LED_G_PIN
-				int "LED blue pin number"
-				default 22
-			config LED_B_PIN
-				int "LED green pin number"
-				default 23
-		endmenu
-
-		menu "Relay configuration"
-			config RELAY_LOWX_PIN
-				int "Releay lowx pin"
-				default 12
-			config RELAY_HIGH_PIN
-				int "Relay hight pin"
-				default 13
-		endmenu
-
-		menu "WiFi configuration"
-			config WIFI_PIN_TX
-				int "WiFi UART TX pin"
-				default 6
-			config WIFI_PIN_RX
-				int "WiFi UART RX pin"
-				default 7
-			config WIFI_PIN_ENABLE
-				int "WiFi UART enable pin"
-				default 8
-			config WIFI_PIN_SPI_SCLK
-				int "WiFi simulate SPI SCLK pin"
-				default 1
-			config WIFI_PIN_SPI_MOSI
-				int "WiFi simulate SPI MOSI pin"
-				default 3
-			config WIFI_PIN_SPI_MISO
-				int "WiFi simulate SPI MISO pin"
-				default 2
-			config WIFI_PIN_SPI_CS
-				int "WiFi simulate SPI CS pin"
-				default 0
-		endmenu
-
-	endmenu
-
-	menu "Peripheral configuration"
-		menu "LCD Pin configuration"
-			config LCD_GPIOHS_DCX
-				int "LCD Pin DCX bind with GPIOHS num"
-				default 5
-			config LCD_GPIOHS_RST
-				int "LCD Pin RST bind with GPIOHS num"
-				default 6
-		endmenu
-
-		menu "SPI TF card configuration"
-			config TF_SPI_GPIOHS_NUM_SCLK
-				int "SPI TF card GPIOHS simulate SCK number"
-				default 12
-			config TF_SPI_GPIOHS_NUM_MOSI
-				int "SPI TF card GPIOHS simulate MOSI number"
-				default 13
-			config TF_SPI_GPIOHS_NUM_MISO
-				int "SPI TF card GPIOHS simulate MISO number"
-				default 14
-			config TF_SPI_GPIOHS_NUM_CS
-				int "SPI TF card GPIOHS simulate CS number"
+			config LCD_CLK_FREQ_MHZ
+				int "lcd clk frequency MHZ"
 				default 15
 		endmenu
 
-		menu "Key configuration"
-			config FUNCTION_KEY_GPIOHS_NUM
-				int "GPIOHS number for function key"
+		menu "LCD Pin Func configuration"
+			config LCD_GPIOHS_DCX
+				int "LCD Pin DCX bind with GPIOHS num"
 				default 0
-		endmenu
-
-		menu "Infrared LED configuration"
-			config INFRARED_GPIOHS_NUM
-				int "Infrared LED GPIOHS number"
+			config LCD_GPIOHS_RST
+				int "LCD Pin RST bind with GPIOHS num"
 				default 1
 		endmenu
+	endmenu
 
-		menu "LED configuration"
-			config LED_R_GPIOHS_NUM
-				int "LED red GPIOHS number"
+	menu "SPI TF card configuration"
+		config SD_CARD_ENABLE
+			bool "Enable SPI TF card"
+			default n
+
+		menu "SPI TF card Pin Func configuration"
+			depends on SD_CARD_ENABLE
+			config TF_SPI_GPIOHS_NUM_SCLK
+				int "SPI TF card GPIOHS simulate SCK number"
 				default 2
-			config LED_G_GPIOHS_NUM
-				int "LED blue GPIOHS number"
+			config TF_SPI_GPIOHS_NUM_MOSI
+				int "SPI TF card GPIOHS simulate MOSI number"
 				default 3
-			config LED_B_GPIOHS_NUM
-				int "LED green GPIOHS number"
+			config TF_SPI_GPIOHS_NUM_MISO
+				int "SPI TF card GPIOHS simulate MISO number"
 				default 4
-		endmenu
-		
-		menu "Relay configuration"
-			config RELAY_LOWX_GPIOHS_NUM
-				int "Releay lowx gpiohs num"
-				default 7
-			config RELAY_HIGH_GPIOHS_NUM
-				int "Relay hight gpiohs num"
-				default 8
-		endmenu
-
-		menu "WiFi configuration"
-			config WIFI_GPIO_NUM_UART_TX
-				int "GPIO number, set WiFi UART TX to RX mod when use UART of esp32"
-				default 0
-			config WIFI_GPIO_NUM_UART_RX
-				int "GPIO number, set WiFi UART RX to RX mod when use UART of esp32"
-				default 1
-			config WIFI_GPIOHS_NUM_ENABLE
-				int "GPIOHS num of WiFi's enable pin"
-				default 10
-			config WIFI_GPIOHS_NUM_CS
-				int "GPIOHS num of WiFi's CS pin(soft cs)"
-				default 11
+			config TF_SPI_GPIOHS_NUM_CS
+				int "SPI TF card GPIOHS simulate CS number"
+				default 5
 		endmenu
 	endmenu
 

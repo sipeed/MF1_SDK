@@ -41,9 +41,6 @@
 #include "system_config.h"
 
 /* clang-format off */
-#define DBG_TIME_INIT()
-#define DBG_TIME()
-
 #define FTR_850                             (1)
 #define FTR_650                             (0)
 
@@ -135,10 +132,23 @@ typedef struct
     lcd_refresh_cb: 刷屏回调
  */
 
+typedef uint8_t (*add_spec_uid_user_ret)(uint8_t code, char *msg, uint8_t *uid);
+
+typedef struct
+{
+    uint8_t uid[16];
+    uint8_t time_out_s;
+
+    add_spec_uid_user_ret send_ret;
+
+} proto_record_face_cfg_t;
+
 typedef struct
 {
     //protocol send
     void (*proto_send)(char *buf, size_t len);
+
+    void (*proto_record_face)(proto_record_face_cfg_t *cfg);
 
     //detect face, user can record face
     void (*detected_face_cb)(face_recognition_ret_t *face);
@@ -193,6 +203,25 @@ typedef struct _pkt_head
 
 typedef struct
 {
+    uint8_t threshold;
+
+    uint8_t auto_add;
+    uint8_t spec_uid;
+    uint8_t uid[16];
+
+    uint8_t *jpeg_buf;
+    uint32_t jpeg_size;
+    uint8_t jpeg_sha256[32];
+
+} cal_pic_fea_t;
+
+extern cal_pic_fea_t cal_pic_cfg;
+
+typedef int8_t (*cal_pic_send_ret)(uint8_t code, char *msg, int8_t feature[FEATURE_DIMENSION], uint8_t *uid, float prob);
+
+
+typedef struct
+{
     char *cmd;
     void (*cmd_cb)(cJSON *root);
 } protocol_custom_cb_t;
@@ -203,7 +232,7 @@ typedef struct
 uint8_t protocol_send_init_done(void);
 
 void protocol_prase(unsigned char *protocol_buf);
-void protocol_cal_pic_fea(uint8_t *jpeg_buf, uint32_t jpeg_len);
+void protocol_cal_pic_fea(cal_pic_fea_t *cal_cfg, cal_pic_send_ret send_ret);
 uint8_t protocol_send_cal_pic_result(uint8_t code, char *msg, int8_t feature[FEATURE_DIMENSION], uint8_t *uid, float prob);
 
 uint8_t protocol_send_face_info(face_obj_t *obj,

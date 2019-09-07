@@ -31,6 +31,8 @@ face_lib_callback_t face_recognition_cb = (face_lib_callback_t)
 #else
     .proto_send = uart_send,
 #endif
+    .proto_record_face = protocol_record_face,
+
     .detected_face_cb = detected_face_cb,
     .fake_face_cb = fake_face_cb,
     .pass_face_cb = pass_face_cb,
@@ -70,9 +72,9 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
 
     tim = sysctl_get_time_us();
 
-    if (g_board_cfg.out_interval_in_ms != 0)
+    if (g_board_cfg.brd_soft_cfg.cfg.out_interval_ms != 0)
     {
-        if (((tim - last_pass_time) / 1000) < g_board_cfg.out_interval_in_ms)
+        if (((tim - last_pass_time) / 1000) < g_board_cfg.brd_soft_cfg.cfg.out_interval_ms)
         {
             printk("last face pass time too short\r\n");
             return;
@@ -82,7 +84,7 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
     last_pass_time = tim;
 
     /* output feature */
-    if ((g_board_cfg.auto_out_feature & 0x1) == 0x1)
+    if (g_board_cfg.brd_soft_cfg.cfg.auto_out_fea)
     {
         protocol_send_face_info(obj,
                                 0, NULL, obj->feature,
@@ -91,16 +93,16 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
     }
     else
     {
-        if (obj->score > g_board_cfg.face_gate)
+        if (obj->score > g_board_cfg.brd_soft_cfg.out_threshold)
         {
             open_relay(); //open when score > gate
             if (flash_get_saved_faceinfo(&info, obj->index) == 0)
             {
-                if ((g_board_cfg.auto_out_feature >> 1) & 1)
+                if (g_board_cfg.brd_soft_cfg.cfg.out_fea == 2)
                 {
                     //output real time feature
                     protocol_send_face_info(obj,
-                                            obj->score, info.uid, g_board_cfg.recong_out_feature ? obj->feature : NULL,
+                                            obj->score, info.uid, g_board_cfg.brd_soft_cfg.cfg.out_fea ? obj->feature : NULL,
                                             total, current, time);
                 }
                 else
@@ -109,7 +111,7 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
                     face_fea_t *face_fea = (face_fea_t *)&(info.info);
                     protocol_send_face_info(obj,
                                             obj->score, info.uid,
-                                            g_board_cfg.recong_out_feature ? (face_fea->stat == 1) ? face_fea->fea_ir : face_fea->fea_rgb : NULL,
+                                            g_board_cfg.brd_soft_cfg.cfg.out_fea ? (face_fea->stat == 1) ? face_fea->fea_ir : face_fea->fea_rgb : NULL,
                                             total, current, time);
                 }
             }
@@ -124,7 +126,7 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
         }
     }
 
-    if (g_board_cfg.auto_out_feature != 1)
+    if (g_board_cfg.brd_soft_cfg.cfg.auto_out_fea == 0)
     {
         lcd_draw_pass();
     }
@@ -202,23 +204,16 @@ int main(void)
         }
     }
 
+    flash_cfg_print(&g_board_cfg);
+
     face_lib_regisiter_callback(&face_recognition_cb);
 
     /* init device */
 #if (CONFIG_PROTO_OVER_NET == 0)
     protocol_regesiter_user_cb(&user_custom_cmd[0], sizeof(user_custom_cmd) / sizeof(user_custom_cmd[0]));
-
-    protocol_init_device(&g_board_cfg);
 #endif
 
-    init_relay_key_pin(g_board_cfg.key_relay_pin_cfg);
-
-    printk("load cfg %s\r\n", g_board_cfg.cfg_right_flag ? "success" : "error");
-    flash_cfg_print(&g_board_cfg);
-
-    /* recognition threshold */
-    face_recognition_cfg.compare_threshold = (float)g_board_cfg.face_gate;
-    printk("set compare_threshold: %d \r\n", g_board_cfg.face_gate);
+    protocol_init_device(&g_board_cfg);
 
 #if CONFIG_WIFI_ENABLE
     /* init 8285 */
@@ -348,13 +343,24 @@ int main(void)
 #endif
         }
 #else
+
         /* if rcv jpg or scan qrcode, will stuck a period */
+#if CONFIG_WIFI_ENABLE
         if (!jpeg_recv_start_flag && !qrcode_get_info_flag)
         {
-            face_recognition_cfg.auto_out_fea = (uint8_t)g_board_cfg.auto_out_feature;
-            face_recognition_cfg.compare_threshold = (float)g_board_cfg.face_gate;
+            face_recognition_cfg.auto_out_fea = (uint8_t)g_board_cfg.brd_soft_cfg.cfg.auto_out_fea;
+            face_recognition_cfg.compare_threshold = (float)g_board_cfg.brd_soft_cfg.out_threshold;
             face_lib_run(&face_recognition_cfg);
         }
+#else
+        if (!jpeg_recv_start_flag)
+        {
+            face_recognition_cfg.auto_out_fea = (uint8_t)g_board_cfg.brd_soft_cfg.cfg.auto_out_fea;
+            face_recognition_cfg.compare_threshold = (float)g_board_cfg.brd_soft_cfg.out_threshold;
+            face_lib_run(&face_recognition_cfg);
+        }
+#endif
+
 #endif
         /* get key state */
         update_key_state();
@@ -507,7 +513,7 @@ int main(void)
         tim = sysctl_get_time_us();
         tim = tim / 1000 / 1000;
 
-        if (relay_open_flag && ((tim - last_open_relay_time_in_s) >= g_board_cfg.relay_open_in_s))
+        if (relay_open_flag && ((tim - last_open_relay_time_in_s) >= g_board_cfg.brd_soft_cfg.cfg.relay_open_s))
         {
             close_relay();
             relay_open_flag = 0;
@@ -535,8 +541,9 @@ int main(void)
             /* recv over */
             if (jpeg_recv_len != 0)
             {
-                protocol_cal_pic_fea(jpeg_recv_buf, jpeg_recv_len);
+                protocol_cal_pic_fea(&cal_pic_cfg, protocol_send_cal_pic_result);
                 jpeg_recv_len = 0;
+                jpeg_recv_start_flag = 0;
             }
         }
 #else

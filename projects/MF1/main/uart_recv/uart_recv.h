@@ -20,9 +20,6 @@ extern pkt_head_t g_pkt_head;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int8_t protocol_init_device(board_cfg_t *brd_cfg);
 
-void init_relay_key_pin(uint32_t cfg);
-void init_board_uart_port(uint32_t port_cfg);
-
 void protocol_start_recv_jpeg(void);
 void protocol_stop_recv_jpeg(void);
 

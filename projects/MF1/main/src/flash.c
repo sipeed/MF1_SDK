@@ -291,11 +291,11 @@ void flash_init(void)
 
     w25qxx_read_id(&manuf_id, &device_id);
 
-    printk("manuf_id:0x%02x, device_id:0x%02x\n", manuf_id, device_id);
+    printk("manuf_id:0x%02x, device_id:0x%02x\r\n", manuf_id, device_id);
 
     if ((manuf_id != 0xEF && manuf_id != 0xC8) || (device_id != 0x17 && device_id != 0x16))
     {
-        printk("manuf_id:0x%02x, device_id:0x%02x\n", manuf_id, device_id);
+        printk("manuf_id:0x%02x, device_id:0x%02x\r\n", manuf_id, device_id);
         return;
     }
 
@@ -318,20 +318,20 @@ void flash_init(void)
 
         if (v_num != g_face_save_info.number)
         {
-            printk("err:> index is %d, but saved is %d\n", v_num, g_face_save_info.number);
+            printk("err:> index is %d, but saved is %d\r\n", v_num, g_face_save_info.number);
             g_face_save_info.number = v_num;
         }
 
         if (v_num >= FACE_DATA_MAX_COUNT)
         {
-            printk("ERR, too many pic\n");
+            printk("ERR, too many pic\r\n");
         }
 
         flash_init_uid_table(0);
     }
     else
     {
-        printk("No header\n");
+        printk("No header\r\n");
         g_face_save_info.header = FACE_HEADER;
         g_face_save_info.number = 0;
         memset((void *)g_face_save_info.face_info_index, 0, sizeof(g_face_save_info.face_info_index));
@@ -347,71 +347,86 @@ void flash_init(void)
     return;
 }
 
-//FIXME: 需要重写
 //1 success
 //2 no feature store
 //0 error
-int flash_get_saved_feature_sha256(uint8_t sha256[32])
+int flash_get_saved_feature_sha256(uint8_t sha256[32 + 1])
 {
-    //     uint8_t cal_sha256[32 + 1];
-    //     static uint8_t flag = 0;
-    //     uint8_t feature[FEATURE_DIMENSION * 4 + 1], tmp[FEATURE_DIMENSION * 4 + 1];
-    //     uint32_t i = 0, cnt = 0;
-    //     face_info_t v_face_info;
+    static uint8_t flag = 0;
+    uint8_t feature[FEATURE_DIMENSION], tmp[FEATURE_DIMENSION];
+    uint32_t i = 0, cnt = 0;
 
-    //     flag = 0;
-    //     cnt = 0;
-    //     for(i = 0; i < FACE_DATA_MAX_COUNT; i++)
-    //     {
-    //         if((g_face_save_info.face_info_index[i / 32] >> (i % 32)) & 0x1)
-    //         {
-    //             if(flash_get_face_info(&v_face_info, i) == 0)
-    //             {
-    //                 memcpy(tmp, v_face_info.info, (FEATURE_DIMENSION * 4));
-    //                 if(flag == 0)
-    //                 {
-    //                     memcpy(feature, tmp, (FEATURE_DIMENSION * 4));
-    //                     flag = 1;
-    //                 } else
-    //                 {
-    //                     for(uint16_t j = 0; j < (FEATURE_DIMENSION * 4); j++)
-    //                     {
-    //                         feature[j] ^= tmp[j];
-    //                     }
-    //                 }
-    //             } else
-    //             {
-    //                 printk("flash_get_face_info failed\r\n");
-    //                 return 0;
-    //             }
-    //             cnt++;
-    //         }
-    //     }
+    face_info_t v_face_info;
+    face_fea_t v_info;
 
-    //     if(cnt == 0)
-    //     {
-    //         printk("flash_get_saved_feature_sha256 cnt == 0\r\n");
-    //         memset(sha256, 0xff, 32);
-    //         return 1;
-    //     }
+    flag = 0;
+    cnt = 0;
+    for (i = 0; i < FACE_DATA_MAX_COUNT; i++)
+    {
+        if ((g_face_save_info.face_info_index[i / 32] >> (i % 32)) & 0x1)
+        {
+            if (flash_get_face_info(&v_face_info, i) == 0)
+            {
+                // memcpy(tmp, v_face_info.info, (FEATURE_DIMENSION * 4));
+                if (v_face_info.info.stat != 1)
+                {
+                    memcpy(tmp, v_face_info.info.fea_rgb, FEATURE_DIMENSION);
+                }
+                else
+                {
+                    printk("flash_get_face_info failed, no rgb feature\r\n");
+                    return 0;
+                }
 
-    //     sha256_hard_calculate(feature, (FEATURE_DIMENSION * 4), cal_sha256);
-    //     memcpy(sha256, cal_sha256, 32);
-    // #if 0
-    //     printk("feature: \r\n");
-    //     for (uint16_t i = 0; i < FEATURE_DIMENSION * 4; i++)
-    //     {
-    //         printk("%02x ", *(feature + i));
-    //         if (i % 4 == 4)
-    //             printk("\r\n");
-    //     }
-    //     printk("\r\n************************************\r\n");
+                if (flag == 0)
+                {
+                    memcpy(feature, tmp, (FEATURE_DIMENSION));
+                    flag = 1;
+                }
+                else
+                {
+                    for (uint16_t j = 0; j < (FEATURE_DIMENSION); j++)
+                    {
+                        feature[j] ^= tmp[j];
+                    }
+                }
+            }
+            else
+            {
+                printk("flash_get_face_info failed\r\n");
+                return 0;
+            }
+            cnt++;
+        }
+    }
 
-    //     for (uint16_t i = 0; i < 32; i++)
-    //     {
-    //         printk("%02X", sha256[i]);
-    //     }
-    // #endif
+    if (cnt == 0)
+    {
+        printk("flash_get_saved_feature_sha256 cnt == 0\r\n");
+        memset(sha256, 0xff, 32);
+        sha256[32] = 0;
+        return 1;
+    }
+
+    sha256_hard_calculate(feature, (FEATURE_DIMENSION), sha256);
+    sha256[32] = 0;
+
+#if 1
+    printk("feature: \r\n");
+    for (uint16_t i = 0; i < FEATURE_DIMENSION * 4; i++)
+    {
+        printk("%02x ", *(feature + i));
+        if (i % 4 == 4)
+            printk("\r\n");
+    }
+    printk("\r\n************************************\r\n");
+
+    for (uint16_t i = 0; i < 32; i++)
+    {
+        printk("%02X", sha256[i]);
+    }
+    printf("\r\n");
+#endif
 
     return 1;
 }
@@ -478,12 +493,12 @@ uint8_t flash_save_cfg(board_cfg_t *cfg)
 
     sha256_hard_calculate((uint8_t *)cfg, sizeof(board_cfg_t) - 32, cfg->cfg_sha256);
 
-    printf("cfg new checksum: ");
+    printf("boardcfg checksum:\r\n");
     for (uint8_t i = 0; i < 32; i++)
     {
-        printk("%02X", cfg->cfg_sha256[i]);
+        printf("%02X", cfg->cfg_sha256[i]);
     }
-    printk("\r\n");
+    printf("\r\n");
 
     stat = w25qxx_write_data(BOARD_CFG_ADDR, (uint8_t *)cfg, sizeof(board_cfg_t));
 
@@ -492,62 +507,84 @@ uint8_t flash_save_cfg(board_cfg_t *cfg)
 
 uint8_t flash_cfg_print(board_cfg_t *cfg)
 {
-    printk("uart_baud:%d\r\n", cfg->uart_baud);
-    printk("recong_out_feature:%d\r\n", cfg->recong_out_feature);
-    printk("relay_open_in_s:%d\r\n", cfg->relay_open_in_s);
-    printk("pkt_fix:%d\r\n", cfg->pkt_sum_header);
-    printk("auto_out_feature:%d\r\n", cfg->auto_out_feature);
-    printk("out_interval_in_ms:%d\r\n", cfg->out_interval_in_ms);
-    printk("lcd_cam_dir:%08X\r\n", cfg->lcd_cam_dir);
-    printk("face_gate:%d\r\n", cfg->face_gate);
-    printk("port_cfg:%08X\r\n", cfg->port_cfg);
-    printk("key_relay_pin_cfg:%08X\r\n", cfg->key_relay_pin_cfg);
-    return 0;
+    printf("dump board cfg:\r\n");
+
+    printf("    %-16s : %f\r\n", "out_threshold", cfg->brd_soft_cfg.out_threshold);
+
+    printf("    %-16s : %d\r\n", "auto_out_fea", cfg->brd_soft_cfg.cfg.auto_out_fea);
+    printf("    %-16s : %d\r\n", "out_fea", cfg->brd_soft_cfg.cfg.out_fea);
+    printf("    %-16s : %d\r\n", "out_interval_ms", cfg->brd_soft_cfg.cfg.out_interval_ms);
+    printf("    %-16s : %d\r\n", "pkt_fix", cfg->brd_soft_cfg.cfg.pkt_fix);
+    printf("    %-16s : %d\r\n", "port_baud", cfg->brd_soft_cfg.cfg.port_baud);
+    printf("    %-16s : %d\r\n", "relay_open_s", cfg->brd_soft_cfg.cfg.relay_open_s);
+
+    printf("    %-16s : %d\r\n", "cam_flip", cfg->brd_hard_cfg.lcd_cam.cam_flip);
+    printf("    %-16s : %d\r\n", "cam_hmirror", cfg->brd_hard_cfg.lcd_cam.cam_hmirror);
+    printf("    %-16s : %d\r\n", "lcd_dir", cfg->brd_hard_cfg.lcd_cam.lcd_dir);
+    printf("    %-16s : %d\r\n", "lcd_flip", cfg->brd_hard_cfg.lcd_cam.lcd_flip);
+    printf("    %-16s : %d\r\n", "lcd_hmirror", cfg->brd_hard_cfg.lcd_cam.lcd_hmirror);
+
+    printf("    %-16s : %d\r\n", "key", cfg->brd_hard_cfg.uart_relay_key.key);
+    printf("    %-16s : %d\r\n", "key_dir", cfg->brd_hard_cfg.uart_relay_key.key_dir);
+    printf("    %-16s : %d\r\n", "log_rx", cfg->brd_hard_cfg.uart_relay_key.log_rx);
+    printf("    %-16s : %d\r\n", "log_tx", cfg->brd_hard_cfg.uart_relay_key.log_tx);
+    printf("    %-16s : %d\r\n", "port_rx", cfg->brd_hard_cfg.uart_relay_key.port_rx);
+    printf("    %-16s : %d\r\n", "port_tx", cfg->brd_hard_cfg.uart_relay_key.port_tx);
+    printf("    %-16s : %d\r\n", "relay_high", cfg->brd_hard_cfg.uart_relay_key.relay_high);
+    printf("    %-16s : %d\r\n", "relay_low", cfg->brd_hard_cfg.uart_relay_key.relay_low);
+
+    printf("    %-16s : %08X\r\n", "user_custom_cfg", (uint32_t)cfg->user_custom_cfg);
+
+    return;
 }
 
 uint8_t flash_cfg_set_default(board_cfg_t *cfg)
 {
     memset(cfg, 0, sizeof(board_cfg_t));
+
     cfg->header = CFG_HEADER;
     cfg->cfg_right_flag = 0;
+    cfg->user_custom_cfg = NULL;
 
-    cfg->uart_baud = 115200;
-    cfg->recong_out_feature = 0;
-    cfg->relay_open_in_s = 1;
-    cfg->pkt_sum_header = 0;
-    cfg->auto_out_feature = 0;
-    cfg->out_interval_in_ms = 500;
+    cfg->brd_soft_cfg.out_threshold = (float)FACE_RECGONITION_THRESHOLD;
 
-    //31-4 3        2       1       0
-    //---- lcd_v    lcd_h   cam_v   cam_h
+    //brd_soft_cfg
+    cfg->brd_soft_cfg.cfg.auto_out_fea = 0;
+    cfg->brd_soft_cfg.cfg.out_fea = 0;
+    cfg->brd_soft_cfg.cfg.out_interval_ms = 100;
+    cfg->brd_soft_cfg.cfg.pkt_fix = 0;
+    cfg->brd_soft_cfg.cfg.port_baud = 115200;
+    cfg->brd_soft_cfg.cfg.relay_open_s = 2;
 
-    /* lcd dir */
-    //  7   6   5   4   3   2   1   0
-    //  MY  MX  MV  ML  RGB MH  -   -
-
+    //brd_hard_cfg
 #if CONFIG_LCD_VERTICAL
-    cfg->lcd_cam_dir = 0x00;
+    cfg->brd_hard_cfg.lcd_cam.cam_flip = 0;
+    cfg->brd_hard_cfg.lcd_cam.cam_hmirror = 0;
+    cfg->brd_hard_cfg.lcd_cam.lcd_dir = 0;
+    cfg->brd_hard_cfg.lcd_cam.lcd_flip = 0;
+    cfg->brd_hard_cfg.lcd_cam.lcd_hmirror = 0;
 #elif CONFI_SINGLE_CAMERA
-    cfg->lcd_cam_dir = 0x01;
+    cfg->brd_hard_cfg.lcd_cam.cam_flip = 0;
+    cfg->brd_hard_cfg.lcd_cam.cam_hmirror = 1;
+    cfg->brd_hard_cfg.lcd_cam.lcd_dir = 0;
+    cfg->brd_hard_cfg.lcd_cam.lcd_flip = 0;
+    cfg->brd_hard_cfg.lcd_cam.lcd_hmirror = 0;
 #else
-    cfg->lcd_cam_dir = 0x02;
+    cfg->brd_hard_cfg.lcd_cam.cam_flip = 1;
+    cfg->brd_hard_cfg.lcd_cam.cam_hmirror = 0;
+    cfg->brd_hard_cfg.lcd_cam.lcd_dir = 0;
+    cfg->brd_hard_cfg.lcd_cam.lcd_flip = 0;
+    cfg->brd_hard_cfg.lcd_cam.lcd_hmirror = 0;
 #endif
 
-    cfg->face_gate = FACE_RECGONITION_THRESHOLD;
+    cfg->brd_hard_cfg.uart_relay_key.key = CONFIG_FUNCTION_KEY_PIN;
+    cfg->brd_hard_cfg.uart_relay_key.key_dir = CONFIG_FUNCTION_KEY_PRESS_VOLTAGE_HIGH;
+    cfg->brd_hard_cfg.uart_relay_key.log_rx = CONFIG_DEBUG_UART_PORT_RX_PIN;
+    cfg->brd_hard_cfg.uart_relay_key.log_tx = CONFIG_DEBUG_UART_PORT_TX_PIN;
+    cfg->brd_hard_cfg.uart_relay_key.port_rx = CONFIG_PROTOCOL_UART_PORT_RX_PIN;
+    cfg->brd_hard_cfg.uart_relay_key.port_tx = CONFIG_PROTOCOL_UART_PORT_TX_PIN;
+    cfg->brd_hard_cfg.uart_relay_key.relay_high = CONFIG_RELAY_HIGH_PIN;
+    cfg->brd_hard_cfg.uart_relay_key.relay_low = CONFIG_RELAY_LOWX_PIN;
 
-#if CONFIG_PROTOCOL_DEBUG_UART_PIN_SWAP
-    cfg->port_cfg = (uint32_t)((CONFIG_PROTOCOL_UART_PORT_TX_PIN << 24) | (CONFIG_PROTOCOL_UART_PORT_RX_PIN << 16) |
-                               (CONFIG_DEBUG_UART_PORT_TX_PIN << 8) | (CONFIG_DEBUG_UART_PORT_RX_PIN));
-#else
-    cfg->port_cfg = (uint32_t)((CONFIG_DEBUG_UART_PORT_TX_PIN << 24) | (CONFIG_DEBUG_UART_PORT_RX_PIN << 16) |
-                               (CONFIG_PROTOCOL_UART_PORT_TX_PIN << 8) | (CONFIG_PROTOCOL_UART_PORT_RX_PIN));
-#endif
-
-    cfg->key_relay_pin_cfg = (uint32_t)((CONFIG_FUNCTION_KEY_PRESS_VOLTAGE_HIGH << 24) | (CONFIG_FUNCTION_KEY_PIN << 16) |
-                                        (CONFIG_RELAY_LOWX_PIN << 8) | (CONFIG_RELAY_HIGH_PIN));
-    
-    memset(cfg->wifi_ssid, 0, 32);
-    memset(cfg->wifi_passwd, 0, 32);
-
-    return 0;
+    return;
 }

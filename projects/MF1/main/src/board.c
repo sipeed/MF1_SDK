@@ -137,6 +137,7 @@ static void io_mux_init(void)
     gpiohs_set_drive_mode(CONFIG_LED_B_GPIOHS_NUM, GPIO_DM_OUTPUT);
     gpiohs_set_pin(CONFIG_LED_B_GPIOHS_NUM, 1);
 
+#if CONFIG_WIFI_ENABLE
     //SPI WIFI
     fpioa_set_function(CONFIG_WIFI_PIN_TX, FUNC_GPIO0 + CONFIG_WIFI_GPIO_NUM_UART_TX);
     gpio_set_drive_mode(CONFIG_WIFI_GPIO_NUM_UART_TX, GPIO_DM_INPUT);
@@ -148,7 +149,6 @@ static void io_mux_init(void)
     gpiohs_set_drive_mode(CONFIG_WIFI_GPIOHS_NUM_ENABLE, GPIO_DM_OUTPUT);
     gpiohs_set_pin(CONFIG_WIFI_GPIOHS_NUM_ENABLE, 0); //disable WIFI
 
-#if CONFIG_WIFI_ENABLE
     /*
      GPIO   |   Name    |   K210    
 =====================================

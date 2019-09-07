@@ -181,6 +181,8 @@ lcd_dis_t *lcd_dis_list_add_str(int id, int auto_del, uint16_t size, uint16_t zh
         if (lcd_dis_list_check_id(id))
         {
             lcd_dis_list_del_by_id(id);
+            //recheck
+            lcd_dis_list_check_id(id);
         }
         lcd_dis->id = id;
 

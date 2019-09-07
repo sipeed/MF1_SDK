@@ -19,10 +19,14 @@ list(APPEND ADD_INCLUDE "audio"
 ############ Add source files #################
 append_srcs_dir(ADD_SRCS "audio")
 append_srcs_dir(ADD_SRCS "face_lib")
+
+if(CONFIG_WIFI_ENABLE)
 FILE(GLOB_RECURSE NETWORK_SRC
                             "network/*.c"
                         )
 list(APPEND ADD_SRCS ${NETWORK_SRC})
+endif()
+
 append_srcs_dir(ADD_SRCS "src")
 append_srcs_dir(ADD_SRCS "uart_recv")
 

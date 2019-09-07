@@ -12,7 +12,9 @@ if(CONFIG_COMPONENT_DRIVERS_ENABLE)
         append_srcs_dir(ADD_SRCS "lcd/lcd_sipeed/src")
     endif()
 
-    append_srcs_dir(ADD_SRCS "sd_card/src")
+    if(CONFIG_SD_CARD_ENABLE)
+        append_srcs_dir(ADD_SRCS "sd_card/src")
+    endif()
 
     list(APPEND ADD_REQUIREMENTS kendryte_sdk)
 
