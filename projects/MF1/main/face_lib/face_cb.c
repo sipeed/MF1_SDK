@@ -275,9 +275,9 @@ void detected_face_cb(face_recognition_ret_t *face)
                 set_RGB_LED(0);
             }
         }
+#if CONFIG_SHORT_PRESS_FUNCTION_KEY_RECORD_FACE
         else
         {
-#if CONFIG_SHORT_PRESS_FUNCTION_KEY_RECORD_FACE
             /* 按键录入的功能可以删除 */
             if (g_key_press)
             {

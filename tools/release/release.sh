@@ -30,6 +30,7 @@ cd ../../projects
 #
 cd MF1
 
+## 1
 echo "-------------------"
 echo "build project MF1"
 echo "long press key clear face feature"
@@ -42,6 +43,7 @@ python3 project.py build
 cp build/MF1.bin $release_dir/mf1_clr1_$version.bin
 cp build/MF1.elf $release_dir/elf/mf1_clr1_$version.elf
 
+## 2
 echo "-------------------"
 echo "build project MF1"
 echo "long press key not clear face feature"
@@ -53,6 +55,19 @@ python3 project.py distclean
 python3 project.py build
 cp build/MF1.bin $release_dir/mf1_clr0_$version.bin
 cp build/MF1.elf $release_dir/elf/mf1_clr0_$version.elf
+
+## 3
+echo "-------------------"
+echo "build project MF1"
+echo "key only reset board factory..."
+echo "-------------------"
+
+cp config_defaults.mk.2 config_defaults.mk
+
+python3 project.py distclean
+python3 project.py build
+cp build/MF1.bin $release_dir/mf1_key_reset_$version.bin
+cp build/MF1.elf $release_dir/elf/mf1_key_reset_$version.elf
 
 cd $release_dir
 7z a elf_maixpy_${version}.7z elf/*
