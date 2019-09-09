@@ -79,8 +79,15 @@ static int ov2640_read_id(camera_t *camera, uint16_t *manuf_id, uint16_t *device
 
 static int ov2640_config(camera_t *camera)
 {
+#ifndef CONFIG_NOT_MF1_BOARD
+    //build for MF1
     fpioa_set_function(CAM_SCL_PIN, FUNC_SCCB_SCLK);
     fpioa_set_function(CAM_SDA_650_PIN, FUNC_SCCB_SDA);
+#else
+    //build for Others
+    fpioa_set_function(41, FUNC_SCCB_SCLK);
+    fpioa_set_function(40, FUNC_SCCB_SDA);
+#endif
 
     for (uint16_t index = 0; ov2640_reg_tables[index][0]; index++)
     {

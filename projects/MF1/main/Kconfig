@@ -184,6 +184,7 @@ menu "Application configuration"
 
 			config CAMERA_OV2640
 				bool "single ov2640"
+				select NOT_MF1_BOARD
 			config CAMERA_GC0328_SINGLE
 				bool "single gc0328"
 			config CAMERA_GC0328_DUAL
@@ -209,6 +210,12 @@ menu "Application configuration"
 		bool "Enable WiFi"
 		default n
 	
+	config NOT_MF1_BOARD
+		bool "not MF1 board"
+		default n
+		---help---
+		build for Bit,Go,DOck or Othres
+
 	menu "--------------------------------"
 
 	endmenu

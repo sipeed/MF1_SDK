@@ -100,6 +100,14 @@ static void io_mux_init(void)
     fpioa_set_function(44, FUNC_CMOS_PWDN);
     fpioa_set_function(43, FUNC_CMOS_VSYNC);
 
+#ifndef CONFIG_NOT_MF1_BOARD
+    //build for MF1
+    fpioa_set_function(25, FUNC_CMOS_RST);
+#else
+    //build for Others
+    fpioa_set_function(42, FUNC_CMOS_RST);
+#endif
+
     /* LCD */
     fpioa_set_function(CONFIG_LCD_PIN_RST, FUNC_GPIOHS0 + CONFIG_LCD_GPIOHS_RST);
     fpioa_set_function(CONFIG_LCD_PIN_DCX, FUNC_GPIOHS0 + CONFIG_LCD_GPIOHS_DCX);
@@ -196,8 +204,16 @@ void board_init(void)
     set_IR_LED(0);
 
     /* DVP init */
+#ifndef CONFIG_NOT_MF1_BOARD
+    //build for MF1
     my_dvp_init(8);
     my_dvp_set_xclk_rate(48000000);
+#else
+    //build for Others
+    dvp_init(8);
+    dvp_set_xclk_rate(24000000);
+#endif
+
     dvp_enable_burst();
     dvp_set_output_enable(0, 1);
     dvp_set_output_enable(1, 1);
