@@ -563,10 +563,10 @@ uint8_t flash_cfg_set_default(board_cfg_t *cfg)
     cfg->brd_hard_cfg.lcd_cam.lcd_dir = 0;
     cfg->brd_hard_cfg.lcd_cam.lcd_flip = 0;
     cfg->brd_hard_cfg.lcd_cam.lcd_hmirror = 0;
-#elif CONFI_SINGLE_CAMERA
+#elif CONFIG_CAMERA_OV2640
     cfg->brd_hard_cfg.lcd_cam.cam_flip = 0;
     cfg->brd_hard_cfg.lcd_cam.cam_hmirror = 1;
-    cfg->brd_hard_cfg.lcd_cam.lcd_dir = 0;
+    cfg->brd_hard_cfg.lcd_cam.lcd_dir = 0x20;
     cfg->brd_hard_cfg.lcd_cam.lcd_flip = 0;
     cfg->brd_hard_cfg.lcd_cam.lcd_hmirror = 0;
 #else
@@ -578,7 +578,13 @@ uint8_t flash_cfg_set_default(board_cfg_t *cfg)
 #endif
 
     cfg->brd_hard_cfg.uart_relay_key.key = CONFIG_FUNCTION_KEY_PIN;
-    cfg->brd_hard_cfg.uart_relay_key.key_dir = CONFIG_FUNCTION_KEY_PRESS_VOLTAGE_HIGH;
+
+#if CONFIG_FUNCTION_KEY_PRESS_VOLTAGE_HIGH
+    cfg->brd_hard_cfg.uart_relay_key.key_dir = 1;
+#else
+    cfg->brd_hard_cfg.uart_relay_key.key_dir = 0;
+#endif
+
     cfg->brd_hard_cfg.uart_relay_key.log_rx = CONFIG_DEBUG_UART_PORT_RX_PIN;
     cfg->brd_hard_cfg.uart_relay_key.log_tx = CONFIG_DEBUG_UART_PORT_TX_PIN;
     cfg->brd_hard_cfg.uart_relay_key.port_rx = CONFIG_PROTOCOL_UART_PORT_RX_PIN;
