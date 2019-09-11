@@ -275,7 +275,7 @@ void detected_face_cb(face_recognition_ret_t *face)
                 set_RGB_LED(0);
             }
         }
-#if CONFIG_SHORT_PRESS_FUNCTION_KEY_RECORD_FACE
+#if (CONFIG_SHORT_PRESS_FUNCTION_KEY_RECORD_FACE && (CONFIG_KEY_SHORT_QRCODE == 0))
         else
         {
             /* 按键录入的功能可以删除 */
@@ -366,42 +366,42 @@ void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
     }
 }
 #else
-    void pass_face_cb(face_recognition_ret_t * face, uint8_t ir_check)
+void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
+{
+    uint64_t v_tick;
+    uint32_t face_num = 0;
+    face_obj_t *face_info = NULL;
+
+    v_tick = sysctl_get_time_us();
+
+    if (g_board_cfg.brd_soft_cfg.cfg.auto_out_fea)
     {
-        uint64_t v_tick;
-        uint32_t face_num = 0;
-        face_obj_t *face_info = NULL;
+        //不与数据库的人脸数据进行对比，直接输出识别到的
+        face_num = face->result->face_obj_info.obj_number;
 
-        v_tick = sysctl_get_time_us();
-
-        if (g_board_cfg.brd_soft_cfg.cfg.auto_out_fea)
+        for (uint32_t i = 0; i < face_num; i++)
         {
-            //不与数据库的人脸数据进行对比，直接输出识别到的
-            face_num = face->result->face_obj_info.obj_number;
-
-            for (uint32_t i = 0; i < face_num; i++)
-            {
-                face_info = (face_obj_t *)&(face->result->face_obj_info.obj[i]);
-                face_pass_callback(face_info, face_num, i, &v_tick);
-                image_rgb565_draw_edge(pDisImage, face_info->x1, face_info->y1, face_info->x2, face_info->y2, YELLOW, DisImage_W, DisImage_H);
-            }
+            face_info = (face_obj_t *)&(face->result->face_obj_info.obj[i]);
+            face_pass_callback(face_info, face_num, i, &v_tick);
+            image_rgb565_draw_edge(pDisImage, face_info->x1, face_info->y1, face_info->x2, face_info->y2, YELLOW, DisImage_W, DisImage_H);
         }
-        else
-        {
-            //需要进行对比
-            face_num = face->result->face_compare_info.result_number;
+    }
+    else
+    {
+        //需要进行对比
+        face_num = face->result->face_compare_info.result_number;
 
-            for (uint32_t i = 0; i < face_num; i++)
+        for (uint32_t i = 0; i < face_num; i++)
+        {
+            face_info = (face_obj_t *)(face->result->face_compare_info.obj[i]);
+            face_pass_callback(face_info, face_num, i, &v_tick);
+            if (face_info->pass)
             {
-                face_info = (face_obj_t *)(face->result->face_compare_info.obj[i]);
-                face_pass_callback(face_info, face_num, i, &v_tick);
-                if (face_info->pass)
-                {
-                    image_rgb565_draw_edge(pDisImage, face_info->x1, face_info->y1, face_info->x2, face_info->y2, GREEN, DisImage_W, DisImage_H);
-                }
+                image_rgb565_draw_edge(pDisImage, face_info->x1, face_info->y1, face_info->x2, face_info->y2, GREEN, DisImage_W, DisImage_H);
             }
         }
     }
+}
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -444,9 +444,9 @@ uint8_t judge_face_by_keypoint(key_point_t *kp)
                              RED, NULL,
                              240, 320);
 #else
-        image_rgb565_draw_string(display_image, str, 16, 0, 16,
-                                 RED, NULL,
-                                 320, 240);
+    image_rgb565_draw_string(display_image, str, 16, 0, 16,
+                             RED, NULL,
+                             320, 240);
 #endif
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -472,9 +472,9 @@ uint8_t judge_face_by_keypoint(key_point_t *kp)
                              RED, NULL,
                              240, 320);
 #else
-        image_rgb565_draw_string(display_image, str, 16, 0, 32,
-                                 RED, NULL,
-                                 320, 240);
+    image_rgb565_draw_string(display_image, str, 16, 0, 32,
+                             RED, NULL,
+                             320, 240);
 #endif
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -498,9 +498,9 @@ uint8_t judge_face_by_keypoint(key_point_t *kp)
                              RED, NULL,
                              240, 320);
 #else
-        image_rgb565_draw_string(display_image, str, 16, 0, 48,
-                                 RED, NULL,
-                                 320, 240);
+    image_rgb565_draw_string(display_image, str, 16, 0, 48,
+                             RED, NULL,
+                             320, 240);
 #endif
     ///////////////////////////////////////////////////////////////////////////////
     return (ret > 0) ? 0 : 1;

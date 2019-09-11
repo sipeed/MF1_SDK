@@ -11,7 +11,6 @@
 #include "global_config.h"
 #include "system_config.h"
 
-#if CONFIG_WIFI_ENABLE
 
 static spi_transfer_width_t sipeed_spi_get_frame_size(size_t data_bit_length);
 static void sipeed_spi_set_tmod(uint8_t spi_num, uint32_t tmod);
@@ -206,5 +205,3 @@ static void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip
     spi_handle->ser = 0x00;
     spi_handle->ssienr = 0x00;
 }
-
-#endif

@@ -160,10 +160,10 @@ menu "Application configuration"
 			depends on WIFI_ENABLE
 			config WIFI_GPIO_NUM_UART_TX
 				int "GPIO number, set WiFi UART TX to RX mod when use UART of esp32"
-				default 13
+				default 0
 			config WIFI_GPIO_NUM_UART_RX
 				int "GPIO number, set WiFi UART RX to RX mod when use UART of esp32"
-				default 14
+				default 1
 			config WIFI_GPIOHS_NUM_ENABLE
 				int "GPIOHS num of WiFi's enable pin"
 				default 15

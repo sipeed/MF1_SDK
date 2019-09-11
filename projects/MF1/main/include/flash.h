@@ -58,6 +58,9 @@ typedef struct _board_cfg
 
     void *user_custom_cfg;
 
+    uint8_t wifi_ssid[32];
+    uint8_t wifi_passwd[32];
+
     uint8_t cfg_sha256[32];
 } board_cfg_t __attribute__((aligned(8)));
 
