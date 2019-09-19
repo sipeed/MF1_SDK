@@ -480,7 +480,11 @@ int main(void)
 #endif
             char *str_del = (char *)malloc(sizeof(char) * 32);
             sprintf(str_del, "Factory Reset...");
+#if CONFIG_LCD_HORIZONTAL
+            if (lcd_dis_list_add_str(1, 1, 16, 0, str_del, 0, 0, RED, 1) == NULL)
+#else
             if (lcd_dis_list_add_str(1, 1, 16, 0, str_del, 40, CONFIG_LCD_WIDTH - 16, RED, 1) == NULL)
+#endif
             {
                 printf("add dis str failed\r\n");
             }

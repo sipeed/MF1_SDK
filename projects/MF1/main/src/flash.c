@@ -572,9 +572,16 @@ uint8_t flash_cfg_set_default(board_cfg_t *cfg)
 #else
     cfg->brd_hard_cfg.lcd_cam.cam_flip = 1;
     cfg->brd_hard_cfg.lcd_cam.cam_hmirror = 0;
+
+#if CONFIG_LCD_HORIZONTAL
+    cfg->brd_hard_cfg.lcd_cam.lcd_dir = 0x20;
+    cfg->brd_hard_cfg.lcd_cam.lcd_hmirror = 1;
+#else
     cfg->brd_hard_cfg.lcd_cam.lcd_dir = 0;
-    cfg->brd_hard_cfg.lcd_cam.lcd_flip = 0;
     cfg->brd_hard_cfg.lcd_cam.lcd_hmirror = 0;
+#endif
+
+    cfg->brd_hard_cfg.lcd_cam.lcd_flip = 0;
 #endif
 
     cfg->brd_hard_cfg.uart_relay_key.key = CONFIG_FUNCTION_KEY_PIN;

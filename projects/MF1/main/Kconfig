@@ -206,6 +206,14 @@ menu "Application configuration"
 		---help---
 		lcd display vertical will use more memrory
 
+	config LCD_HORIZONTAL
+		depends on LCD_TYPE_ST7789
+		bool "Lcd display hortizontal"
+		default n
+		---help---
+		2.4 or 2.8 inch lcd, display hortizontal
+
+
 	config WIFI_ENABLE
 		bool "Enable WiFi"
 		default n

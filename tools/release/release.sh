@@ -69,6 +69,22 @@ python3 project.py build
 cp build/MF1.bin $release_dir/mf1_key_reset_$version.bin
 cp build/MF1.elf $release_dir/elf/mf1_key_reset_$version.elf
 
+
+## 4
+echo "-------------------"
+echo "build project MF1"
+echo "long press key not clear face feature"
+echo "LCD display hor 2.4/2.8 inch"
+echo "-------------------"
+
+cp config_defaults.mk.3 config_defaults.mk
+
+python3 project.py distclean
+python3 project.py build
+cp build/MF1.bin $release_dir/mf1_2_4_inch_$version.bin
+cp build/MF1.elf $release_dir/elf/mf1_2_4_inch_$version.elf
+
+
 cd $release_dir
 7z a elf_maixpy_${version}.7z elf/*
 rm -rf elf
