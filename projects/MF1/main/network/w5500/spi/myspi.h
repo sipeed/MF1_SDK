@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-extern volatile uint8_t w5500_irq_flag;
+// extern volatile uint8_t w5500_irq_flag;
 
 void eth_w5500_spi_init(void);
 void eth_w5500_reset(uint8_t val);

@@ -5,25 +5,6 @@
 #include "global_config.h"
 
 /* clang-format off */
-
-#if CONFIG_WIFI_ENABLE
-#define CONFIG_KEY_SHORT_QRCODE             (1)
-
-#define CONFIG_PROTO_OVER_NET               (0)
-
-#define CONFIG_NET_DEMO_MQTT                (1)
-#define CONFIG_NET_DEMO_HTTP_GET            (1)
-#define CONFIG_NET_DEMO_HTTP_POST           (1)
-#else
-#define CONFIG_KEY_SHORT_QRCODE             (0)
-
-#define CONFIG_PROTO_OVER_NET               (0)
-
-#define CONFIG_NET_DEMO_MQTT                (0)
-#define CONFIG_NET_DEMO_HTTP_GET            (0)
-#define CONFIG_NET_DEMO_HTTP_POST           (0)
-#endif
-
 ///////////////////////////////////////////////////////////////////////////////
 #define DBG_UART_NUM                   	    (UART_DEV3) //maybe bug
 #define PROTOCOL_UART_NUM                   (UART_DEV1)

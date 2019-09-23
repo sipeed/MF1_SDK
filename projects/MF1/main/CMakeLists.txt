@@ -1,17 +1,27 @@
 ############### Add include ###################
 list(APPEND ADD_INCLUDE "audio"
                         "face_lib"
-                        "network"
-                        "network/http"
-                        "network/mqtt"
-                        "network/qrcode"
-                        "network/wifi"
-                        "network/wifi/spi"
-                        "network/wifi/utility"
                         "uart_recv"
                         "include"
                         "camera/include"
                         "camera/ov2640/include"
+                        #esp8285
+                        "network/esp8285"
+                        "network/esp8285/http"
+                        "network/esp8285/mqtt"
+                        "network/esp8285/qrcode"
+                        "network/esp8285/wifi"
+                        "network/esp8285/wifi/spi"
+                        "network/esp8285/wifi/utility"
+                        #w5500
+                        "network/w5500"
+                        "network/w5500/httpc"
+                        "network/w5500/httpd/src"
+                        "network/w5500/httpd/web_pages"
+                        "network/w5500/mqtt"
+                        "network/w5500/spi"
+                        "network/w5500/src"
+                        "network/w5500/src/utility"
     )
 # list(APPEND ADD_PRIVATE_INCLUDE "")
 ###############################################
@@ -20,11 +30,15 @@ list(APPEND ADD_INCLUDE "audio"
 append_srcs_dir(ADD_SRCS "audio")
 append_srcs_dir(ADD_SRCS "face_lib")
 
-if(CONFIG_WIFI_ENABLE)
-FILE(GLOB_RECURSE NETWORK_SRC
-                            "network/*.c"
-                        )
-list(APPEND ADD_SRCS ${NETWORK_SRC})
+if(CONFIG_NET_ENABLE)
+    if(CONFIG_NET_ESP8285)
+        message("-- Use ESP8285")
+        FILE(GLOB_RECURSE NETWORK_SRC "network/esp8285/*.c")
+    elseif(CONFIG_NET_W5500)
+        message("-- Use W5500")
+        FILE(GLOB_RECURSE NETWORK_SRC "network/w5500/*.c")
+    endif()
+    list(APPEND ADD_SRCS ${NETWORK_SRC})
 endif()
 
 append_srcs_dir(ADD_SRCS "src")

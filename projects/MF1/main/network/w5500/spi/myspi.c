@@ -9,15 +9,14 @@
 #include "myspi.h"
 #include "gpiohs.h"
 
-#include "system_config.h"
-
+#include "global_config.h"
 ///////////////////////////////////////////////////////////////////////////////
 static void sipeed_eth_spi_recv(spi_device_num_t spi_num, spi_chip_select_t chip_select,
                                 uint8_t *rx_buff, size_t rx_len);
 static void sipeed_eth_spi_send(spi_device_num_t spi_num, spi_chip_select_t chip_select,
                                 uint8_t *tx_buff, size_t tx_len);
 ///////////////////////////////////////////////////////////////////////////////
-
+#if 0
 volatile uint8_t w5500_irq_flag = 0;
 
 static int irq_gpiohs(void *ctx)
@@ -26,6 +25,7 @@ static int irq_gpiohs(void *ctx)
     printk("#");
     return 0;
 }
+#endif
 
 /* SPI端口初始化 */
 void eth_w5500_spi_init(void)
@@ -33,17 +33,19 @@ void eth_w5500_spi_init(void)
     printf("hard spi\r\n");
 
     /* init cs */
-    gpiohs_set_drive_mode(CONFIG_ETH_GPIOHS_CSX, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(CONFIG_ETH_GPIOHS_CSX, 1);
+    gpiohs_set_drive_mode(CONFIG_ETH_GPIOHS_NUM_CS, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_ETH_GPIOHS_NUM_CS, 1);
 
+#if 0 
     /* init rst */
-    gpiohs_set_drive_mode(CONFIG_ETH_GPIOHS_RST, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(CONFIG_ETH_GPIOHS_RST, 0);
+    gpiohs_set_drive_mode(CONFIG_ETH_GPIOHS_NUM_RST, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_ETH_GPIOHS_NUM_RST, 0);
     msleep(50);
-    gpiohs_set_pin(CONFIG_ETH_GPIOHS_RST, 1);
+    gpiohs_set_pin(CONFIG_ETH_GPIOHS_NUM_RST, 1);
     msleep(50);
+#endif /* eth w5500 rst */
 
-    /* init int */
+#if 0
     uint8_t key_dir = 0;
     gpiohs_set_drive_mode(CONFIG_ETH_GPIOHS_INT, GPIO_DM_INPUT_PULL_DOWN);
     if (key_dir)
@@ -57,27 +59,30 @@ void eth_w5500_spi_init(void)
         gpiohs_set_pin_edge(CONFIG_ETH_GPIOHS_INT, GPIO_PE_FALLING);
     }
     gpiohs_irq_register(CONFIG_ETH_GPIOHS_INT, 2, irq_gpiohs, NULL);
+#endif /* eth w5500 int */
 
     spi_init(SPI_DEVICE_1, SPI_WORK_MODE_0, SPI_FF_STANDARD, 8, 0);
-    printf("set spi clk:%d\r\n", spi_set_clk_rate(SPI_DEVICE_1, 1000000 * 30)); /*set clk rate*/
+    printf("set spi clk:%d\r\n", spi_set_clk_rate(SPI_DEVICE_1, 1000000 * 20)); /*set clk rate*/
 }
 
+#if 0
 void eth_w5500_reset(uint8_t val)
 {
-    gpiohs_set_pin(CONFIG_ETH_GPIOHS_RST, val);
+    gpiohs_set_pin(CONFIG_ETH_GPIOHS_NUM_RST, val);
 }
+#endif /* eth w5500 rst */
 
 ///////////////////////////////////////////////////////////////////////////////
 //lib call
 void eth_w5500_spi_cs_sel(void)
 {
-    gpiohs_set_pin(CONFIG_ETH_GPIOHS_CSX, 0);
+    gpiohs_set_pin(CONFIG_ETH_GPIOHS_NUM_CS, 0);
     return;
 }
 
 void eth_w5500_spi_cs_desel(void)
 {
-    gpiohs_set_pin(CONFIG_ETH_GPIOHS_CSX, 1);
+    gpiohs_set_pin(CONFIG_ETH_GPIOHS_NUM_CS, 1);
     return;
 }
 

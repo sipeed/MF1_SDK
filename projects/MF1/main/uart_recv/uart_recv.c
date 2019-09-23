@@ -214,12 +214,17 @@ static void init_lcd_cam(board_cfg_t *brd_cfg)
 }
 
 //init uart port
-int8_t protocol_init_device(board_cfg_t *brd_cfg)
+int8_t protocol_init_device(board_cfg_t *brd_cfg, uint8_t op)
 {
     /*load cfg from flash end*/
-    init_board_uart_port(brd_cfg);
     init_relay_key_pin(brd_cfg);
     init_lcd_cam(brd_cfg);
+    if (op)
+    {
+        //no uart
+        return;
+    }
+    init_board_uart_port(brd_cfg);
 
     if (brd_cfg->brd_soft_cfg.cfg.pkt_fix)
     {

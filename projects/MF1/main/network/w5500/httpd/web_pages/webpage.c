@@ -2,6 +2,7 @@
 
 #include "sha256.h"
 
+#include "board.h"
 #include "lcd.h"
 #include "cJSON.h"
 
@@ -12,6 +13,7 @@
 
 INCBIN(WEB_INDEX, "html/index.html");
 ///////////////////////////////////////////////////////////////////////////////
+// TODO:
 /* 可以将网页资源打包成一个bin文件,在头部做一个table,读取tabl来解析,节省内存资源 */
 web_html_t web_htmlfile_table[] = {
     {"index.html", WEB_INDEX_data, 0, 0},
@@ -49,6 +51,7 @@ static uint8_t http_get_led_stat(httpd_req_t *req)
 
     len = sprintf(buf, stat_json, led_stat[0], led_stat[1], led_stat[2]);
     httpd_write(req, buf, len);
+    return 0;
 }
 
 static cJSON *cJSON_GetObjectItem_Type(const cJSON *const object, const char *const string, uint8_t type)
@@ -129,7 +132,7 @@ static uint8_t http_set_led_stat(httpd_req_t *req)
                 }
                 led_stat[2] = tmp->valueint & 0x1;
 
-                set_RGB_LED(led_stat);
+                web_set_RGB_LED(led_stat);
                 len = sprintf(buf, "set value success");
                 httpd_write(req, buf, len);
             }
@@ -140,6 +143,7 @@ static uint8_t http_set_led_stat(httpd_req_t *req)
             }
         }
     }
+    return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

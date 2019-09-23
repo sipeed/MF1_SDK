@@ -15,7 +15,7 @@
 #define SERVER_URL                  "http://www.acme.com/software/mini_httpd/"
 #define CHAERSET                    "utf-8"
 
-#define ENABLE_AUTH                 (1)
+#define ENABLE_AUTH                 (0)
 #define AUTH_USER                   "admin"
 #define AUTH_PASSWD                 "123456"
 

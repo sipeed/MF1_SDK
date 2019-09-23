@@ -38,4 +38,6 @@ void set_RGB_LED(int state);
 void update_key_state(void);
 void board_init(void);
 
+void web_set_RGB_LED(uint8_t val[3]);
+
 #endif

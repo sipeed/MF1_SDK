@@ -88,7 +88,7 @@ menu "Application configuration"
 		endmenu
 
 		menu "WiFi configuration"
-			depends on WIFI_ENABLE
+			depends on NET_ESP8285
 
 			config WIFI_PIN_TX
 				int "WiFi UART TX pin"
@@ -111,6 +111,33 @@ menu "Application configuration"
 			config WIFI_PIN_SPI_CS
 				int "WiFi simulate SPI CS pin"
 				default 0
+		endmenu
+
+		menu "W5500 configuration"
+			depends on NET_W5500
+
+			#default config should change
+
+			config ETH_PIN_MOSI
+				int "Ethernet Spi mosi pin"
+				default 13
+
+			config ETH_PIN_MISO
+				int "Ethernet Spi miso pin"
+				default 12
+
+			config ETH_PIN_SCLK
+				int "Ethernet Spi sclk pin"
+				default 14
+
+			config ETH_PIN_CS
+				int "Ethernet Spi cs pin"
+				default 31
+
+			config ETH_PIN_RST
+				int "Ethernet rst pin"
+				---help---
+				default not use this one pin
 		endmenu
 
 	endmenu
@@ -157,7 +184,7 @@ menu "Application configuration"
 		endmenu
 
 		menu "WiFi configuration"
-			depends on WIFI_ENABLE
+			depends on NET_ESP8285
 			config WIFI_GPIO_NUM_UART_TX
 				int "GPIO number, set WiFi UART TX to RX mod when use UART of esp32"
 				default 0
@@ -166,11 +193,24 @@ menu "Application configuration"
 				default 1
 			config WIFI_GPIOHS_NUM_ENABLE
 				int "GPIOHS num of WiFi's enable pin"
-				default 15
+				default 13
 			config WIFI_GPIOHS_NUM_CS
 				int "GPIOHS num of WiFi's CS pin(soft cs)"
+				default 14
+		endmenu
+
+		menu "W5500 configuration"
+			depends on NET_W5500
+
+			config ETH_GPIOHS_NUM_CS
+				int "GPIOHS num of Ethernet W5500's cs pin"
+				default 15
+
+			config ETH_GPIOHS_NUM_RST
+				int "GPIOHS num of Ethernet W5500's rst pin"
 				default 16
 		endmenu
+
 	endmenu
 
 	menu "Camera( Sensor ) configuration"
@@ -199,6 +239,28 @@ menu "Application configuration"
 			default 240
 	endmenu
 
+	menu "network"
+		config NET_ENABLE
+			bool "enable network"
+			default n
+
+		choice NET_IF_TYPE
+			depends on NET_ENABLE
+			bool "net interface type"
+			default NET_ESP8285
+
+			config NET_ESP8285
+				bool "wifi, use esp8285"
+				---help---
+				MF1 with M1w have a esp8285
+
+			config NET_W5500
+				bool "ethernet, use w5500"
+				---help---
+				should have a extended w5500 board
+		endchoice
+	endmenu
+
 	config LCD_VERTICAL
 		depends on LCD_TYPE_ST7789
 		bool "Lcd display vertical"
@@ -213,11 +275,6 @@ menu "Application configuration"
 		---help---
 		2.4 or 2.8 inch lcd, display hortizontal
 
-
-	config WIFI_ENABLE
-		bool "Enable WiFi"
-		default n
-	
 	config NOT_MF1_BOARD
 		bool "not MF1 board"
 		default n

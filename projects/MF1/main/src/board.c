@@ -145,7 +145,8 @@ static void io_mux_init(void)
     gpiohs_set_drive_mode(CONFIG_LED_B_GPIOHS_NUM, GPIO_DM_OUTPUT);
     gpiohs_set_pin(CONFIG_LED_B_GPIOHS_NUM, 1);
 
-#if CONFIG_WIFI_ENABLE
+#if CONFIG_NET_ENABLE
+#if CONFIG_NET_ESP8285
     //SPI WIFI
     fpioa_set_function(CONFIG_WIFI_PIN_TX, FUNC_GPIO0 + CONFIG_WIFI_GPIO_NUM_UART_TX);
     gpio_set_drive_mode(CONFIG_WIFI_GPIO_NUM_UART_TX, GPIO_DM_INPUT);
@@ -171,8 +172,20 @@ static void io_mux_init(void)
     fpioa_set_function(CONFIG_WIFI_PIN_SPI_MISO, FUNC_SPI1_D1);                           //MISO
     fpioa_set_function(CONFIG_WIFI_PIN_SPI_MOSI, FUNC_SPI1_D0);                           //MOSI
     fpioa_set_function(CONFIG_WIFI_PIN_SPI_SCLK, FUNC_SPI1_SCLK);                         //CLK
+#elif CONFIG_NET_W5500
+    /* ETH */
+    fpioa_set_function(CONFIG_ETH_PIN_CS, FUNC_GPIOHS0 + CONFIG_ETH_GPIOHS_NUM_CS); //CSS
+    // fpioa_set_function(CONFIG_ETH_PIN_RST, FUNC_GPIOHS0 + CONFIG_ETH_GPIOHS_NUM_RST); //RST
+
+    fpioa_set_function(CONFIG_ETH_PIN_MISO, FUNC_SPI1_D1);   //MISO
+    fpioa_set_function(CONFIG_ETH_PIN_MOSI, FUNC_SPI1_D0);   //MOSI
+    fpioa_set_function(CONFIG_ETH_PIN_SCLK, FUNC_SPI1_SCLK); //CLK
+#else
+#error("no net if select")
+#endif
 #endif
 }
+
 ///////////////////////////////////////////////////////////////////////////////
 void set_IR_LED(int state)
 {
@@ -180,6 +193,13 @@ void set_IR_LED(int state)
     return;
 }
 ///////////////////////////////////////////////////////////////////////////////
+void web_set_RGB_LED(uint8_t val[3])
+{
+    gpiohs_set_pin(CONFIG_LED_R_GPIOHS_NUM, (val[0]) ? 0 : 1);
+    gpiohs_set_pin(CONFIG_LED_G_GPIOHS_NUM, (val[1]) ? 0 : 1);
+    gpiohs_set_pin(CONFIG_LED_B_GPIOHS_NUM, (val[2]) ? 0 : 1);
+    return;
+}
 
 void set_RGB_LED(int state)
 {

@@ -32,7 +32,7 @@ volatile uint8_t qrcode_get_info_flag = 0;
 uint64_t qrcode_start_time = 0;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* for mqtt */
-static unsigned char *id_fmt = "%02X:%02X:%02X:%02X:%02X:%02X";
+static unsigned char *id_fmt = "MEN-%02X:%02X:%02X:%02X:%02X:%02X";
 static unsigned char mqttc_id[32];
 
 static uint8_t *mqtt_ip = NULL;
@@ -128,7 +128,7 @@ _prase_json_error:
     return err;
 }
 
-/* {"t":"84:0D:8E:6C:62:9C","w":"Sipeed_2.4G","p":"Sipeed123."} */
+/* {"t":"MEN-84:0D:8E:6C:62:9C","w":"Sipeed_2.4G","p":"Sipeed123."} */
 qr_wifi_info_t *qrcode_get_wifi_cfg(void)
 {
     uint8_t scan_ret = -1;
@@ -275,11 +275,8 @@ static void mqtt_callback(unsigned char *intopic, uint16_t msgId, unsigned char 
     if (last_msgId != msgId)
     {
         last_msgId = msgId;
-        /* TODO: here you can prase mqtt msg */
-#if CONFIG_PROTO_OVER_NET
         /* should use Qos 1 */
-        protocol_prase(payload);
-#endif
+        // protocol_prase(payload);
     }
     else
     {
