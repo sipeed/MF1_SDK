@@ -1,0 +1,2 @@
+https://github.com/arduino-libraries/Ethernet.git
+commit id: 4f4ac17f296f5ffbe869730db88265ddc3e4fc15

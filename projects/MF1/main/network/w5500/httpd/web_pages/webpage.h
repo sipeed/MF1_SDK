@@ -1,0 +1,35 @@
+#ifndef __WEB_PAGE_H
+#define __WEB_PAGE_H
+
+#include "httpd.h"
+
+///////////////////////////////////////////////////////////////////////////////
+typedef struct _web_html
+{
+    char *url_path;
+
+    uint8_t *addr;
+    uint32_t size;
+
+    uint32_t flag;
+} web_html_t;
+
+typedef struct _web_cmd
+{
+    char *cmd_path;
+    uint8_t (*func)(httpd_req_t *req);
+    uint8_t method;
+} web_cmd_t;
+
+///////////////////////////////////////////////////////////////////////////////
+extern time_t time_pages_created;
+
+extern web_html_t web_htmlfile_table[];
+extern web_cmd_t web_cmd_table[];
+
+///////////////////////////////////////////////////////////////////////////////
+void webpage_init_size(void);
+
+///////////////////////////////////////////////////////////////////////////////
+
+#endif

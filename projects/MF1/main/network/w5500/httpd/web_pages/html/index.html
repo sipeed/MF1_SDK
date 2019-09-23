@@ -1,0 +1,141 @@
+<html>
+
+<head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1' />
+
+    <title>K210 + W5500 网络测试</title>
+
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+
+        div {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin: -150px 0 0 -200px;
+            width: 400px;
+            height: 300px;
+            /* border: 1px solid red; */
+        }
+    </style>
+</head>
+
+<body style="text-align:center;">
+    <h2>Httpd 测试</h2>
+    <div>
+        <table id="led_stat" border="1" align="center">
+            <tr>
+                <th>R</th>
+                <th>G</th>
+                <th>B</th>
+            </tr>
+            <tr>
+                <td id="td_r">1</td>
+                <td id="td_g">1</td>
+                <td id="td_b"> 1</td>
+            </tr>
+            <tr>
+                <td><input type="checkbox" id="ck_r" /></td>
+                <td><input type="checkbox" id="ck_g" /></td>
+                <td><input type="checkbox" id="ck_b" /></td>
+            </tr>
+        </table>
+        <br>
+        <br>
+        <button id='submit'>设置</button>
+        <button id='refresh'>刷新</button>
+    </div>
+
+    <script>
+        var ck_r = document.getElementById('ck_r');
+        var ck_g = document.getElementById('ck_g');
+        var ck_b = document.getElementById('ck_b');
+
+        var td_r = document.getElementById('td_r');
+        var td_g = document.getElementById('td_g');
+        var td_b = document.getElementById('td_b');
+
+        ///////
+        // get status
+        function get_led_status(callback) {
+            var req = new XMLHttpRequest();
+            req.open('GET', '/get_led_stat');
+            if (callback !== undefined) {
+                req.onreadystatechange = function () {
+                    if (req.status === 200 && req.readyState == 4) {
+                        callback(req.responseText);
+                    }
+                };
+            }
+            req.send(null);
+        }
+
+        function updateStatus(status) {
+            json = JSON.parse(status);
+
+            td_r.innerText = json.r ? "亮" : "灭";
+            td_g.innerText = json.g ? "亮" : "灭";
+            td_b.innerText = json.b ? "亮" : "灭";
+
+            ck_r.checked = json.r ? true : false;
+            ck_g.checked = json.g ? true : false;
+            ck_b.checked = json.b ? true : false;
+
+            console.log(json)
+        }
+        window.onload = get_led_status(updateStatus);
+
+        document.getElementById('refresh').addEventListener('click',
+            function () {
+                get_led_status(updateStatus);
+            });
+
+        ///////
+        function set_led_status(json, callback) {
+            var req = new XMLHttpRequest();
+            req.open('POST', '/set_led_stat');
+            req.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
+            if (callback !== undefined) {
+                req.onreadystatechange = function () {
+                    if (req.status === 200 && req.readyState == 4) {
+                        callback(req.responseText);
+                    }
+                };
+            }
+            req.send(json);
+        }
+
+        function set_cb(ret) {
+            console.log(ret);
+            get_led_status(updateStatus);
+        }
+
+        function tab_to_json() {
+            console.log(ck_r.checked ? "选中" : "未选中");
+            console.log(ck_g.checked ? "选中" : "未选中");
+            console.log(ck_b.checked ? "选中" : "未选中");
+
+            var json = {
+                "r": ck_r.checked ? 1 : 0,
+                "g": ck_g.checked ? 1 : 0,
+                "b": ck_b.checked ? 1 : 0
+            };
+
+            json_str = JSON.stringify(json);
+            console.log(json_str);
+            set_led_status(json_str, set_cb);
+        }
+
+        //set status
+        document.getElementById('submit').addEventListener('click',
+            function () {
+                tab_to_json()
+            });
+
+    </script>
+</body>
+
+</html>
