@@ -36,7 +36,7 @@ echo "build project MF1"
 echo "long press key clear face feature"
 echo "-------------------"
 
-cp config_defaults.mk.1 config_defaults.mk
+cp config/config_defaults.mk.1 config_defaults.mk
 
 python3 project.py distclean
 python3 project.py build
@@ -49,7 +49,7 @@ echo "build project MF1"
 echo "long press key not clear face feature"
 echo "-------------------"
 
-cp config_defaults.mk.0 config_defaults.mk
+cp config/config_defaults.mk.0 config_defaults.mk
 
 python3 project.py distclean
 python3 project.py build
@@ -62,7 +62,7 @@ echo "build project MF1"
 echo "key only reset board factory..."
 echo "-------------------"
 
-cp config_defaults.mk.2 config_defaults.mk
+cp config/config_defaults.mk.2 config_defaults.mk
 
 python3 project.py distclean
 python3 project.py build
@@ -77,7 +77,7 @@ echo "long press key not clear face feature"
 echo "LCD display hor 2.4/2.8 inch"
 echo "-------------------"
 
-cp config_defaults.mk.3 config_defaults.mk
+cp config/config_defaults.mk.3 config_defaults.mk
 
 python3 project.py distclean
 python3 project.py build
