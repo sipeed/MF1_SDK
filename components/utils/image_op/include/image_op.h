@@ -53,4 +53,8 @@ typedef struct
 void image_rgb565_mix_pic_with_alpha(mix_image_t *img_src, mix_image_t *img_dst,
                                      uint32_t alpha);
 
+void image_rgb565_paste_img(uint16_t *canvas, uint16_t canvas_w, uint16_t canvas_h,
+                            uint16_t *img, uint16_t img_w, uint16_t img_h,
+                            int16_t x_oft, int16_t y_oft);
+
 #endif

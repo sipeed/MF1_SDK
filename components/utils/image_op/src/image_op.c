@@ -461,7 +461,7 @@ void image_rgb565_mix_pic_with_alpha(mix_image_t *img_src, mix_image_t *img_dst,
 
     if ((dx + dw) > (sw + sx) || (dh + dy) > (sh + sy))
     {
-        printf("[image_rgb565_mix_pic_with_alpha]:image invaild\r\n");
+        // printk("[image_rgb565_mix_pic_with_alpha]:image invaild\r\n");
         return;
     }
 
@@ -473,6 +473,39 @@ void image_rgb565_mix_pic_with_alpha(mix_image_t *img_src, mix_image_t *img_dst,
                                                                    (uint32_t) * (img_dst->img_addr + (i - dy) * dw + (j - dx)),
                                                                    (uint32_t)alpha / 8);
         }
+    }
+    return;
+}
+
+void image_rgb565_paste_img(uint16_t *canvas, uint16_t canvas_w, uint16_t canvas_h,
+                            uint16_t *img, uint16_t img_w, uint16_t img_h,
+                            int16_t x_oft, int16_t y_oft)
+{
+    int16_t canvas_x0 = x_oft < 0 ? 0 : x_oft;
+    int16_t canvas_y0 = y_oft < 0 ? 0 : y_oft;
+    int16_t img_x0 = x_oft < 0 ? -x_oft : 0;
+    int16_t img_y0 = y_oft < 0 ? -y_oft : 0;
+
+    int16_t canvas_x1 = x_oft + img_w > canvas_w ? canvas_w : x_oft + img_w;
+    int16_t canvas_y1 = y_oft + img_h > canvas_h ? canvas_h : y_oft + img_h;
+    int16_t img_x1 = x_oft + img_w > canvas_w ? canvas_w + x_oft : img_w;
+    int16_t img_y1 = y_oft + img_h > canvas_h ? canvas_h + y_oft : img_h;
+
+    int16_t cpy_w = canvas_x1 - canvas_x0;
+    int16_t cpy_h = canvas_y1 - canvas_y0;
+
+    int16_t canvas_y, img_y, dy;
+
+    if (x_oft == 0 && y_oft == 0 && canvas_w == img_w && canvas_h == img_h)
+        return;
+
+    for (dy = 0; dy < cpy_h; dy++)
+    {
+        canvas_y = canvas_y0 + dy;
+        img_y = img_y0 + dy;
+        memcpy((uint8_t *)canvas + (canvas_y * canvas_w + canvas_x0) * 2,
+               (uint8_t *)img + (img_y * img_w + img_x0) * 2,
+               cpy_w * 2);
     }
     return;
 }
