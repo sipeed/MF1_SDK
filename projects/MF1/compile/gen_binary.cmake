@@ -19,10 +19,21 @@ else()
     set(CMAKE_SIZE   "objdump${EXT}")
 endif()
 
+# add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+#         COMMAND ${CMAKE_OBJCOPY} --output-format=binary ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.elf ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.bin
+#         COMMENT "-- Generating .bin firmware at ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.bin"
+#         )
+
+# Build target
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_OBJCOPY} --output-format=binary ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.elf ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.bin
-        COMMENT "-- Generating .bin firmware at ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.bin"
-        )
+        # COMMAND ${CMAKE_OBJCOPY} --output-format=binary ${CMAKE_BINARY_DIR}/${PROJECT_NAME}${SUFFIX} --remove-section .iodata ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.bin
+        COMMAND ${CMAKE_OBJCOPY} --output-format=binary ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.elf --remove-section .iodata ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.bin
+        COMMENT "Generating .bin file ...")
+		
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        # COMMAND ${CMAKE_OBJCOPY} --output-format=binary ${CMAKE_BINARY_DIR}/${PROJECT_NAME}${SUFFIX} --only-section .iodata ${CMAKE_BINARY_DIR}/${PROJECT_NAME}_iodata.bin
+        COMMAND ${CMAKE_OBJCOPY} --output-format=binary ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.elf --only-section .iodata ${CMAKE_BINARY_DIR}/${PROJECT_NAME}_iodata.bin 
+        COMMENT "Generating .bin file ...")
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_SIZE} ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.elf
