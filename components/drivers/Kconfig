@@ -2,48 +2,11 @@
 
 config COMPONENT_DRIVERS_ENABLE
 	bool "Enbale drivers component"
-	default y
+	default n
 	select COMPONENT_KENDRYTE_SDK_ENABLE
 
 menu "Drivers configuration"
 	depends on COMPONENT_DRIVERS_ENABLE
-
-	menu "LCD configuration"
-		choice LCD_TYPE
-			bool "LCD driver type"
-			default LCD_TYPE_ST7789
-
-			config LCD_TYPE_ST7789
-				bool "LCD use ST7789"
-			config LCD_TYPE_SIPEED
-				bool "LCD use sipeed board"
-		endchoice
-
-		menu "Lcd ( Display ) configuration"
-
-			config LCD_WIDTH
-				depends on LCD_TYPE_ST7789
-				int "Lcd display size width"
-				default 240
-			config LCD_HEIGHT
-				depends on LCD_TYPE_ST7789
-				int "Lcd display size height"
-				default 240
-
-			config LCD_CLK_FREQ_MHZ
-				int "lcd clk frequency MHZ"
-				default 15
-		endmenu
-
-		menu "LCD Pin Func configuration"
-			config LCD_GPIOHS_DCX
-				int "LCD Pin DCX bind with GPIOHS num"
-				default 0
-			config LCD_GPIOHS_RST
-				int "LCD Pin RST bind with GPIOHS num"
-				default 1
-		endmenu
-	endmenu
 
 	menu "SPI TF card configuration"
 		config SD_CARD_ENABLE
