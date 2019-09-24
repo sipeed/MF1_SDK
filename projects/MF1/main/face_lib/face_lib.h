@@ -41,6 +41,24 @@
 #include "system_config.h"
 
 /* clang-format off */
+///////////////////////////////////////////////////////////////////////////////
+#define _IS_IOMEM(x)                            (!((uint64_t)(&(x))&0x80000000))
+#define _IS_CACHEMEM(x)                         ((uint64_t)(&(x))&0x80000000)
+#define _IS_IOMEMP(x)                           (!((uint64_t)(x)&0x80000000))
+#define _IS_CACHEMEMP(x)                        ((uint64_t)(x)&0x80000000)
+
+#define _IOMEM(x, type)                         (*(type *)(((uint64_t)&(x))-0x40000000))
+#define _IOMEM_UINT8(x)                         (*(uint8_t *)(((uint64_t)&(x))-0x40000000))
+#define _IOMEM_ADDR(x)                          (_IS_IOMEM(x)?(uint64_t)(x):(((uint64_t)&(x))-0x40000000))
+#define _IOMEM_PADDR(p)                         (_IS_IOMEMP(p)?(uint64_t)(p):(((uint64_t)(p))-0x40000000))
+#define _ADDR(x)	                            ((uint64_t)(x))
+#define _IN_BUF(x, buf)	                        (_ADDR(x)>=_ADDR(buf) && _ADDR(x)<_ADDR(buf)+sizeof(buf))
+#define CHECK_IOMEM(x)                          configASSERT(_IS_IOMEM(x))
+#define CHECK_IOMEMP(x)                         configASSERT(_IS_IOMEMP(x))
+
+#define _MODULE_ADDR(x)                         (x)
+
+///////////////////////////////////////////////////////////////////////////////
 #define FTR_850                             (1)
 #define FTR_650                             (0)
 
@@ -49,6 +67,7 @@
 #define FACE_RECGONITION_THRESHOLD          (88.0f)
 #define FACE_RECGONITION_SCORE_MAX          (95.0f)
 
+///////////////////////////////////////////////////////////////////////////////
 /* clang-format on */
 
 typedef struct
@@ -159,7 +178,7 @@ typedef struct
 
     void (*lcd_refresh_cb)(void);
 
-    void (*lcd_convert_cb)(void);
+    // void (*lcd_convert_cb)(void);
 } face_lib_callback_t;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -218,7 +237,6 @@ typedef struct
 extern cal_pic_fea_t cal_pic_cfg;
 
 typedef int8_t (*cal_pic_send_ret)(uint8_t code, char *msg, int8_t feature[FEATURE_DIMENSION], uint8_t *uid, float prob);
-
 
 typedef struct
 {

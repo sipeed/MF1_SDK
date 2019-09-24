@@ -10,12 +10,6 @@
 
 #include "face_lib.h"
 
-#define DEBUG()                                  \
-    do                                           \
-    {                                            \
-        printk("%s:%d\r\n", __func__, __LINE__); \
-    } while (0)
-
 ///////////////////////////////////////////////////////////////////////////////
 extern void gpiohs_irq_disable(size_t pin);
 extern void spi_send_data_normal(spi_device_num_t spi_num,
@@ -25,17 +19,14 @@ extern void spi_send_data_normal(spi_device_num_t spi_num,
 volatile uint8_t dis_flag = 0;
 
 static int32_t PageCount = 0;
-static uint8_t *img_ptr = NULL;
-
-static void irq_RS_Sync(void);
-static int timer_callback(void *ctx);
-static void lcd_sipeed_send_dat(uint8_t *DataBuf, uint32_t Length);
+static uint8_t *disp_buf = NULL;
+static uint8_t *disp_banner_buf = NULL;
 
 ///////////////////////////////////////////////////////////////////////////////
 #if 0
 static void lcd_test(void)
 {
-    uint8_t *lcd_addr = _IOMEM_PADDR(lcd_image);
+    uint8_t *lcd_addr = _IOMEM_PADDR(disp_buf);
     uint16_t unit_x = SIPEED_LCD_W / 16;
     for (int i = 0; i < SIPEED_LCD_H; i++)
     {
@@ -83,10 +74,36 @@ static void lcd_sipeed_send_dat(uint8_t *DataBuf, uint32_t Length)
     sipeed_spi_send_data_dma(LCD_SIPEED_SPI_DEV, LCD_SIPEED_SPI_SS, DMAC_CHANNEL2, _IOMEM_PADDR(DataBuf), Length);
 }
 
-//excute in 50Hz lcd refresh irq
-static void lcd_sipeed_display(uint8_t *img_buf, uint8_t block)
+static void irq_RS_Sync(void)
 {
-    img_ptr = img_buf;
+    if (PageCount < SIPEED_LCD_H * LCD_YUP)
+    {
+        dis_flag = 1;
+        if (PageCount >= 0)
+        {
+            lcd_sipeed_send_dat(&disp_buf[PageCount / LCD_YUP * SIPEED_LCD_W * 2], SIPEED_LCD_W * 2);
+            dmac_wait_done(DMAC_CHANNEL2);
+            for (int i = 0; i < 30; i++)
+            {
+                asm volatile("nop");
+            };
+            if (SIPEED_LCD_BANNER_W)
+            {
+                lcd_sipeed_send_dat(&disp_banner_buf[PageCount * SIPEED_LCD_BANNER_W * 2], SIPEED_LCD_BANNER_W * 2);
+            }
+        }
+    }
+    else if (PageCount > LCD_SIPEED_FRAME_END_LINE - 1 && dis_flag)
+    {
+        dis_flag = 0;
+    }
+    PageCount++;
+    return;
+}
+
+//excute in 50Hz lcd refresh irq
+static void lcd_sipeed_display(uint8_t block)
+{
     gpiohs_irq_disable(CONFIG_LCD_GPIOHS_DCX);
     PageCount = -1;
 
@@ -109,71 +126,11 @@ static void lcd_sipeed_display(uint8_t *img_buf, uint8_t block)
     }
 }
 
-#if CONFIG_LCD_TYPE_SIPEED
-#if CONFIG_DETECT_VERTICAL
-#else
-#if CONFIG_TYPE_800_480_57_INCH
-static uint8_t bar_buf[160 * 480 * 2];
-#endif
-#endif
-#endif
-
-#if CONFIG_TYPE_800_480_57_INCH
-static int SIPEED_LCD_Half_done(void *ctx)
-{
-    for (int i = 0; i < 30; i++)
-    {
-        asm volatile("nop");
-    };
-    lcd_sipeed_send_dat(&bar_buf[PageCount * 160 * 2], 160 * 2);
-    return 0;
-}
-#endif
-
-static void irq_RS_Sync(void)
-{
-    if (PageCount < SIPEED_LCD_H * LCD_YUP)
-    {
-        dis_flag = 1;
-        if (PageCount >= 0)
-        {
-            lcd_sipeed_send_dat(&img_ptr[PageCount / LCD_YUP * SIPEED_LCD_W * 2], SIPEED_LCD_W * 2);
-#if CONFIG_TYPE_800_480_57_INCH
-            dmac_wait_done(DMAC_CHANNEL2);
-            for (int i = 0; i < 30; i++)
-            {
-                asm volatile("nop");
-            };
-            lcd_sipeed_send_dat(&bar_buf[PageCount * 160 * 2], 160 * 2);
-#endif
-        }
-    }
-    else if (PageCount > LCD_SIPEED_FRAME_END_LINE - 1 && dis_flag)
-    {
-        dis_flag = 0;
-    }
-    PageCount++;
-    return;
-}
-
 static int timer_callback(void *ctx)
 {
     dis_flag = 1;
-    lcd_sipeed_display(_IOMEM_PADDR(lcd_image), 0);
+    lcd_sipeed_display(0);
     return 0;
-}
-
-static int lcd_sipeed_clear(uint16_t rgb565_color)
-{
-    uint16_t *addr = _IOMEM_PADDR(lcd_image);
-    for (int i = 0; i < SIPEED_LCD_H; i++)
-        for (int j = 0; j < SIPEED_LCD_W; j++)
-            addr[i * SIPEED_LCD_W + j] = rgb565_color;
-    addr = (lcd_image);
-    for (int i = 0; i < SIPEED_LCD_H; i++)
-        for (int j = 0; j < SIPEED_LCD_W; j++)
-            addr[i * SIPEED_LCD_W + j] = rgb565_color;
-    return;
 }
 
 static void lcd_sipeed_config(void)
@@ -203,19 +160,21 @@ static void lcd_sipeed_config(void)
     timer_irq_register(1, 1, 0, 1, timer_callback, NULL); //4th pri
     timer_set_enable(1, 1, 1);
 
-#if CONFIG_TYPE_800_480_57_INCH
-    w25qxx_read_data(IMG_BAR_800480_ADDR, bar_buf, sizeof(bar_buf));
-#elif CONFIG_TYPE_480_272_4_3_INCH
-    lcd_sipeed_clear((0 << 11) | (27 << 5) | (21 << 0));
-    uint16_t *bar_buf = malloc(160 * 272 * 2);
-    if (bar_buf == NULL)
-        return;
-    w25qxx_read_data(IMG_BAR_480272_ADDR, bar_buf, 160 * 272 * 2);
-    image_rgb565_paste_img(_IOMEM_PADDR(lcd_image), SIPEED_LCD_W, SIPEED_LCD_H,
-                           bar_buf, 160, 272,
-                           320, 0);
-    free(bar_buf);
-#endif
+    return;
+}
+
+static int lcd_sipeed_clear(uint16_t rgb565_color)
+{
+    uint16_t *addr = _IOMEM_PADDR(disp_buf);
+    //clear iomem
+    for (int i = 0; i < SIPEED_LCD_H; i++)
+        for (int j = 0; j < SIPEED_LCD_W; j++)
+            addr[i * SIPEED_LCD_W + j] = rgb565_color;
+    //clear cache
+    addr = (disp_buf);
+    for (int i = 0; i < SIPEED_LCD_H; i++)
+        for (int j = 0; j < SIPEED_LCD_W; j++)
+            addr[i * SIPEED_LCD_W + j] = rgb565_color;
     return;
 }
 
@@ -239,5 +198,17 @@ int lcd_sipeed_init(lcd_t *lcd)
     lcd->lcd_set_area = NULL;
     lcd->lcd_draw_picture = lcd_sipeed_draw_picture;
 
+    return 0;
+}
+
+uint8_t lcd_sipeed_config_disp_buf(uint8_t *lcd_disp_buf, uint8_t *lcd_disp_banner_buf)
+{
+    if (lcd_disp_buf == NULL)
+    {
+        return 1;
+    }
+
+    disp_buf = _IOMEM_PADDR(lcd_disp_buf);
+    disp_banner_buf = lcd_disp_banner_buf;
     return 0;
 }

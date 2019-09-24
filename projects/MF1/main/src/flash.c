@@ -4,6 +4,8 @@
 #include <string.h>
 #include "bsp.h"
 
+#include "printf.h"
+
 #include "flash.h"
 #include "sha256.h"
 #include "sysctl.h"
@@ -12,13 +14,12 @@
 #include "global_config.h"
 
 ///////////////////////////////////////////////////////////////////////////////
-volatile face_save_info_t g_face_save_info;
-volatile board_cfg_t g_board_cfg;
+volatile LOCK_IN_SECTION(DATA) face_save_info_t g_face_save_info;
+volatile static LOCK_IN_SECTION(DATA) uint8_t uid_table[FACE_DATA_MAX_COUNT][UID_LEN];
+
 volatile int flash_all_face_have_ir_fea = 0;
 
-volatile static uint8_t uid_table[FACE_DATA_MAX_COUNT][UID_LEN];
 ///////////////////////////////////////////////////////////////////////////////
-
 static int get_face_id(void)
 {
     int ret = -1;
@@ -425,7 +426,7 @@ int flash_get_saved_feature_sha256(uint8_t sha256[32 + 1])
     {
         printk("%02X", sha256[i]);
     }
-    printf("\r\n");
+    printk("\r\n");
 #endif
 
     return 1;
@@ -493,12 +494,12 @@ uint8_t flash_save_cfg(board_cfg_t *cfg)
 
     sha256_hard_calculate((uint8_t *)cfg, sizeof(board_cfg_t) - 32, cfg->cfg_sha256);
 
-    printf("boardcfg checksum:\r\n");
+    printk("boardcfg checksum:\r\n");
     for (uint8_t i = 0; i < 32; i++)
     {
-        printf("%02X", cfg->cfg_sha256[i]);
+        printk("%02X", cfg->cfg_sha256[i]);
     }
-    printf("\r\n");
+    printk("\r\n");
 
     stat = w25qxx_write_data(BOARD_CFG_ADDR, (uint8_t *)cfg, sizeof(board_cfg_t));
 
@@ -507,33 +508,35 @@ uint8_t flash_save_cfg(board_cfg_t *cfg)
 
 uint8_t flash_cfg_print(board_cfg_t *cfg)
 {
-    printf("dump board cfg:\r\n");
+    printk("dump board cfg:\r\n");
 
-    printf("    %-16s : %f\r\n", "out_threshold", cfg->brd_soft_cfg.out_threshold);
+    char buf[32];
+    sprintf(buf, "%f", cfg->brd_soft_cfg.out_threshold);
+    printk("    %-16s : %s\r\n", "out_threshold", buf);
 
-    printf("    %-16s : %d\r\n", "auto_out_fea", cfg->brd_soft_cfg.cfg.auto_out_fea);
-    printf("    %-16s : %d\r\n", "out_fea", cfg->brd_soft_cfg.cfg.out_fea);
-    printf("    %-16s : %d\r\n", "out_interval_ms", cfg->brd_soft_cfg.cfg.out_interval_ms);
-    printf("    %-16s : %d\r\n", "pkt_fix", cfg->brd_soft_cfg.cfg.pkt_fix);
-    printf("    %-16s : %d\r\n", "port_baud", cfg->brd_soft_cfg.cfg.port_baud);
-    printf("    %-16s : %d\r\n", "relay_open_s", cfg->brd_soft_cfg.cfg.relay_open_s);
+    printk("    %-16s : %d\r\n", "auto_out_fea", cfg->brd_soft_cfg.cfg.auto_out_fea);
+    printk("    %-16s : %d\r\n", "out_fea", cfg->brd_soft_cfg.cfg.out_fea);
+    printk("    %-16s : %d\r\n", "out_interval_ms", cfg->brd_soft_cfg.cfg.out_interval_ms);
+    printk("    %-16s : %d\r\n", "pkt_fix", cfg->brd_soft_cfg.cfg.pkt_fix);
+    printk("    %-16s : %d\r\n", "port_baud", cfg->brd_soft_cfg.cfg.port_baud);
+    printk("    %-16s : %d\r\n", "relay_open_s", cfg->brd_soft_cfg.cfg.relay_open_s);
 
-    printf("    %-16s : %d\r\n", "cam_flip", cfg->brd_hard_cfg.lcd_cam.cam_flip);
-    printf("    %-16s : %d\r\n", "cam_hmirror", cfg->brd_hard_cfg.lcd_cam.cam_hmirror);
-    printf("    %-16s : %d\r\n", "lcd_dir", cfg->brd_hard_cfg.lcd_cam.lcd_dir);
-    printf("    %-16s : %d\r\n", "lcd_flip", cfg->brd_hard_cfg.lcd_cam.lcd_flip);
-    printf("    %-16s : %d\r\n", "lcd_hmirror", cfg->brd_hard_cfg.lcd_cam.lcd_hmirror);
+    printk("    %-16s : %d\r\n", "cam_flip", cfg->brd_hard_cfg.lcd_cam.cam_flip);
+    printk("    %-16s : %d\r\n", "cam_hmirror", cfg->brd_hard_cfg.lcd_cam.cam_hmirror);
+    printk("    %-16s : %d\r\n", "lcd_dir", cfg->brd_hard_cfg.lcd_cam.lcd_dir);
+    printk("    %-16s : %d\r\n", "lcd_flip", cfg->brd_hard_cfg.lcd_cam.lcd_flip);
+    printk("    %-16s : %d\r\n", "lcd_hmirror", cfg->brd_hard_cfg.lcd_cam.lcd_hmirror);
 
-    printf("    %-16s : %d\r\n", "key", cfg->brd_hard_cfg.uart_relay_key.key);
-    printf("    %-16s : %d\r\n", "key_dir", cfg->brd_hard_cfg.uart_relay_key.key_dir);
-    printf("    %-16s : %d\r\n", "log_rx", cfg->brd_hard_cfg.uart_relay_key.log_rx);
-    printf("    %-16s : %d\r\n", "log_tx", cfg->brd_hard_cfg.uart_relay_key.log_tx);
-    printf("    %-16s : %d\r\n", "port_rx", cfg->brd_hard_cfg.uart_relay_key.port_rx);
-    printf("    %-16s : %d\r\n", "port_tx", cfg->brd_hard_cfg.uart_relay_key.port_tx);
-    printf("    %-16s : %d\r\n", "relay_high", cfg->brd_hard_cfg.uart_relay_key.relay_high);
-    printf("    %-16s : %d\r\n", "relay_low", cfg->brd_hard_cfg.uart_relay_key.relay_low);
+    printk("    %-16s : %d\r\n", "key", cfg->brd_hard_cfg.uart_relay_key.key);
+    printk("    %-16s : %d\r\n", "key_dir", cfg->brd_hard_cfg.uart_relay_key.key_dir);
+    printk("    %-16s : %d\r\n", "log_rx", cfg->brd_hard_cfg.uart_relay_key.log_rx);
+    printk("    %-16s : %d\r\n", "log_tx", cfg->brd_hard_cfg.uart_relay_key.log_tx);
+    printk("    %-16s : %d\r\n", "port_rx", cfg->brd_hard_cfg.uart_relay_key.port_rx);
+    printk("    %-16s : %d\r\n", "port_tx", cfg->brd_hard_cfg.uart_relay_key.port_tx);
+    printk("    %-16s : %d\r\n", "relay_high", cfg->brd_hard_cfg.uart_relay_key.relay_high);
+    printk("    %-16s : %d\r\n", "relay_low", cfg->brd_hard_cfg.uart_relay_key.relay_low);
 
-    printf("    %-16s : %08X\r\n", "user_custom_cfg", (uint32_t)cfg->user_custom_cfg);
+    printk("    %-16s : %08X\r\n", "user_custom_cfg", (uint32_t)cfg->user_custom_cfg);
 
     return;
 }
@@ -592,10 +595,18 @@ uint8_t flash_cfg_set_default(board_cfg_t *cfg)
     cfg->brd_hard_cfg.uart_relay_key.key_dir = 0;
 #endif
 
+#if CONFIG_PROTOCOL_DEBUG_UART_PIN_SWAP
+    cfg->brd_hard_cfg.uart_relay_key.log_rx = CONFIG_PROTOCOL_UART_PORT_RX_PIN;
+    cfg->brd_hard_cfg.uart_relay_key.log_tx = CONFIG_PROTOCOL_UART_PORT_TX_PIN;
+    cfg->brd_hard_cfg.uart_relay_key.port_rx = CONFIG_DEBUG_UART_PORT_RX_PIN;
+    cfg->brd_hard_cfg.uart_relay_key.port_tx = CONFIG_DEBUG_UART_PORT_TX_PIN;
+#else
     cfg->brd_hard_cfg.uart_relay_key.log_rx = CONFIG_DEBUG_UART_PORT_RX_PIN;
     cfg->brd_hard_cfg.uart_relay_key.log_tx = CONFIG_DEBUG_UART_PORT_TX_PIN;
     cfg->brd_hard_cfg.uart_relay_key.port_rx = CONFIG_PROTOCOL_UART_PORT_RX_PIN;
     cfg->brd_hard_cfg.uart_relay_key.port_tx = CONFIG_PROTOCOL_UART_PORT_TX_PIN;
+#endif
+
     cfg->brd_hard_cfg.uart_relay_key.relay_high = CONFIG_RELAY_HIGH_PIN;
     cfg->brd_hard_cfg.uart_relay_key.relay_low = CONFIG_RELAY_LOWX_PIN;
 

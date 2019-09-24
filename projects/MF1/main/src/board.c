@@ -14,27 +14,26 @@
 
 #include "camera.h"
 #include "lcd.h"
-#include "flash.h"
+
 #include "face_lib.h"
 
 #include "system_config.h"
 #include "global_config.h"
 ///////////////////////////////////////////////////////////////////////////////
+volatile board_cfg_t g_board_cfg;
+
 volatile uint8_t g_key_press = 0;
 volatile uint8_t g_key_long_press = 0;
 uint8_t sKey_dir = 0;
 
 ///////////////////////////////////////////////////////////////////////////////
+uint8_t kpu_image[2][CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 3] __attribute__((aligned(128)));
+uint8_t cam_image[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2] __attribute__((aligned(64)));
+
+//如果是双摄,需要多一个缓存
 #if (CONFIG_CAMERA_GC0328_DUAL)
 uint8_t kpu_image_tmp[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 3] __attribute__((aligned(128)));
 #endif
-
-#if CONFIG_LCD_VERTICAL
-uint8_t display_image_ver[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2] __attribute__((aligned(64))); //显示
-#endif
-
-uint8_t kpu_image[2][CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 3] __attribute__((aligned(128)));
-uint8_t display_image[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2] __attribute__((aligned(64)));
 
 ///////////////////////////////////////////////////////////////////////////////
 static volatile uint8_t g_gpio_flag = 0;
@@ -115,7 +114,7 @@ static void io_mux_init(void)
     fpioa_set_function(CONFIG_LCD_PIN_SCK, FUNC_SPI0_SCLK);
 
 #if CONFIG_LCD_TYPE_SIPEED
-    fpioa_set_io_driving(LCD_SCK_PIN, FPIOA_DRIVING_7);
+    fpioa_set_io_driving(CONFIG_LCD_PIN_SCK, FPIOA_DRIVING_7);
 #endif
 
     /* change to 1.8V */
@@ -250,8 +249,11 @@ void board_init(void)
     printf("unknown camera type!!!\r\n");
 #endif
 
-    dvp_set_ai_addr((uint32_t)kpu_image, (uint32_t)(kpu_image + CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT), (uint32_t)(kpu_image + CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2));
-    dvp_set_display_addr((uint32_t)display_image);
+    dvp_set_ai_addr((uint32_t)_IOMEM_ADDR(kpu_image),
+                    (uint32_t)(_IOMEM_ADDR(kpu_image) + CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT),
+                    (uint32_t)(_IOMEM_ADDR(kpu_image) + CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2));
+
+    dvp_set_display_addr((uint32_t)_IOMEM_ADDR(cam_image));
     dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 0);
     dvp_disable_auto();
 
@@ -263,8 +265,20 @@ void board_init(void)
     lcd_init(LCD_ST7789);
     lcd_clear(RED);
 #elif CONFIG_LCD_TYPE_SIPEED
-    printf("unsupport lcd type!!!\r\n");
-#endif
+    extern uint8_t *lcd_image;
+    extern uint8_t *lcd_banner_image;
+    extern uint8_t lcd_sipeed_config_disp_buf(uint8_t * lcd_disp_buf, uint8_t * lcd_disp_banner_buf);
+
+    w25qxx_read_data(((SIPEED_LCD_BANNER_H == 480) ? IMG_BAR_800480_ADDR : IMG_BAR_480272_ADDR),
+                     lcd_banner_image, SIPEED_LCD_BANNER_H * SIPEED_LCD_BANNER_W * 2);
+
+    lcd_sipeed_config_disp_buf(lcd_image, lcd_banner_image);
+
+    lcd_init(LCD_SIPEED);
+    /* FIXME:清空屏幕没有用 */
+    // lcd_clear((0<<11)|(27<<5)|(21<<0));
+    //  lcd_clear(RED);
+#endif /*CONFIG_LCD_TYPE_ST7789*/
 
     /* DVP interrupt config */
     plic_set_priority(IRQN_DVP_INTERRUPT, 1);

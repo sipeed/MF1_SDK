@@ -31,7 +31,7 @@ face_lib_callback_t face_recognition_cb = (face_lib_callback_t){
     .fake_face_cb = fake_face_cb,
     .pass_face_cb = pass_face_cb,
     .lcd_refresh_cb = lcd_refresh_cb,
-    .lcd_convert_cb = lcd_convert_cb,
+    // .lcd_convert_cb = lcd_convert_cb,
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -184,7 +184,7 @@ int main(void)
     printk("face_lib_version:\r\n%s\r\n", face_lib_version());
 
     /*load cfg from flash*/
-    if (flash_load_cfg(&g_board_cfg) == 0)
+    // if (flash_load_cfg(&g_board_cfg) == 0)
     {
         printk("load cfg failed,save default config\r\n");
 

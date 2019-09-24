@@ -14,10 +14,6 @@
 #define LCD_DISOLAY_ON                  (0x30)
 #define LCD_FRAME_START                 (0x41)
 
-#define LCDDisMode_normal               (0x01)
-#define LCDDisMode_TranBK               (0x00)
-#define LCDDisMode_Reverse              (0x10)
-
 #define LCD_SIPEED_SPI_DEV              (SPI_DEVICE_0)
 #define LCD_SIPEED_SPI_SS               (SPI_CHIP_SELECT_3)
 
@@ -31,7 +27,7 @@
 	#define LCD_XUP						(1)
 	#define LCD_YUP						(1)
 	#define LCD_VFP						(8)
-	#define LCD_SIPEED_SPI_FREQ  		(50000000)
+	#define LCD_SIPEED_SPI_FREQ  		(100000000)//50000000
 #elif CONFIG_TYPE_1024_600
 	#define LCD_XUP						(3)
 	#define LCD_YUP						(3)
@@ -50,14 +46,6 @@
 extern volatile uint8_t dis_flag;
 
 int lcd_sipeed_init(lcd_t *lcd);
-
-void LCDPrintStr(uint8_t *img, uint16_t XPos, uint16_t YPos, char *Srt,
-				 uint8_t Mode, uint16_t FontColor, uint16_t BKColor);
-
-uint8_t lcd_covert_cam_order(uint32_t *addr, uint32_t length);
-void copy_image_cam_to_lcd(uint8_t *cam_img, uint8_t *lcd_img);
-
-/* flush img_buf to lcd */
-// void lcd_sipeed_display(uint8_t *img_buf, uint8_t block);
+uint8_t lcd_sipeed_config_disp_buf(uint8_t *lcd_disp_buf, uint8_t *lcd_disp_banner_buf);
 
 #endif /* __LCD_SPIEED_H */

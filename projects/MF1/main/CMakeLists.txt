@@ -1,8 +1,16 @@
 ############### Add include ###################
 list(APPEND ADD_INCLUDE "audio"
-                        "face_lib"
                         "uart_recv"
                         "include"
+                        #face_lib
+                        "face_lib"
+                        "face_lib/face_cb_lcd_sipeed"
+                        "face_lib/face_cb_lcd_st7789"
+                        #lcd
+                        "lcd/include"
+                        "lcd/lcd_st7789/include"
+                        "lcd/lcd_sipeed/include"
+                        #camera
                         "camera/include"
                         "camera/ov2640/include"
                         #esp8285
@@ -49,12 +57,42 @@ if(CONFIG_CAMERA_OV2640)
     append_srcs_dir(ADD_SRCS "camera/ov2640/src")
 endif()
 
+append_srcs_dir(ADD_SRCS "lcd/src")
+
+if(CONFIG_LCD_TYPE_ST7789)
+    append_srcs_dir(ADD_SRCS    "lcd/lcd_st7789/src"
+                                "face_lib/face_cb_lcd_st7789"
+                                )
+
+elseif(CONFIG_LCD_TYPE_SIPEED)
+    append_srcs_dir(ADD_SRCS    "lcd/lcd_sipeed/src"
+                                "face_lib/face_cb_lcd_sipeed"
+                                )
+
+    if(CONFIG_TYPE_800_480_57_INCH)
+        list(APPEND ADD_DEFINITIONS -DSIPEED_LCD_W=322
+                                    -DSIPEED_LCD_H=240
+                                    -DSIPEED_LCD_BANNER_W=160
+                                    -DSIPEED_LCD_BANNER_H=480
+                                    )
+    elseif(CONFIG_TYPE_480_272_4_3_INCH)
+        list(APPEND ADD_DEFINITIONS -DSIPEED_LCD_W=322
+                                    -DSIPEED_LCD_H=272
+                                    -DSIPEED_LCD_BANNER_W=160
+                                    -DSIPEED_LCD_BANNER_H=272
+                                    )
+    elseif(CONFIG_TYPE_1024_600)
+
+    endif()
+endif()
+
 # aux_source_directory(src ADD_SRCS)
 # list(REMOVE_ITEM COMPONENT_SRCS "src/test2.c")
 ###############################################
 
 ###### Add required/dependent components ######
-list(APPEND ADD_REQUIREMENTS kendryte_sdk drivers utils)
+# list(APPEND ADD_REQUIREMENTS kendryte_sdk drivers utils)
+list(APPEND ADD_REQUIREMENTS kendryte_sdk utils)
 ###############################################
 
 ############ Add static libs ##################

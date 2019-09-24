@@ -146,9 +146,7 @@ menu "Application configuration"
 
 	menu "Peripheral configuration"
 
-		menu "!!! LCD AND SPI TF USE 0-5 !!!"
-
-		endmenu
+		comment "!!! LCD AND SPI TF USE 0-5 !!!"
 
 		menu "Key configuration"
 			config FUNCTION_KEY_GPIOHS_NUM
@@ -212,11 +210,64 @@ menu "Application configuration"
 		endmenu
 
 	endmenu
+	
+	comment "--------------------------------"
+
+	menu "LCD configuration"
+		choice LCD_TYPE
+			bool "LCD driver type"
+			default LCD_TYPE_ST7789
+
+			config LCD_TYPE_ST7789
+				bool "LCD use ST7789"
+			config LCD_TYPE_SIPEED
+				bool "LCD use sipeed board"
+		endchoice
+
+		menu "Lcd ( Display ) configuration"
+
+			config LCD_WIDTH
+				depends on LCD_TYPE_ST7789
+				int "Lcd display size width"
+				default 240
+			config LCD_HEIGHT
+				depends on LCD_TYPE_ST7789
+				int "Lcd display size height"
+				default 240
+
+			config LCD_CLK_FREQ_MHZ
+				depends on LCD_TYPE_ST7789
+				int "lcd clk frequency MHZ"
+				default 15
+
+			choice LCD_SIPEED_TYPE
+				depends on LCD_TYPE_SIPEED
+				bool "lcd size"
+				default TYPE_480_272_4_3_INCH
+
+				config TYPE_800_480_57_INCH
+					bool "800x480 5 inch and 7 inch"
+
+				config TYPE_480_272_4_3_INCH
+					bool "480x272 4.3 inch"
+
+				config TYPE_1024_600
+					bool "1024x600 "
+			endchoice
+		endmenu
+
+		menu "LCD Pin Func configuration"
+			config LCD_GPIOHS_DCX
+				int "LCD Pin DCX bind with GPIOHS num"
+				default 0
+			config LCD_GPIOHS_RST
+				int "LCD Pin RST bind with GPIOHS num"
+				default 1
+		endmenu
+	endmenu
 
 	menu "Camera( Sensor ) configuration"
-		menu "!!!DONT MODIFY CAMERA_RESOLUTION!!!"
-
-		endmenu
+		comment "!!!DONT MODIFY CAMERA_RESOLUTION!!!"
 
 		choice CAMERA_TYPE
 			bool "Camera type"
@@ -281,9 +332,7 @@ menu "Application configuration"
 		---help---
 		build for Bit,Go,DOck or Othres
 
-	menu "--------------------------------"
-
-	endmenu
+	comment "--------------------------------"
 
 	config FUNCTION_KEY_PRESS_VOLTAGE_HIGH
 		bool "Voltage is high when key pressed"

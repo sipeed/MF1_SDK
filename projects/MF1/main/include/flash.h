@@ -4,11 +4,10 @@
 #include <stdint.h>
 #include "system_config.h"
 
-#define DBG_TIME_INIT()
-#define DBG_TIME()
-
+///////////////////////////////////////////////////////////////////////////////
 #define CFG_HEADER 0x55AA5558
 
+///////////////////////////////////////////////////////////////////////////////
 typedef struct _board_cfg
 {
     uint32_t header;
@@ -91,10 +90,12 @@ typedef struct _face_save_info_t
     uint32_t face_info_index[FACE_DATA_MAX_COUNT / 32 + 1];
 } face_save_info_t __attribute__((aligned(8)));
 
+///////////////////////////////////////////////////////////////////////////////
 extern volatile face_save_info_t g_face_save_info;
 extern volatile board_cfg_t g_board_cfg;
 extern volatile int flash_all_face_have_ir_fea;
 
+///////////////////////////////////////////////////////////////////////////////
 void flash_init(void);
 int flash_delete_face_info(uint32_t id);
 int flash_save_face_info(face_fea_t *features, uint8_t *uid, uint32_t valid, char *name, char *note, uint8_t *ret_uid);
@@ -118,4 +119,5 @@ uint8_t flash_save_cfg(board_cfg_t *cfg);
 uint8_t flash_cfg_print(board_cfg_t *cfg);
 uint8_t flash_cfg_set_default(board_cfg_t *cfg);
 
+///////////////////////////////////////////////////////////////////////////////
 #endif

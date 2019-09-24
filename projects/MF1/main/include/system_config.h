@@ -6,17 +6,24 @@
 
 /* clang-format off */
 ///////////////////////////////////////////////////////////////////////////////
-#define DBG_UART_NUM                   	    (UART_DEV3) //maybe bug
-#define PROTOCOL_UART_NUM                   (UART_DEV1)
+#define LOCK_IN_SECTION(s)                          __attribute__((used,unused,section(".iodata." #s)))
+
+//图片资源的长宽
+#define PIC_W                                       (240)
+#define PIC_H                                       (240)
+
+///////////////////////////////////////////////////////////////////////////////
+#define DBG_UART_NUM                   	            (UART_DEV3) //maybe bug
+#define PROTOCOL_UART_NUM                           (UART_DEV1)
 
 ///////////////////////////////////////////////////////////////////////////////
 /* CAMERA */
-#define CAM_SCL_PIN                         (41)
-#define CAM_SDA_650_PIN                     (42)
-#define CAM_SDA_850_PIN                     (40)
+#define CAM_SCL_PIN                                 (41)
+#define CAM_SDA_650_PIN                             (42)
+#define CAM_SDA_850_PIN                             (40)
 ///////////////////////////////////////////////////////////////////////////////
 
-//Note: Address must 4KB align
+//Note: Address must 64KB align
 ///////////////////////////////////////////////////////////////////////////////
 #define FONT_16x16_ADDR                             (0x70C000)
 #define FONT_32x32_ADDR                             (0xA00000)
@@ -44,6 +51,10 @@
 #define IMG_CONN_SUCC_ADDR                          (IMG_RECORD_FACE_ADDR + (116 * 1024 * 4))
 #define IMG_SCAN_QR_ADDR                            (IMG_RECORD_FACE_ADDR + (116 * 1024 * 5))
 #define IMG_QR_TIMEOUT_ADDR                         (IMG_RECORD_FACE_ADDR + (116 * 1024 * 6))
+
+#define IMG_BAR_800480_ADDR                         (IMG_RECORD_FACE_ADDR + (116 * 1024 * 7))
+#define IMG_BAR_480272_ADDR                         (IMG_RECORD_FACE_ADDR + (116 * 1024 * 7) + 160*1024)
+
 ///////////////////////////////////////////////////////////////////////////////
 // AUDIO DATA
 #define AUDIO_DATA_ADDR                             (0xE00000)
