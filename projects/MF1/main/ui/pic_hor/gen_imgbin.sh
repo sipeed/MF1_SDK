@@ -11,15 +11,18 @@ do
         local name=$file        #得到文件的名字
         #做自己的工作.
         if [ "${file##*.}" = "bmp" ]; then
-            python3 bmp2hex.py $file -kbin
-
+            if [ "$2" -eq "1" ] ; then
+                python3 bmp2hex.py $file -kbin -be
+            else
+                python3 bmp2hex.py $file -kbin
+            fi
         fi
     fi
 done
 }
 
 INIT_PATH="."
-ergodic $INIT_PATH
+ergodic $INIT_PATH $1
 
 #delete exist file
 if [ -e pic.kfpkg ]
@@ -28,9 +31,9 @@ then
 fi
 
 #compress bin to kfpkg
-zip pic.kfpkg flash-list.json 0.bin 1.bin 2.bin 3.bin 4.bin 5.bin 6.bin
+zip pic.kfpkg flash-list.json 0.bin 1.bin 2.bin 3.bin 4.bin 5.bin 6.bin 7.bin 8.bin
 
-if [ "$1" ] ;then
+if [ "$2" -eq "1" ] ;then
     echo "merge kfpkg"
 
     #merge kfpkg to bin
