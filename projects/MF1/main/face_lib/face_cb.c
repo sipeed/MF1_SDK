@@ -66,6 +66,12 @@ void face_cb_init(void)
     DisImageX_Off = 0;
     DisImageY_Off = 0;
 #else
+    pDisImage = _IOMEM_PADDR(lcd_image);
+    pCamImage = _IOMEM_ADDR(cam_image);
+
+    DisLcd_W = SIPEED_LCD_W;
+    DisLcd_H = SIPEED_LCD_H;
+
     //09月25日 星期三
     uint8_t zhCN_date[] = {0x30, 0x39, 0xd4, 0xc2, 0x32, 0x35, 0xc8, 0xd5, 0x20, 0xd0, 0xc7, 0xc6, 0xda, 0xc8, 0xfd, 0x0};
     //深圳XX公司
@@ -73,15 +79,10 @@ void face_cb_init(void)
     //欢迎使用人脸识别
     uint8_t zhCN_welcome[] = {0xBB, 0xB6, 0xD3, 0xAD, 0xCA, 0xB9, 0xD3, 0xC3, 0xC8, 0xCB, 0xC1, 0xB3, 0xCA, 0xB6, 0xB1, 0xF0, 0x0};
 
-    pDisImage = _IOMEM_PADDR(lcd_image);
-    pCamImage = _IOMEM_ADDR(cam_image);
-
-    DisLcd_W = SIPEED_LCD_W;
-    DisLcd_H = SIPEED_LCD_H;
-
 #if CONFIG_TYPE_800_480_57_INCH
     DisImageX_Off = 0;
     DisImageY_Off = 0;
+
 #if CONFIG_LCD_VERTICAL
     //时间
     image_rgb565_draw_string(lcd_banner_image, "10:08", 48,
@@ -124,6 +125,46 @@ void face_cb_init(void)
 #elif CONFIG_TYPE_480_272_4_3_INCH
     DisImageX_Off = 8;
     DisImageY_Off = 16;
+#if CONFIG_LCD_VERTICAL
+    //时间
+    image_rgb565_draw_string(lcd_banner_image, "10:08", 32,
+                             29, 27, WHITE, NULL, SIPEED_LCD_BANNER_W, SIPEED_LCD_BANNER_H);
+    //09月25日 星期三
+    image_rgb565_draw_zhCN_string(lcd_banner_image, zhCN_date, 16,
+                                  5, 69, WHITE, NULL, SIPEED_LCD_BANNER_W, SIPEED_LCD_BANNER_H,
+                                  lcd_dis_get_zhCN_dat);
+    //深圳XX公司
+    image_rgb565_draw_zhCN_string(lcd_banner_image, zhCN_company, 16,
+                                  18, 111, WHITE, NULL, SIPEED_LCD_BANNER_W, SIPEED_LCD_BANNER_H,
+                                  lcd_dis_get_zhCN_dat);
+    //欢迎使用人脸识别
+    image_rgb565_draw_zhCN_string(lcd_banner_image, zhCN_welcome, 16,
+                                  137, 118, WHITE, NULL, SIPEED_LCD_BANNER_W, SIPEED_LCD_BANNER_H,
+                                  lcd_dis_get_zhCN_dat);
+    //IP地址
+    image_rgb565_draw_string(lcd_banner_image, "192.168.0.169", 16,
+                             149, 138, WHITE, NULL, SIPEED_LCD_BANNER_W, SIPEED_LCD_BANNER_H);
+#else
+    //时间
+    image_rgb565_draw_string(lcd_banner_image, "10:08", 48,
+                             21, 10, WHITE, NULL, SIPEED_LCD_BANNER_W, SIPEED_LCD_BANNER_H);
+    //09月25日 星期三
+    image_rgb565_draw_zhCN_string(lcd_banner_image, zhCN_date, 16,
+                                  21, 59, WHITE, NULL, SIPEED_LCD_BANNER_W, SIPEED_LCD_BANNER_H,
+                                  lcd_dis_get_zhCN_dat);
+    //深圳XX公司
+    image_rgb565_draw_zhCN_string(lcd_banner_image, zhCN_company, 24,
+                                  8, 100, WHITE, NULL, SIPEED_LCD_BANNER_W, SIPEED_LCD_BANNER_H,
+                                  lcd_dis_get_zhCN_dat);
+    //欢迎使用人脸识别
+    image_rgb565_draw_zhCN_string(lcd_banner_image, zhCN_welcome, 16,
+                                  16, 230, WHITE, NULL, SIPEED_LCD_BANNER_W, SIPEED_LCD_BANNER_H,
+                                  lcd_dis_get_zhCN_dat);
+    //IP地址
+    image_rgb565_draw_string(lcd_banner_image, "192.168.0.169", 16,
+                             28, 250, WHITE, NULL, SIPEED_LCD_BANNER_W, SIPEED_LCD_BANNER_H);
+#endif /* CONFIG_LCD_VERTICAL */
+
 #elif CONFIG_TYPE_1024_600
     DisImageX_Off = 0;
     DisImageY_Off = 0;

@@ -275,9 +275,9 @@ void board_init(void)
     lcd_sipeed_config_disp_buf(lcd_image, lcd_banner_image);
 
     lcd_init(LCD_SIPEED);
-    /* FIXME:清空屏幕没有用 */
-    // lcd_clear((0<<11)|(27<<5)|(21<<0));
-    //  lcd_clear(RED);
+    // (((r << 8) & 0xF800) | ((g << 3) & 0x7E0) | (b >> 3))
+    lcd_clear((((1 << 8) & 0xF800) | ((107 << 3) & 0x7E0) | (168 >> 3)));
+
 #endif /*CONFIG_LCD_TYPE_ST7789*/
 
     /* DVP interrupt config */

@@ -133,7 +133,7 @@ static int timer_callback(void *ctx)
     return 0;
 }
 
-static void lcd_sipeed_config(void)
+static void lcd_sipeed_config(lcd_t *lcd)
 {
     gpiohs_set_drive_mode(CONFIG_LCD_GPIOHS_DCX, GPIO_DM_OUTPUT);
     gpiohs_set_pin(CONFIG_LCD_GPIOHS_DCX, GPIO_PV_HIGH);
@@ -163,7 +163,7 @@ static void lcd_sipeed_config(void)
     return;
 }
 
-static int lcd_sipeed_clear(uint16_t rgb565_color)
+static int lcd_sipeed_clear(lcd_t *lcd, uint16_t rgb565_color)
 {
     uint16_t *addr = _IOMEM_PADDR(disp_buf);
     //clear iomem
@@ -178,15 +178,6 @@ static int lcd_sipeed_clear(uint16_t rgb565_color)
     return;
 }
 
-static int lcd_sipeed_draw_picture(lcd_t *lcd,
-                                   uint16_t x, uint16_t y,
-                                   uint16_t w, uint16_t h,
-                                   uint32_t *imamge)
-{
-    //do nothing, we refresh in 20ms irq
-    return;
-}
-
 int lcd_sipeed_init(lcd_t *lcd)
 {
     lcd->dir = 0x0;
@@ -194,9 +185,10 @@ int lcd_sipeed_init(lcd_t *lcd)
     lcd->height = SIPEED_LCD_H;
     lcd->lcd_config = lcd_sipeed_config; //初始化配置
     lcd->lcd_clear = lcd_sipeed_clear;
+
+    lcd->lcd_draw_picture = NULL;
     lcd->lcd_set_direction = NULL;
     lcd->lcd_set_area = NULL;
-    lcd->lcd_draw_picture = lcd_sipeed_draw_picture;
 
     return 0;
 }
