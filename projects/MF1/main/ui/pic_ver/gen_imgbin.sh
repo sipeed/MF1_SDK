@@ -1,5 +1,8 @@
 #!/bin/bash
 
+merge="_unmerge"
+flash=
+
 function ergodic(){
 for file in ` ls $1`
 do
@@ -12,8 +15,10 @@ do
         #做自己的工作.
         if [ "${file##*.}" = "bmp" ]; then
             if [ "$2" -eq "1" ] ; then
+                flash="_quad"
                 python3 bmp2hex.py $file -kbin -be
             else
+                flash="_std"
                 python3 bmp2hex.py $file -kbin
             fi
         fi
@@ -31,16 +36,16 @@ then
 fi
 
 #compress bin to kfpkg
-zip pic.kfpkg flash-list.json 0.bin 1.bin 2.bin 3.bin 4.bin 5.bin 6.bin 7.bin 8.bin
+zip pic$merge$flash.kfpkg flash-list.json 0.bin 1.bin 2.bin 3.bin 4.bin 5.bin 6.bin 7.bin 8.bin
 
 if [ "$2" -eq "1" ] ;then
     echo "merge kfpkg"
 
     #merge kfpkg to bin
-    python3 merge_kfpkg.py pic.kfpkg
-    rm pic.kfpkg
+    python3 merge_kfpkg.py pic$merge$flash.kfpkg
+    rm pic$merge$flash.kfpkg
     # addr file save_file
-    python3 pack_kfpkg.py 12582912 pic.bin pic.kfpkg
+    python3 pack_kfpkg.py 12582912 pic$merge$flash.bin pic_merge$flash.kfpkg
 fi
 
 rm *.bin

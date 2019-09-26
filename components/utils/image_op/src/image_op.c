@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "global_config.h"
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -169,11 +170,65 @@ void image_rgb5652rgb888(uint16_t *rgb565, uint8_t *rgb888,
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#if CONFIG_LCD_VERTICAL
+static void image_rgb565_draw_line(uint16_t *ptr, uint8_t hor_ver,
+                                   uint16_t x, uint16_t y,
+                                   uint16_t linew, uint16_t lineh,
+                                   uint16_t img_w, uint16_t img_h,
+                                   uint16_t color)
+{
+    uint16_t i, j, *addr = NULL;
+    {
+        for (i = 0; i < (hor_ver ? lineh : linew); i++)
+        {
+            addr = ((uint16_t *)ptr) + (img_h - (x + i) - 1) * img_w + y; //竖屏
+            for (j = 0; j < (hor_ver ? linew : lineh); j++)
+            {
+                *addr = color;
+                addr++;
+            }
+        }
+    }
+    return;
+}
+#endif /* CONFIG_LCD_VERTICAL */
+
 void image_rgb565_draw_edge(uint32_t *gram,
                             uint16_t x1, uint16_t y1,
                             uint16_t x2, uint16_t y2,
-                            uint16_t color, uint16_t img_w, uint16_t img_h)
+                            uint16_t color,
+                            uint16_t img_w, uint16_t img_h)
 {
+#if CONFIG_LCD_VERTICAL
+    if (x1 <= 0)
+        x1 = 1;
+    if (x2 >= img_w - 1)
+        x2 = img_w - 2;
+    if (y1 <= 0)
+        y1 = 1;
+    if (y2 >= img_h - 1)
+        y2 = img_h - 2;
+
+    x2 -= 3;
+    y2 -= 3;
+
+    //左上
+    image_rgb565_draw_line(gram, 1, x1, y1, 3, 15, img_w, img_h, color);
+    image_rgb565_draw_line(gram, 0, x1, y1, 3, 15, img_w, img_h, color);
+
+    //右上
+    image_rgb565_draw_line(gram, 1, x2 - 12, y1, 3, 15, img_w, img_h, color);
+    image_rgb565_draw_line(gram, 0, x2, y1, 3, 15, img_w, img_h, color);
+
+    //右下
+    image_rgb565_draw_line(gram, 1, x2 - 12, y2, 3, 15, img_w, img_h, color);
+    image_rgb565_draw_line(gram, 0, x2, y2 - 12, 3, 15, img_w, img_h, color);
+
+    //左下
+    image_rgb565_draw_line(gram, 1, x1, y2, 3, 12, img_w, img_h, color);
+    image_rgb565_draw_line(gram, 0, x1, y2 - 12, 3, 15, img_w, img_h, color);
+    return;
+#else
     uint32_t data = ((uint32_t)color << 16) | (uint32_t)color;
     uint32_t *addr1, *addr2, *addr3, *addr4;
 
@@ -223,7 +278,10 @@ void image_rgb565_draw_edge(uint32_t *gram,
         addr3 += img_w / 2;
         addr4 += img_w / 2;
     }
+    return;
+#endif /* CONFIG_LCD_VERTICAL */
 }
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -232,36 +290,48 @@ static void image_rgb565_ram_draw_font_mat(uint16_t *ptr, uint8_t zhCN,
                                            uint8_t *font_mat, uint8_t size,
                                            uint16_t x, uint16_t y,
                                            uint16_t color, uint16_t *bg_color,
-                                           uint16_t img_w)
+                                           uint16_t img_w, uint16_t img_h)
 {
-    uint8_t data, csize;
+    uint8_t data;
     uint16_t *addr = NULL;
     uint16_t oy = y;
 
-    csize = (size / 8 + ((size % 8) ? 1 : 0)) * (zhCN ? size : (size / 2));
+    uint16_t csize = (size / 8 + ((size % 8) ? 1 : 0)) * (zhCN ? size : (size / 2));
 
-    for (uint8_t i = 0; i < csize; i++)
+    for (uint16_t i = 0; i < csize; i++)
     {
         data = *(font_mat + i);
         for (uint8_t j = 0; j < 8; j++)
         {
-            addr = ((uint16_t *)ptr) + y * img_w + x;
+#if CONFIG_LCD_VERTICAL
+            addr = ((uint16_t *)ptr) + (img_h - x - 1) * img_w + y; //竖屏
+#else
+            addr = ((uint16_t *)ptr) + y * img_w + x; //横屏
+#endif /* CONFIG_LCD_VERTICAL */
 
             if (data & 0x80)
             {
+#if CONFIG_LCD_TYPE_SIPEED
+                *addr = color;
+#else
                 if (x & 1)
                     *(addr - 1) = color;
                 else
                     *(addr + 1) = color;
+#endif /* CONFIG_LCD_TYPE_SIPEED */
             }
             else
             {
                 if (bg_color)
                 {
+#if CONFIG_LCD_TYPE_SIPEED
+                    *addr = *bg_color;
+#else
                     if (x & 1)
                         *(addr - 1) = *bg_color;
                     else
                         *(addr + 1) = *bg_color;
+#endif /* CONFIG_LCD_TYPE_SIPEED */
                 }
             }
             data <<= 1;
@@ -280,7 +350,7 @@ static void image_rgb565_ram_draw_font_mat(uint16_t *ptr, uint8_t zhCN,
 static void image_rgb565_ram_draw_char(uint16_t *ptr, char c, uint8_t size,
                                        uint16_t x, uint16_t y,
                                        uint16_t color, uint16_t *bg_color,
-                                       uint16_t img_w)
+                                       uint16_t img_w, uint16_t img_h)
 {
     if (c < ' ' || c > '~')
     {
@@ -288,14 +358,30 @@ static void image_rgb565_ram_draw_char(uint16_t *ptr, char c, uint8_t size,
     }
 
     uint8_t offset = c - ' ';
+    uint16_t csize = (size / 8 + ((size % 8) ? 1 : 0)) * (size / 2);
 
     switch (size)
     {
     case 16:
-        image_rgb565_ram_draw_font_mat(ptr, 0, ascii0816 + (offset * 16), size, x, y, color, bg_color, img_w);
+        image_rgb565_ram_draw_font_mat(ptr, 0, ascii0816 + (offset * csize), size, x, y, color, bg_color, img_w, img_h);
+        break;
+    case 24:
+        image_rgb565_ram_draw_font_mat(ptr, 0, ascii1224 + (offset * csize), size, x, y, color, bg_color, img_w, img_h);
         break;
     case 32:
-        image_rgb565_ram_draw_font_mat(ptr, 0, ascii_1632 + (offset * 64), size, x, y, color, bg_color, img_w);
+        image_rgb565_ram_draw_font_mat(ptr, 0, ascii_1632 + (offset * csize), size, x, y, color, bg_color, img_w, img_h);
+        break;
+    case 48:
+        if (c >= '0' && c <= '9')
+        {
+            offset = c - '0';
+            image_rgb565_ram_draw_font_mat(ptr, 0, ascii2448 + (offset * csize), size, x, y, color, bg_color, img_w, img_h);
+        }
+        else if (c == ':')
+        {
+            offset = 10;
+            image_rgb565_ram_draw_font_mat(ptr, 0, ascii2448 + (offset * csize), size, x, y, color, bg_color, img_w, img_h);
+        }
         break;
     default:
         break;
@@ -311,7 +397,7 @@ void image_rgb565_draw_string(uint16_t *ptr, char *str, uint8_t size,
     uint16_t ox = x;
     uint16_t oy = y;
 
-    if (size != 32 && size != 16)
+    if (size != 32 && size != 16 && size != 24 && size != 48)
     {
         return;
     }
@@ -335,7 +421,7 @@ void image_rgb565_draw_string(uint16_t *ptr, char *str, uint8_t size,
         }
         else
         {
-            image_rgb565_ram_draw_char(ptr, *str, size, x, y, color, bg_color, img_w);
+            image_rgb565_ram_draw_char(ptr, *str, size, x, y, color, bg_color, img_w, img_h);
         }
         str++;
         x += size / 2;
@@ -349,7 +435,8 @@ void image_rgb565_draw_string(uint16_t *ptr, char *str, uint8_t size,
 static void image_rgb565_draw_zhCN_char(uint16_t *ptr, uint8_t *zhCN_char, uint8_t size,
                                         uint16_t x, uint16_t y,
                                         uint16_t color, uint16_t *bg_color,
-                                        uint16_t img_w, get_zhCN_dat get_font_data)
+                                        uint16_t img_w, int16_t img_h,
+                                        get_zhCN_dat get_font_data)
 {
     uint8_t zhCN_dat[128]; //max 32x32 font
 
@@ -360,7 +447,7 @@ static void image_rgb565_draw_zhCN_char(uint16_t *ptr, uint8_t *zhCN_char, uint8
         get_font_data(zhCN_char, zhCN_dat, size);
     }
 
-    image_rgb565_ram_draw_font_mat(ptr, 1, zhCN_dat, size, x, y, color, bg_color, img_w);
+    image_rgb565_ram_draw_font_mat(ptr, 1, zhCN_dat, size, x, y, color, bg_color, img_w, img_h);
 
     return;
 }
@@ -375,7 +462,7 @@ void image_rgb565_draw_zhCN_string(uint16_t *ptr, uint8_t *zhCN_string, uint8_t 
     uint16_t ox = x;
     uint16_t oy = y;
 
-    if ((size != 32 && size != 16) || (get_font_data == NULL))
+    if ((size != 32 && size != 16 && size != 24) || (get_font_data == NULL))
     {
         return;
     }
@@ -407,7 +494,7 @@ void image_rgb565_draw_zhCN_string(uint16_t *ptr, uint8_t *zhCN_string, uint8_t 
                 }
                 else
                 {
-                    image_rgb565_ram_draw_char(ptr, *zhCN_string, size, x, y, color, bg_color, img_w);
+                    image_rgb565_ram_draw_char(ptr, *zhCN_string, size, x, y, color, bg_color, img_w, img_h);
                 }
                 zhCN_string++;
                 x += size / 2;
@@ -424,7 +511,7 @@ void image_rgb565_draw_zhCN_string(uint16_t *ptr, uint8_t *zhCN_string, uint8_t 
             if (y > (oy + img_h - size))
                 break;
 
-            image_rgb565_draw_zhCN_char(ptr, zhCN_string, size, x, y, color, bg_color, img_w, get_font_data);
+            image_rgb565_draw_zhCN_char(ptr, zhCN_string, size, x, y, color, bg_color, img_w, img_h, get_font_data);
             zhCN_string += 2;
             x += size;
         }

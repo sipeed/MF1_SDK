@@ -153,7 +153,7 @@ static void lcd_sipeed_config(void)
     lcd_sipeed_send_cmd(LCD_DISOLAY_ON);
 
     timer_init(1);
-    timer_set_interval(1, 1, 30 * 1000 * 1000);
+    timer_set_interval(1, 1, 40 * 1000 * 1000);
     //SPI传输时间(dis_flag=1)约20ms，需要留出10~20ms给缓冲区准备(dis_flag=0)
     //如果图像中断处理时间久，可以调慢FPGA端的像素时钟，但是注意不能比刷屏中断慢(否则就会垂直滚动画面)。
     //33M->18ms  25M->23ms  20M->29ms
@@ -171,7 +171,7 @@ static int lcd_sipeed_clear(uint16_t rgb565_color)
         for (int j = 0; j < SIPEED_LCD_W; j++)
             addr[i * SIPEED_LCD_W + j] = rgb565_color;
     //clear cache
-    addr = (disp_buf);
+    addr = _CACHE_PADDR(disp_buf);
     for (int i = 0; i < SIPEED_LCD_H; i++)
         for (int j = 0; j < SIPEED_LCD_W; j++)
             addr[i * SIPEED_LCD_W + j] = rgb565_color;

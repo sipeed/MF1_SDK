@@ -31,7 +31,7 @@ face_lib_callback_t face_recognition_cb = (face_lib_callback_t){
     .fake_face_cb = fake_face_cb,
     .pass_face_cb = pass_face_cb,
     .lcd_refresh_cb = lcd_refresh_cb,
-    // .lcd_convert_cb = lcd_convert_cb,
+    .lcd_convert_cb = lcd_convert_cb,
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

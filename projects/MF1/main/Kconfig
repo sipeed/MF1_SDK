@@ -313,14 +313,12 @@ menu "Application configuration"
 	endmenu
 
 	config LCD_VERTICAL
-		depends on LCD_TYPE_ST7789
 		bool "Lcd display vertical"
 		default n
 		---help---
 		lcd display vertical will use more memrory
 
 	config LCD_HORIZONTAL
-		depends on LCD_TYPE_ST7789
 		bool "Lcd display hortizontal"
 		default n
 		---help---

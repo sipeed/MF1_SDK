@@ -58,6 +58,9 @@
 
 #define _MODULE_ADDR(x)                         (x)
 
+#define _CACHE_ADDR(x)                          (_IS_CACHEMEM(x)?(uint64_t)(x):(((uint64_t)&(x))+0x40000000))
+#define _CACHE_PADDR(p)                         (_IS_CACHEMEMP(p)?(uint64_t)(p):(((uint64_t)(p))+0x40000000))
+
 ///////////////////////////////////////////////////////////////////////////////
 #define FTR_850                             (1)
 #define FTR_650                             (0)
@@ -178,7 +181,7 @@ typedef struct
 
     void (*lcd_refresh_cb)(void);
 
-    // void (*lcd_convert_cb)(void);
+    void (*lcd_convert_cb)(void);
 } face_lib_callback_t;
 
 ///////////////////////////////////////////////////////////////////////////////

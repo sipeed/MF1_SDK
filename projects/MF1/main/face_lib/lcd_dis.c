@@ -68,6 +68,9 @@ uint8_t lcd_dis_get_zhCN_dat(uint8_t *zhCN_char, uint8_t *zhCN_dat, uint8_t size
     case 16:
         my_w25qxx_read_data((uint32_t)(FONT_16x16_ADDR + font_offset), zhCN_dat, csize, W25QXX_STANDARD);
         break;
+    case 24:
+        my_w25qxx_read_data((uint32_t)(FONT_24x24_ADDR + font_offset), zhCN_dat, csize, W25QXX_STANDARD);
+        break;
     case 32:
         my_w25qxx_read_data((uint32_t)(FONT_32x32_ADDR + font_offset), zhCN_dat, csize, W25QXX_STANDARD);
         break;

@@ -270,7 +270,7 @@ void board_init(void)
     extern uint8_t lcd_sipeed_config_disp_buf(uint8_t * lcd_disp_buf, uint8_t * lcd_disp_banner_buf);
 
     w25qxx_read_data(((SIPEED_LCD_BANNER_H == 480) ? IMG_BAR_800480_ADDR : IMG_BAR_480272_ADDR),
-                     lcd_banner_image, SIPEED_LCD_BANNER_H * SIPEED_LCD_BANNER_W * 2);
+                     lcd_banner_image, SIPEED_LCD_BANNER_W * SIPEED_LCD_BANNER_H * 2);
 
     lcd_sipeed_config_disp_buf(lcd_image, lcd_banner_image);
 

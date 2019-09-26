@@ -25,8 +25,9 @@
 
 //Note: Address must 64KB align
 ///////////////////////////////////////////////////////////////////////////////
-#define FONT_16x16_ADDR                             (0x70C000)
-#define FONT_32x32_ADDR                             (0xA00000)
+#define FONT_16x16_ADDR                             (0x100000)
+#define FONT_24x24_ADDR                             (FONT_16x16_ADDR + 267264)
+#define FONT_32x32_ADDR                             (FONT_24x24_ADDR + 601344)
 
 #define BOARD_CFG_ADDR                              (0x7FF000)  //8M-4K
 #define BOARD_CFG_LEN                               (4 * 1024)
@@ -53,7 +54,7 @@
 #define IMG_QR_TIMEOUT_ADDR                         (IMG_RECORD_FACE_ADDR + (116 * 1024 * 6))
 
 #define IMG_BAR_800480_ADDR                         (IMG_RECORD_FACE_ADDR + (116 * 1024 * 7))
-#define IMG_BAR_480272_ADDR                         (IMG_RECORD_FACE_ADDR + (116 * 1024 * 7) + 160*1024)
+#define IMG_BAR_480272_ADDR                         (IMG_RECORD_FACE_ADDR + (116 * 1024 * 7) + 230456)
 
 ///////////////////////////////////////////////////////////////////////////////
 // AUDIO DATA
