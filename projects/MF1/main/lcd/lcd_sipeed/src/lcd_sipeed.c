@@ -153,7 +153,14 @@ static void lcd_sipeed_config(lcd_t *lcd)
     lcd_sipeed_send_cmd(LCD_DISOLAY_ON);
 
     timer_init(1);
-    timer_set_interval(1, 1, 40 * 1000 * 1000);
+
+    uint8_t tmp = 40;
+
+#if TYPE_SIPEED_7_INCH
+    tmp = 30;
+#endif
+
+    timer_set_interval(1, 1, tmp * 1000 * 1000);
     //SPI传输时间(dis_flag=1)约20ms，需要留出10~20ms给缓冲区准备(dis_flag=0)
     //如果图像中断处理时间久，可以调慢FPGA端的像素时钟，但是注意不能比刷屏中断慢(否则就会垂直滚动画面)。
     //33M->18ms  25M->23ms  20M->29ms

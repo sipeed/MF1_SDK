@@ -253,7 +253,15 @@ menu "Application configuration"
 
 				config TYPE_1024_600
 					bool "1024x600 "
+					default n
+
 			endchoice
+
+			config TYPE_SIPEED_7_INCH
+				depends on TYPE_800_480_57_INCH
+				bool "7 inch lcd, is little special"
+				default n
+
 		endmenu
 
 		menu "LCD Pin Func configuration"
