@@ -9,9 +9,9 @@
 #include "ov2640.h"
 #endif
 
-#if (CONFIG_CAMERA_GC0328_SINGLE || CONFIG_CAMERA_GC0328_DUAL)
-#include "face_lib.h"
-#endif
+// #if (CONFIG_CAMERA_GC0328_SINGLE || CONFIG_CAMERA_GC0328_DUAL)
+// #include "face_lib.h"
+// #endif
 
 static camera_t camera = {
     .slv_id = 0x0,
@@ -66,6 +66,28 @@ int camera_config(void)
     }
     return 1;
 }
+
+#if (CONFIG_CAMERA_GC0328_SINGLE || CONFIG_CAMERA_GC0328_DUAL)
+///////////////////////////////////////////////////////////////////////////////
+/* 具体函数在工程中,这里只是防止编译出错 */
+int __attribute__((weak)) gc0328_dual_init(camera_t *camera)
+{
+    printf("error at %s %s->%d\r\n", __FILE__, __func__, __LINE__);
+    while (1)
+        ;
+    return 0;
+}
+
+int __attribute__((weak)) gc0328_single_init(camera_t *camera)
+{
+    printf("error at %s %s->%d\r\n", __FILE__, __func__, __LINE__);
+    while (1)
+        ;
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+#endif /* CONFIG_CAMERA_GC0328 */
 
 int camera_init(camera_type_t type)
 {

@@ -145,7 +145,7 @@ menu "Application configuration"
 	# board fpioa func config
 
 	menu "Peripheral configuration"
-
+	
 		comment "!!! LCD AND SPI TF USE 0-5 !!!"
 
 		menu "Key configuration"
@@ -180,7 +180,7 @@ menu "Application configuration"
 				int "Relay hight gpiohs num"
 				default 12
 		endmenu
-
+		
 		menu "WiFi configuration"
 			depends on NET_ESP8285
 			config WIFI_GPIO_NUM_UART_TX
@@ -212,91 +212,6 @@ menu "Application configuration"
 	endmenu
 	
 	comment "--------------------------------"
-
-	menu "LCD configuration"
-		choice LCD_TYPE
-			bool "LCD driver type"
-			default LCD_TYPE_ST7789
-
-			config LCD_TYPE_ST7789
-				bool "LCD use ST7789"
-			config LCD_TYPE_SIPEED
-				bool "LCD use sipeed board"
-		endchoice
-
-		menu "Lcd ( Display ) configuration"
-
-			config LCD_WIDTH
-				depends on LCD_TYPE_ST7789
-				int "Lcd display size width"
-				default 240
-			config LCD_HEIGHT
-				depends on LCD_TYPE_ST7789
-				int "Lcd display size height"
-				default 240
-
-			config LCD_CLK_FREQ_MHZ
-				depends on LCD_TYPE_ST7789
-				int "lcd clk frequency MHZ"
-				default 15
-
-			choice LCD_SIPEED_TYPE
-				depends on LCD_TYPE_SIPEED
-				bool "lcd size"
-				default TYPE_480_272_4_3_INCH
-
-				config TYPE_800_480_57_INCH
-					bool "800x480 5 inch and 7 inch"
-
-				config TYPE_480_272_4_3_INCH
-					bool "480x272 4.3 inch"
-
-				config TYPE_1024_600
-					bool "1024x600 "
-					default n
-
-			endchoice
-
-			config TYPE_SIPEED_7_INCH
-				depends on TYPE_800_480_57_INCH
-				bool "7 inch lcd, is little special"
-				default n
-
-		endmenu
-
-		menu "LCD Pin Func configuration"
-			config LCD_GPIOHS_DCX
-				int "LCD Pin DCX bind with GPIOHS num"
-				default 0
-			config LCD_GPIOHS_RST
-				int "LCD Pin RST bind with GPIOHS num"
-				default 1
-		endmenu
-	endmenu
-
-	menu "Camera( Sensor ) configuration"
-		comment "!!!DONT MODIFY CAMERA_RESOLUTION!!!"
-
-		choice CAMERA_TYPE
-			bool "Camera type"
-			default CAMERA_GC0328_DUAL
-
-			config CAMERA_OV2640
-				bool "single ov2640"
-				select NOT_MF1_BOARD
-			config CAMERA_GC0328_SINGLE
-				bool "single gc0328"
-			config CAMERA_GC0328_DUAL
-				bool "dual gc0328, IR+RGB"
-		endchoice
-
-		config CAMERA_RESOLUTION_WIDTH
-			int "Camera resolution width"
-			default 320
-		config CAMERA_RESOLUTION_HEIGHT
-			int "Camera resolution height"
-			default 240
-	endmenu
 
 	menu "network"
 		config NET_ENABLE

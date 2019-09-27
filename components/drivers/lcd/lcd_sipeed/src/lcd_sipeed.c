@@ -8,13 +8,17 @@
 #include "timer.h"
 #include "spi.h"
 
-#include "face_lib.h"
+#include "mem_macro.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 extern void gpiohs_irq_disable(size_t pin);
 extern void spi_send_data_normal(spi_device_num_t spi_num,
                                  spi_chip_select_t chip_select,
                                  const uint8_t *tx_buff, size_t tx_len);
+
+extern void sipeed_spi_send_data_dma(uint8_t spi_num, uint8_t chip_select,
+                                     uint8_t dma_chn, const uint8_t *data_buf, size_t buf_len);
+
 ///////////////////////////////////////////////////////////////////////////////
 volatile uint8_t dis_flag = 0;
 
