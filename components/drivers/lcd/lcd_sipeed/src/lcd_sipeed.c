@@ -160,8 +160,8 @@ static void lcd_sipeed_config(lcd_t *lcd)
 
     uint8_t tmp = 40;
 
-#if TYPE_SIPEED_7_INCH
-    tmp = 30;
+#if CONFIG_TYPE_SIPEED_7_INCH
+    tmp = 25;
 #endif
 
     timer_set_interval(1, 1, tmp * 1000 * 1000);
