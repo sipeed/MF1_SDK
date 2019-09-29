@@ -246,14 +246,14 @@ void detected_face_cb(face_recognition_ret_t *face)
 
                 face_fea_t face_fea;
 
-#if CONFI_SINGLE_CAMERA
-                face_fea.stat = 0;
-                memcpy(&(face_fea.fea_rgb), face_info->feature, 196);
-                memset(&(face_fea.fea_ir), 0, 196);
-#else
+#if CONFIG_CAMERA_GC0328_DUAL
                 face_fea.stat = 1;
                 memcpy(&(face_fea.fea_ir), face_info->feature, 196);
                 memset(&(face_fea.fea_rgb), 0, 196);
+#else
+                face_fea.stat = 0;
+                memcpy(&(face_fea.fea_rgb), face_info->feature, 196);
+                memset(&(face_fea.fea_ir), 0, 196);
 #endif
                 printf("#######save face\r\n");
                 if (flash_save_face_info(&face_fea, record_cfg.uid, 1, NULL, NULL, NULL) < 0) //image, feature, uid, valid, name, note

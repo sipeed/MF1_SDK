@@ -61,7 +61,7 @@ static void flash_init_uid_table(uint8_t init_flag)
 
 static int flash_isall_have_ir(void)
 {
-    int ret = -1;
+    int ret = 0;
     face_info_t face_info;
     face_fea_t *info = NULL;
     for (uint32_t i = 0; i < FACE_DATA_MAX_COUNT; i++)
@@ -74,9 +74,13 @@ static int flash_isall_have_ir(void)
                 if (info->stat == 0)
                     return 0;
             }
+            else
+            {
+                ret = 1;
+            }
         }
     }
-    return 1;
+    return ret;
 }
 
 //高四位置0xF
