@@ -8,6 +8,11 @@
 #include "lcd.h"
 #include "lcd_dis.h"
 
+#if CONFIG_ENABLE_OUTPUT_JPEG
+#include "cQueue.h"
+#include "core1.h"
+#endif /* CONFIG_ENABLE_OUTPUT_JPEG */
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 static uint64_t last_open_relay_time_in_s = 0;
 static volatile uint8_t relay_open_flag = 0;
@@ -210,6 +215,19 @@ int main(void)
     demo_w5500();
 #endif
 #endif
+
+#if CONFIG_ENABLE_OUTPUT_JPEG
+    /* 这个需要可配置 */
+    fpioa_set_function(CONFIG_JPEG_OUTPUT_PORT_TX, FUNC_UART1_TX + UART_DEV2 * 2);
+    fpioa_set_function(CONFIG_JPEG_OUTPUT_PORT_RX, FUNC_UART1_RX + UART_DEV2 * 2);
+    uart_config(UART_DEV2, CONFIG_OUTPUT_JPEG_UART_BAUD, 8, UART_STOP_1, UART_PARITY_NONE);
+
+    printf("jpeg output uart cfg:\r\n");
+    printf("                     tx:%d rx:%d, baud:%d\r\n",
+           CONFIG_JPEG_OUTPUT_PORT_TX, CONFIG_JPEG_OUTPUT_PORT_RX, CONFIG_OUTPUT_JPEG_UART_BAUD);
+    q_init(&q_core1, sizeof(void *), 10, FIFO, false); //core1 接受core0 上传图片到服务器的队列
+    register_core1(core1_function, NULL);
+#endif /* CONFIG_ENABLE_OUTPUT_JPEG */
 
     /* init device */
     protocol_regesiter_user_cb(&user_custom_cmd[0], sizeof(user_custom_cmd) / sizeof(user_custom_cmd[0]));

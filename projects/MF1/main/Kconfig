@@ -49,6 +49,14 @@ menu "Application configuration"
 			config DEBUG_UART_PORT_RX_PIN
 				int "Debug uart port RX pin"
 				default 11
+			config JPEG_OUTPUT_PORT_TX
+				depends on ENABLE_OUTPUT_JPEG
+				int "Jpeg output uart pot tx"
+				default 30
+			config JPEG_OUTPUT_PORT_RX
+				depends on ENABLE_OUTPUT_JPEG
+				int "Jpeg output uart pot rx"
+				default 31
 			config PROTOCOL_DEBUG_UART_PIN_SWAP
 				bool "Swap protocol uart pin and debug pin"
 				default n
@@ -146,9 +154,8 @@ menu "Application configuration"
 
 	menu "Peripheral configuration"
 
-		menu "!!! LCD AND SPI TF USE 0-5 !!!"
+		comment "!!! LCD AND SPI TF USE 0-5 !!!"
 
-		endmenu
 
 		menu "Key configuration"
 			config FUNCTION_KEY_GPIOHS_NUM
@@ -213,31 +220,6 @@ menu "Application configuration"
 
 	endmenu
 
-	menu "Camera( Sensor ) configuration"
-		menu "!!!DONT MODIFY CAMERA_RESOLUTION!!!"
-
-		endmenu
-
-		choice CAMERA_TYPE
-			bool "Camera type"
-			default CAMERA_GC0328_DUAL
-
-			config CAMERA_OV2640
-				bool "single ov2640"
-				select NOT_MF1_BOARD
-			config CAMERA_GC0328_SINGLE
-				bool "single gc0328"
-			config CAMERA_GC0328_DUAL
-				bool "dual gc0328, IR+RGB"
-		endchoice
-
-		config CAMERA_RESOLUTION_WIDTH
-			int "Camera resolution width"
-			default 320
-		config CAMERA_RESOLUTION_HEIGHT
-			int "Camera resolution height"
-			default 240
-	endmenu
 
 	menu "network"
 		config NET_ENABLE
@@ -261,6 +243,18 @@ menu "Application configuration"
 		endchoice
 	endmenu
 
+	menu "Output Jpeg configuration"
+		config ENABLE_OUTPUT_JPEG
+			bool "enable output jpeg via uart"
+			select ENABLE_CQUEUE
+			select ENABLE_JPEG_ENCODE
+			default n
+		config OUTPUT_JPEG_UART_BAUD
+			depends on ENABLE_OUTPUT_JPEG
+			int "output jpeg uart baud"
+			default 921600
+	endmenu
+
 	config LCD_VERTICAL
 		depends on LCD_TYPE_ST7789
 		bool "Lcd display vertical"
@@ -281,9 +275,7 @@ menu "Application configuration"
 		---help---
 		build for Bit,Go,DOck or Othres
 
-	menu "--------------------------------"
-
-	endmenu
+	comment "--------------------------------"
 
 	config FUNCTION_KEY_PRESS_VOLTAGE_HIGH
 		bool "Voltage is high when key pressed"

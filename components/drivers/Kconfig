@@ -45,6 +45,30 @@ menu "Drivers configuration"
 		endmenu
 	endmenu
 
+	menu "Camera( Sensor ) configuration"
+		comment "!!!DONT MODIFY CAMERA_RESOLUTION!!!"
+
+		choice CAMERA_TYPE
+			bool "Camera type"
+			default CAMERA_GC0328_DUAL
+
+			config CAMERA_OV2640
+				bool "single ov2640"
+				select NOT_MF1_BOARD
+			config CAMERA_GC0328_SINGLE
+				bool "single gc0328"
+			config CAMERA_GC0328_DUAL
+				bool "dual gc0328, IR+RGB"
+		endchoice
+
+		config CAMERA_RESOLUTION_WIDTH
+			int "Camera resolution width"
+			default 320
+		config CAMERA_RESOLUTION_HEIGHT
+			int "Camera resolution height"
+			default 240
+	endmenu
+
 	menu "SPI TF card configuration"
 		config SD_CARD_ENABLE
 			bool "Enable SPI TF card"

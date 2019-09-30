@@ -1,5 +1,17 @@
 
 menu "utils config"
     
+    config  ENABLE_CQUEUE
+        bool "enable cqueue module"
+        default n
+
+    config ENABLE_JPEG_DECODE
+        bool "enable jpeg decode"
+        default y
+
+    config ENABLE_JPEG_ENCODE
+        bool "enable jpeg encode"
+        default y
+
 endmenu
 

@@ -10,3 +10,6 @@
 [submodule "components/utils/list"]
 	path = components/utils/list
 	url = https://github.com/clibs/list.git
+[submodule "components/utils/cQueue"]
+	path = components/utils/cQueue
+	url = https://github.com/SMFSW/cQueue.git

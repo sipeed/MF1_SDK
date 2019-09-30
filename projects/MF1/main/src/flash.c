@@ -596,10 +596,18 @@ uint8_t flash_cfg_set_default(board_cfg_t *cfg)
     cfg->brd_hard_cfg.uart_relay_key.key_dir = 0;
 #endif
 
+#if CONFIG_PROTOCOL_DEBUG_UART_PIN_SWAP
+    cfg->brd_hard_cfg.uart_relay_key.log_rx = CONFIG_PROTOCOL_UART_PORT_RX_PIN;
+    cfg->brd_hard_cfg.uart_relay_key.log_tx = CONFIG_PROTOCOL_UART_PORT_TX_PIN;
+    cfg->brd_hard_cfg.uart_relay_key.port_rx = CONFIG_DEBUG_UART_PORT_RX_PIN;
+    cfg->brd_hard_cfg.uart_relay_key.port_tx = CONFIG_DEBUG_UART_PORT_TX_PIN;
+#else
     cfg->brd_hard_cfg.uart_relay_key.log_rx = CONFIG_DEBUG_UART_PORT_RX_PIN;
     cfg->brd_hard_cfg.uart_relay_key.log_tx = CONFIG_DEBUG_UART_PORT_TX_PIN;
     cfg->brd_hard_cfg.uart_relay_key.port_rx = CONFIG_PROTOCOL_UART_PORT_RX_PIN;
     cfg->brd_hard_cfg.uart_relay_key.port_tx = CONFIG_PROTOCOL_UART_PORT_TX_PIN;
+#endif
+
     cfg->brd_hard_cfg.uart_relay_key.relay_high = CONFIG_RELAY_HIGH_PIN;
     cfg->brd_hard_cfg.uart_relay_key.relay_low = CONFIG_RELAY_LOWX_PIN;
 

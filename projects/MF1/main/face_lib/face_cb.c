@@ -12,6 +12,10 @@
 
 #include "global_config.h"
 
+#if CONFIG_ENABLE_OUTPUT_JPEG
+#include "core1.h"
+#endif /* CONFIG_ENABLE_OUTPUT_JPEG */
+
 extern void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint64_t *time);
 ///////////////////////////////////////////////////////////////////////////////
 /* protocol record face */
@@ -105,6 +109,10 @@ void lcd_display_image_alpha(uint32_t pic_addr, uint32_t alpha)
 
 void lcd_convert_cb(void)
 {
+#if CONFIG_ENABLE_OUTPUT_JPEG
+    send_jpeg_to_core1(display_image);
+#endif /* CONFIG_ENABLE_OUTPUT_JPEG */
+
 #if CONFIG_LCD_VERTICAL
     //5300us @ 400M
     convert_rgb565_order((uint16_t *)display_image, CONFIG_CAMERA_RESOLUTION_WIDTH, CONFIG_CAMERA_RESOLUTION_HEIGHT);

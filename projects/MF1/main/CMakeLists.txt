@@ -3,8 +3,6 @@ list(APPEND ADD_INCLUDE "audio"
                         "face_lib"
                         "uart_recv"
                         "include"
-                        "camera/include"
-                        "camera/ov2640/include"
                         #esp8285
                         "network/esp8285"
                         "network/esp8285/http"
@@ -43,11 +41,6 @@ endif()
 
 append_srcs_dir(ADD_SRCS "src")
 append_srcs_dir(ADD_SRCS "uart_recv")
-
-append_srcs_dir(ADD_SRCS "camera/src")
-if(CONFIG_CAMERA_OV2640)
-    append_srcs_dir(ADD_SRCS "camera/ov2640/src")
-endif()
 
 # aux_source_directory(src ADD_SRCS)
 # list(REMOVE_ITEM COMPONENT_SRCS "src/test2.c")
