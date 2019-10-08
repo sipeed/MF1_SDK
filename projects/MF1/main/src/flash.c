@@ -458,8 +458,6 @@ int flash_get_saved_faceinfo(face_info_t *info, uint32_t index)
     return (i < FACE_DATA_MAX_COUNT) ? 0 : -1;
 }
 
-// BOARD_CFG_ADDR
-// BOARD_CFG_LEN
 uint8_t flash_load_cfg(board_cfg_t *cfg)
 {
     w25qxx_status_t stat;
@@ -467,9 +465,9 @@ uint8_t flash_load_cfg(board_cfg_t *cfg)
 
     stat = w25qxx_read_data(BOARD_CFG_ADDR, (uint8_t *)cfg, sizeof(board_cfg_t));
 
-    if (cfg->header == CFG_HEADER && stat == W25QXX_OK)
+    if (cfg->header == CFG_HEADER && stat == W25QXX_OK && cfg->version == (float)CFG_VERSION)
     {
-        sha256_hard_calculate((uint8_t *)cfg, sizeof(board_cfg_t) - 32, sha256); //34是因为结构体8字节对齐，导致尾部多了2字节
+        sha256_hard_calculate((uint8_t *)(cfg + 32), sizeof(board_cfg_t) - 32, sha256);
         if (memcmp(cfg->cfg_sha256, sha256, 32) == 0)
         {
             cfg->cfg_right_flag = 1;
@@ -495,7 +493,7 @@ uint8_t flash_save_cfg(board_cfg_t *cfg)
 
     cfg->cfg_right_flag = 0;
 
-    sha256_hard_calculate((uint8_t *)cfg, sizeof(board_cfg_t) - 32, cfg->cfg_sha256);
+    sha256_hard_calculate((uint8_t *)(cfg + 32), sizeof(board_cfg_t) - 32, cfg->cfg_sha256);
 
     printf("boardcfg checksum:\r\n");
     for (uint8_t i = 0; i < 32; i++)
@@ -547,7 +545,8 @@ uint8_t flash_cfg_set_default(board_cfg_t *cfg)
     memset(cfg, 0, sizeof(board_cfg_t));
 
     cfg->header = CFG_HEADER;
-    cfg->cfg_right_flag = 0;
+    cfg->version = (float)CFG_VERSION;
+    cfg->cfg_right_flag = 1;
     cfg->user_custom_cfg = NULL;
 
     cfg->brd_soft_cfg.out_threshold = (float)FACE_RECGONITION_THRESHOLD;

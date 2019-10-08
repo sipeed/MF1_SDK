@@ -4,15 +4,18 @@
 #include <stdint.h>
 #include "system_config.h"
 
-#define DBG_TIME_INIT()
-#define DBG_TIME()
-
-#define CFG_HEADER 0x55AA5558
+//每一次大的更改配置结构的时候建议修改版本
+#define CFG_VERSION (0.1f)
+#define CFG_HEADER (0x55AA5558)
 
 typedef struct _board_cfg
 {
+    uint8_t cfg_sha256[32];
+
     uint32_t header;
+    float version;
     uint32_t cfg_right_flag;
+
     struct
     {
         struct
@@ -61,7 +64,6 @@ typedef struct _board_cfg
     uint8_t wifi_ssid[32];
     uint8_t wifi_passwd[32];
 
-    uint8_t cfg_sha256[32];
 } board_cfg_t __attribute__((aligned(8)));
 
 typedef struct
