@@ -83,12 +83,12 @@ void convert_320x240_to_240x240(uint8_t *img_320, uint16_t x_offset)
 
 void lcd_display_image_alpha(uint32_t pic_addr, uint32_t alpha)
 {
-    lcd_dis_t *lcd_dis = lcd_dis_list_add_pic(255, 1, pic_addr, alpha, DisImageX_Off, DisImageY_Off, 240, 240);
+    lcd_dis_t *lcd_dis = lcd_dis_list_add_pic(CONFIG_LIST_NODE_MAX_NUM - 1, 1, pic_addr, alpha, DisImageX_Off, DisImageY_Off, 240, 240);
 
     if (lcd_dis)
     {
         lcd_dis_list_display(pDisImage, DisImage_W, DisImage_H, lcd_dis);
-        lcd_dis_list_del_by_id(255);
+        lcd_dis_list_del_by_id(CONFIG_LIST_NODE_MAX_NUM - 1);
     }
     else
     {

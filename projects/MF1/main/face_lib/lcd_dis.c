@@ -8,17 +8,15 @@
 #include "face_lib.h"
 #include "system_config.h"
 ///////////////////////////////////////////////////////////////////////////////
-#define LIST_MAX_SIZE 256
-///////////////////////////////////////////////////////////////////////////////
 list_t *lcd_dis_list = NULL;
 ///////////////////////////////////////////////////////////////////////////////
-static uint32_t list_id_table[LIST_MAX_SIZE / 32];
+static uint32_t list_id_table[CONFIG_LIST_NODE_MAX_NUM / 32 + 1];
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
 static uint8_t lcd_dis_list_check_id(int id)
 {
-    if (id > LIST_MAX_SIZE)
+    if (id >= CONFIG_LIST_NODE_MAX_NUM)
     {
         printf("id too big\r\n");
         return 1;
@@ -182,7 +180,11 @@ lcd_dis_t *lcd_dis_list_add_str(int id, int auto_del, uint16_t size, uint16_t zh
         {
             lcd_dis_list_del_by_id(id);
             //recheck
-            lcd_dis_list_check_id(id);
+            if (lcd_dis_list_check_id(id))
+            {
+                printk("add lcd_dis failed\r\n");
+                return NULL;
+            }
         }
         lcd_dis->id = id;
 
@@ -236,6 +238,12 @@ lcd_dis_t *lcd_dis_list_add_pic(int id, int auto_del,
         if (lcd_dis_list_check_id(id))
         {
             lcd_dis_list_del_by_id(id);
+            //recheck
+            if (lcd_dis_list_check_id(id))
+            {
+                printk("add lcd_dis failed\r\n");
+                return NULL;
+            }
         }
         lcd_dis->id = id;
 
@@ -279,6 +287,7 @@ lcd_dis_t *lcd_dis_list_add_pic(int id, int auto_del,
 uint8_t lcd_dis_list_init(void)
 {
     memset(list_id_table, 0, sizeof(list_id_table));
+    list_static_init();
     lcd_dis_list = list_new();
     if (lcd_dis_list == NULL)
     {
@@ -303,10 +312,12 @@ int lcd_dis_list_del_by_id(int id)
                 lcd_dis_list_free(lcd_dis);
                 list_remove(lcd_dis_list, node);
                 list_id_table[id / 32] &= ~(1 << (id % 32));
+                list_iterator_destroy(lcd_dis_list_iterator);
                 return id;
             }
         }
     }
+    list_iterator_destroy(lcd_dis_list_iterator);
     return -1;
 }
 
@@ -325,6 +336,8 @@ void lcd_dis_list_del_all(void)
         }
     }
     memset(list_id_table, 0, sizeof(list_id_table));
+    list_iterator_destroy(lcd_dis_list_iterator);
+    free_all_node();
     return;
 }
 
