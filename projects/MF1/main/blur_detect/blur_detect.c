@@ -81,7 +81,7 @@ static float clc_variance(conv_img_t *conv_img)
     }
     for (int i = 0; i < conv_img->ch; i++)
     {
-        result += ch_variance[i];
+        result += ch_variance[i] / ch_mean[i];
     }
     result /= conv_img->ch;
 
