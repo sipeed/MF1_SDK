@@ -51,8 +51,9 @@ float blur_detect_run(uint8_t *buf_in)
 
 static float clc_variance(conv_img_t *conv_img)
 {
-    float ch_mean[conv_img->ch];
-    float ch_variance[conv_img->ch];
+    uint8_t ch_mean[conv_img->ch];
+    uint64_t ch_sum[conv_img->ch];
+    uint64_t ch_variance[conv_img->ch];
     float result = 0;
     for (int i = 0; i < conv_img->ch; i++)
     {
@@ -60,24 +61,30 @@ static float clc_variance(conv_img_t *conv_img)
         ch_variance[i] = 0;
     }
     uint32_t img_size = conv_img->w * conv_img->h;
+
     for (int i = 0; i < conv_img->ch; i++)
     {
         for (uint32_t j = 0; j < img_size; j++)
         {
-            ch_mean[i] += (float)(conv_img->buf[j * conv_img->ch + i]) / (float)img_size;
+            ch_sum[i] += conv_img->buf[j * conv_img->ch + i];
         }
+        ch_mean[i] = ch_sum[i]/img_size;
     }
+
     for (int i = 0; i < conv_img->ch; i++)
     {
         for (uint32_t j = 0; j < img_size; j++)
         {
-            ch_variance[i] += (ch_mean[i] - (float)(conv_img->buf[j * conv_img->ch + i])) * (ch_mean[i] - (float)(conv_img->buf[j * conv_img->ch + i])) / (float)img_size;
+            ch_variance[i] += (ch_mean[i] - (conv_img->buf[j * conv_img->ch + i])) * (ch_mean[i] - (conv_img->buf[j * conv_img->ch + i]));
         }
+        ch_variance[i] /= img_size;
     }
     for (int i = 0; i < conv_img->ch; i++)
     {
-        result += ch_variance[i] / conv_img->ch;
+        result += ch_variance[i];
     }
+    result /= conv_img->ch;
+
     return result;
 }
 
