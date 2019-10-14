@@ -34,7 +34,11 @@ extern uint8_t display_image[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESO
 int irq_gpiohs(void *ctx);
 
 void set_IR_LED(int state);
+void set_W_LED(int state);
+void set_lcd_bl(int stat);
+
 void set_RGB_LED(int state);
+
 void update_key_state(void);
 void board_init(void);
 

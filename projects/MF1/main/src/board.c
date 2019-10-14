@@ -132,6 +132,7 @@ static void io_mux_init(void)
     gpiohs_set_drive_mode(CONFIG_INFRARED_GPIOHS_NUM, GPIO_DM_OUTPUT);
     gpiohs_set_pin(CONFIG_INFRARED_GPIOHS_NUM, 1);
 
+#if CONFIG_ENABLE_RGB_LED
     //RGB LED
     fpioa_set_function(CONFIG_LED_R_PIN, FUNC_GPIOHS0 + CONFIG_LED_R_GPIOHS_NUM);
     gpiohs_set_drive_mode(CONFIG_LED_R_GPIOHS_NUM, GPIO_DM_OUTPUT);
@@ -144,6 +145,13 @@ static void io_mux_init(void)
     fpioa_set_function(CONFIG_LED_B_PIN, FUNC_GPIOHS0 + CONFIG_LED_B_GPIOHS_NUM);
     gpiohs_set_drive_mode(CONFIG_LED_B_GPIOHS_NUM, GPIO_DM_OUTPUT);
     gpiohs_set_pin(CONFIG_LED_B_GPIOHS_NUM, 1);
+#endif /* CONFIG_ENABLE_RGB_LED */
+
+#if CONFIG_ENABLE_FLASH_LED
+    fpioa_set_function(CONFIG_FLASH_LED_PIN, FUNC_GPIOHS0 + CONFIG_FLASH_LED_GPIOHS_NUM);
+    gpiohs_set_drive_mode(CONFIG_FLASH_LED_GPIOHS_NUM, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_FLASH_LED_GPIOHS_NUM, 1);
+#endif /* CONFIG_ENABLE_FLASH_LED */
 
 #if CONFIG_NET_ENABLE
 #if CONFIG_NET_ESP8285
@@ -192,21 +200,56 @@ void set_IR_LED(int state)
     gpiohs_set_pin(CONFIG_INFRARED_GPIOHS_NUM, state);
     return;
 }
+
+void set_W_LED(int state)
+{
+#if CONFIG_ENABLE_FLASH_LED
+    gpiohs_set_pin(CONFIG_FLASH_LED_GPIOHS_NUM, state ? 0 : 1);
+#endif /* CONFIG_ENABLE_FLASH_LED */
+    return;
+}
+
+void set_lcd_bl(int stat)
+{
+    //     if (stat)
+    //     {
+    //         //LCD BL
+    //         fpioa_set_function(CONFIG_LCD_PIN_BL, FUNC_TIMER1_TOGGLE1);
+    //         pwm_init(TIMER_PWM);
+    // #if CONFIG_DETECT_VERTICAL
+    //         pwm_set_frequency(TIMER_PWM, TIMER_PWM_CHN, 1000, 1); //neg, 1 dark
+    // #else
+    //         pwm_set_frequency(TIMER_PWM, TIMER_PWM_CHN, 1000, 0.95); //neg, 1 dark
+    // #endif
+    //         pwm_set_enable(TIMER_PWM, TIMER_PWM_CHN, 1);
+    //     }
+    //     else
+    //     {
+    //         fpioa_set_function(CONFIG_LCD_PIN_BL, FUNC_GPIOHS0 + LCD_BL_HS_NUM);
+    //         gpiohs_set_drive_mode(LCD_BL_HS_NUM, GPIO_DM_OUTPUT);
+    //         gpiohs_set_pin(LCD_BL_HS_NUM, 1);
+    //     }
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 void web_set_RGB_LED(uint8_t val[3])
 {
+#if CONFIG_ENABLE_RGB_LED
     gpiohs_set_pin(CONFIG_LED_R_GPIOHS_NUM, (val[0]) ? 0 : 1);
     gpiohs_set_pin(CONFIG_LED_G_GPIOHS_NUM, (val[1]) ? 0 : 1);
     gpiohs_set_pin(CONFIG_LED_B_GPIOHS_NUM, (val[2]) ? 0 : 1);
+#endif
     return;
 }
 
 void set_RGB_LED(int state)
 {
+#if CONFIG_ENABLE_RGB_LED
     state = state & 0x07;
     gpiohs_set_pin(CONFIG_LED_R_GPIOHS_NUM, (state & RLED) ? 0 : 1);
     gpiohs_set_pin(CONFIG_LED_G_GPIOHS_NUM, (state & GLED) ? 0 : 1);
     gpiohs_set_pin(CONFIG_LED_B_GPIOHS_NUM, (state & BLED) ? 0 : 1);
+#endif
     return;
 }
 

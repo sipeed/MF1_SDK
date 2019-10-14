@@ -26,6 +26,14 @@ face_recognition_cfg_t face_recognition_cfg = {
     .auto_out_fea = 0,
     .detect_threshold = 0.0,
     .compare_threshold = 0.0,
+
+#if CONFIG_ENABLE_FLASH_LED
+    .use_flash_led = 1,
+#else
+    .use_flash_led = 0,
+#endif
+
+    .no_face_ctrl_lcd = 0,
 };
 
 face_lib_callback_t face_recognition_cb = (face_lib_callback_t){
@@ -35,8 +43,10 @@ face_lib_callback_t face_recognition_cb = (face_lib_callback_t){
     .detected_face_cb = detected_face_cb,
     .fake_face_cb = fake_face_cb,
     .pass_face_cb = pass_face_cb,
+
     .lcd_refresh_cb = lcd_refresh_cb,
     .lcd_convert_cb = lcd_convert_cb,
+    .lcd_close_bl_cb = lcd_close_bl_cb,
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -120,7 +130,7 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
         }
         else
         {
-            printf("face score not pass\r\n");
+            printk("face score not pass\r\n");
         }
     }
 
@@ -222,8 +232,8 @@ int main(void)
     fpioa_set_function(CONFIG_JPEG_OUTPUT_PORT_RX, FUNC_UART1_RX + UART_DEV2 * 2);
     uart_config(UART_DEV2, CONFIG_OUTPUT_JPEG_UART_BAUD, 8, UART_STOP_1, UART_PARITY_NONE);
 
-    printf("jpeg output uart cfg:\r\n");
-    printf("                     tx:%d rx:%d, baud:%d\r\n",
+    printk("jpeg output uart cfg:\r\n");
+    printk("                     tx:%d rx:%d, baud:%d\r\n",
            CONFIG_JPEG_OUTPUT_PORT_TX, CONFIG_JPEG_OUTPUT_PORT_RX, CONFIG_OUTPUT_JPEG_UART_BAUD);
     q_init(&q_core1, sizeof(void *), 10, FIFO, false); //core1 接受core0 上传图片到服务器的队列
     register_core1(core1_function, NULL);
@@ -274,7 +284,7 @@ int main(void)
             sprintf(str_del, "Factory Reset...");
             if (lcd_dis_list_add_str(1, 1, 16, 0, str_del, 0, 0, RED, 1) == NULL)
             {
-                printf("add dis str failed\r\n");
+                printk("add dis str failed\r\n");
             }
             delay_flag = 1;
 #endif
@@ -294,6 +304,18 @@ int main(void)
         {
             protocol_prase(cJSON_prase_buf);
             recv_over_flag = 0;
+        }
+
+        if (lcd_bl_stat == 0)
+        {
+            static uint8_t led_cnt = 0, led_stat = 0;
+            led_cnt++;
+            if (led_cnt >= 10)
+            {
+                led_cnt = 0;
+                led_stat ^= 0x1;
+                set_RGB_LED(led_stat ? GLED : 0);
+            }
         }
 
         if (jpeg_recv_start_flag)

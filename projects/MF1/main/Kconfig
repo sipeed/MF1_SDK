@@ -75,6 +75,7 @@ menu "Application configuration"
 		endmenu
 
 		menu "LED configuration"
+			depends on ENABLE_RGB_LED
 			config LED_R_PIN
 				int "LED red pin number"
 				default 21
@@ -84,6 +85,13 @@ menu "Application configuration"
 			config LED_B_PIN
 				int "LED green pin number"
 				default 23
+		endmenu
+
+		menu "FLASH LED configuration"
+			depends on ENABLE_FLASH_LED
+			config FLASH_LED_PIN
+				int "FLASH LED pin number"
+				default 18
 		endmenu
 
 		menu "Relay configuration"
@@ -170,6 +178,7 @@ menu "Application configuration"
 		endmenu
 
 		menu "LED configuration"
+			depends on ENABLE_RGB_LED
 			config LED_R_GPIOHS_NUM
 				int "LED red GPIOHS number"
 				default 8
@@ -180,7 +189,14 @@ menu "Application configuration"
 				int "LED green GPIOHS number"
 				default 10
 		endmenu
-		
+
+		menu "FLASH LED configuration"
+			depends on ENABLE_FLASH_LED
+			config FLASH_LED_GPIOHS_NUM
+				int "FLASH LED GPIOHS number"
+				default 15 #notice it
+		endmenu
+
 		menu "Relay configuration"
 			config RELAY_LOWX_GPIOHS_NUM
 				int "Releay lowx gpiohs num"
@@ -254,6 +270,17 @@ menu "Application configuration"
 			int "output jpeg uart baud"
 			default 921600
 	endmenu
+
+	comment "--------------------------------"
+
+	config ENABLE_RGB_LED
+		bool "enable rgb led"
+		default y
+	config ENABLE_FLASH_LED
+		bool "enable flash led"
+		default n
+
+	comment "--------------------------------"
 
 	config LCD_VERTICAL
 		depends on LCD_TYPE_ST7789

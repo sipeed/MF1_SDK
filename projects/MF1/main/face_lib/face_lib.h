@@ -121,6 +121,9 @@ typedef struct
     uint8_t check_ir_face; //1 check, 0 not check, not support now
     uint8_t auto_out_fea;  //1 yes, 0 no
 
+    uint8_t use_flash_led;    //when night, use flash led
+    uint8_t no_face_ctrl_lcd; //if no face, close lcd
+
     float detect_threshold;
     float compare_threshold;
 } face_recognition_cfg_t;
@@ -160,6 +163,8 @@ typedef struct
     void (*lcd_refresh_cb)(void);
 
     void (*lcd_convert_cb)(void);
+
+    void (*lcd_close_bl_cb)(void);
 } face_lib_callback_t;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -218,7 +223,6 @@ typedef struct
 extern cal_pic_fea_t cal_pic_cfg;
 
 typedef int8_t (*cal_pic_send_ret)(uint8_t code, char *msg, int8_t feature[FEATURE_DIMENSION], uint8_t *uid, float prob);
-
 
 typedef struct
 {
