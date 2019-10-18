@@ -1,5 +1,17 @@
 
 menu "utils config"
     
+    menu "list config"
+        config LIST_MAX_NUM
+            int "list max num"
+            default 1
+        config LIST_NODE_MAX_NUM
+            int "list node num"
+            default 32
+        config LIST_ITERATOR_MAX_NUM
+            int "list iterator num"
+            default 2
+    endmenu
+
 endmenu
 
