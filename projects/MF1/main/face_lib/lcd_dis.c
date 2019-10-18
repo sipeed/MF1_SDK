@@ -317,6 +317,7 @@ int lcd_dis_list_del_by_id(int id)
             }
         }
     }
+    list_id_table[id / 32] &= ~(1 << (id % 32));
     list_iterator_destroy(lcd_dis_list_iterator);
     return -1;
 }
