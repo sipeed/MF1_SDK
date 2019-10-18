@@ -226,6 +226,13 @@ void lcd_display_image_alpha(uint32_t pic_addr, uint16_t pic_w, uint16_t pic_h, 
     return;
 }
 
+void lcd_display_image_alpha_old(uint32_t pic_addr, uint32_t alpha)
+{
+    int16_t oft_x = (CamImage_W - PIC_W) / 2 + DisImageX_Off;
+    int16_t oft_y = (CamImage_H - PIC_H) / 2 + DisImageY_Off;
+    lcd_display_image_alpha(pic_addr, PIC_W, PIC_H, alpha, oft_x, oft_y);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////

@@ -19,18 +19,18 @@ void demo_esp8285(void)
 
     if (strlen(g_board_cfg.wifi_ssid) > 0 && strlen(g_board_cfg.wifi_passwd) >= 8)
     {
-        lcd_display_image_alpha(IMG_CONNING_ADDR, 0);
+        lcd_display_image_alpha_old(IMG_CONNING_ADDR, 0);
         g_net_status = spi_8266_connect_ap(g_board_cfg.wifi_ssid, g_board_cfg.wifi_passwd, 2);
         if (g_net_status)
         {
-            lcd_display_image_alpha(IMG_CONN_SUCC_ADDR, 0);
+            lcd_display_image_alpha_old(IMG_CONN_SUCC_ADDR, 0);
 #if CONFIG_NET_DEMO_MQTT
             spi_8266_mqtt_init();
 #endif /* CONFIG_NET_DEMO_MQTT */
         }
         else
         {
-            lcd_display_image_alpha(IMG_CONN_FAILED_ADDR, 0);
+            lcd_display_image_alpha_old(IMG_CONN_FAILED_ADDR, 0);
             printk("wifi config maybe error,we can not connect to it!\r\n");
         }
     }
@@ -60,8 +60,8 @@ void demo_esp8285(void)
                 NULL,
                 http_header,
                 sizeof(http_header),
-                display_image,
-                sizeof(display_image));
+                cam_image,
+                sizeof(cam_image));
 
             uint64_t tt = sysctl_get_time_us() - tm;
 
@@ -79,7 +79,7 @@ void demo_esp8285(void)
             {
                 jpeg_decode_image_t *jpeg = NULL;
 
-                jpeg = pico_jpeg_decode(kpu_image[0], display_image, get_recv_len, 1);
+                jpeg = pico_jpeg_decode(kpu_image[0], cam_image, get_recv_len, 1);
 
                 if (jpeg)
                 {
@@ -104,12 +104,12 @@ void demo_esp8285(void)
                                                         post_send_header,
                                                         post_send_body,
                                                         boundary,
-                                                        display_image,
+                                                        cam_image,
                                                         get_recv_len,
                                                         http_header,
                                                         sizeof(http_header),
-                                                        display_image,
-                                                        sizeof(display_image));
+                                                        cam_image,
+                                                        sizeof(cam_image));
 
                 tt = sysctl_get_time_us() - tm;
 
@@ -117,7 +117,7 @@ void demo_esp8285(void)
                 {
                     printk("post_recv_len %d \r\n", post_recv_len);
                     printk("http_header:%s\r\n", http_header);
-                    printf("http_body:\r\n%s\r\n", display_image);
+                    printf("http_body:\r\n%s\r\n", cam_image);
 
                     time_s = (float)((float)tt / 1000.0 / 1000.0);
                     file_kb = (float)((float)get_recv_len / 1024.0);
@@ -164,13 +164,13 @@ void demo_esp8285(void)
 
         if (!qrcode_get_info_flag)
         {
-            memset(display_image, 0, sizeof(display_image));
-            image_rgb565_draw_string(display_image, "TOUCH KEY TO CONFIG WiFi...", 16, 40, 0, RED, NULL, 320, 240);
+            memset(cam_image, 0, sizeof(cam_image));
+            image_rgb565_draw_string(cam_image, "TOUCH KEY TO CONFIG WiFi...", 16, 40, 0, RED, NULL, 320, 240);
 #if (CONFIG_LCD_WIDTH == 240)
-            convert_320x240_to_240x240(display_image, 40);
-            lcd_draw_picture(0, 0, 240, 240, (uint32_t *)display_image);
+            convert_320x240_to_240x240(cam_image, 40);
+            lcd_draw_picture(0, 0, 240, 240, (uint32_t *)cam_image);
 #else
-            lcd_draw_picture(0, 0, 320, 240, (uint32_t *)display_image);
+            lcd_draw_picture(0, 0, 320, 240, (uint32_t *)cam_image);
 #endif /* (CONFIG_LCD_WIDTH == 240) */
         }
 
@@ -225,11 +225,11 @@ void demo_esp8285(void)
                     }
 
                     //connect to network
-                    lcd_display_image_alpha(IMG_CONNING_ADDR, 0);
+                    lcd_display_image_alpha_old(IMG_CONNING_ADDR, 0);
                     g_net_status = spi_8266_connect_ap(wifi_info->ssid, wifi_info->passwd, 2);
                     if (g_net_status)
                     {
-                        lcd_display_image_alpha(IMG_CONN_SUCC_ADDR, 0);
+                        lcd_display_image_alpha_old(IMG_CONN_SUCC_ADDR, 0);
                         spi_8266_mqtt_init();
                         memcpy(g_board_cfg.wifi_ssid, wifi_info->ssid, 32);
                         memcpy(g_board_cfg.wifi_passwd, wifi_info->passwd, 32);
@@ -240,7 +240,7 @@ void demo_esp8285(void)
                     }
                     else
                     {
-                        lcd_display_image_alpha(IMG_CONN_FAILED_ADDR, 0);
+                        lcd_display_image_alpha_old(IMG_CONN_FAILED_ADDR, 0);
                         printk("wifi config maybe error,we can not connect to it!\r\n");
                     }
                     qrcode_get_info_flag = 0;
@@ -255,7 +255,7 @@ void demo_esp8285(void)
                 {
                     printk("scan qrcode timeout\r\n");
                     /* here display pic */
-                    lcd_display_image_alpha(IMG_QR_TIMEOUT_ADDR, 0);
+                    lcd_display_image_alpha_old(IMG_QR_TIMEOUT_ADDR, 0);
                     qrcode_get_info_flag = 0;
                 }
                 break;
@@ -267,7 +267,7 @@ void demo_esp8285(void)
             }
 
             /* here display pic */
-            lcd_display_image_alpha(IMG_SCAN_QR_ADDR, 160);
+            lcd_display_image_alpha_old(IMG_SCAN_QR_ADDR, 160);
 
             g_dvp_finish_flag = 0;
         }

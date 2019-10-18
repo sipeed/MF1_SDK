@@ -154,8 +154,8 @@ void demo_w5500(void)
         NULL,
         http_header,
         sizeof(http_header),
-        display_image,
-        sizeof(display_image));
+        cam_image,
+        sizeof(cam_image));
 
     tt = sysctl_get_time_us() - tm;
 
@@ -185,12 +185,12 @@ void demo_w5500(void)
                                             post_send_header,
                                             post_send_body,
                                             boundary,
-                                            display_image,
+                                            cam_image,
                                             get_recv_len,
                                             http_header,
                                             sizeof(http_header),
-                                            display_image,
-                                            sizeof(display_image));
+                                            cam_image,
+                                            sizeof(cam_image));
 
     tt = sysctl_get_time_us() - tm;
 

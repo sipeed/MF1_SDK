@@ -150,7 +150,7 @@ qr_wifi_info_t *qrcode_get_wifi_cfg(void)
     memset(&img, 0, sizeof(img));
     img.w = CONFIG_CAMERA_RESOLUTION_WIDTH;  /* 320 */
     img.h = CONFIG_CAMERA_RESOLUTION_HEIGHT; /* 240 */
-    img.data = (uint8_t *)display_image;
+    img.data = (uint8_t *)cam_image;
 
     ret->ret = QRCODE_RET_CODE_NO_DATA;
     if (find_qrcodes(&qrcode, &img) != 0)
