@@ -72,6 +72,30 @@ static void close_relay(void)
     gpiohs_set_pin(CONFIG_RELAY_HIGH_GPIOHS_NUM, 1);
 }
 
+#if CONFIG_FACE_PASS_ONLY_OUT_UID
+static void hex2str(uint8_t *inchar, uint16_t len, uint8_t *outtxt)
+{
+    uint16_t i;
+    uint8_t hbit, lbit;
+
+    for (i = 0; i < len; i++)
+    {
+        hbit = (*(inchar + i) & 0xf0) >> 4;
+        lbit = *(inchar + i) & 0x0f;
+        if (hbit > 9)
+            outtxt[2 * i] = 'A' + hbit - 10;
+        else
+            outtxt[2 * i] = '0' + hbit;
+        if (lbit > 9)
+            outtxt[2 * i + 1] = 'A' + lbit - 10;
+        else
+            outtxt[2 * i + 1] = '0' + lbit;
+    }
+    outtxt[2 * i] = 0;
+    return;
+}
+#endif /* CONFIG_FACE_PASS_ONLY_OUT_UID */
+
 /********************* Add your callback code here *********************/
 void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint64_t *time)
 {
@@ -94,9 +118,16 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
     /* output feature */
     if (g_board_cfg.brd_soft_cfg.cfg.auto_out_fea)
     {
+#if CONFIG_FACE_PASS_ONLY_OUT_UID
+        char str[48];
+        int len = sprintf(str, "UNKNOWN PEOPLE\r\n");
+        uart_send(str, len);
+#else
         protocol_send_face_info(obj,
                                 0, NULL, obj->feature,
                                 total, current, time);
+#endif /* CONFIG_FACE_PASS_ONLY_OUT_UID */
+
         open_relay(); //open when have face
     }
     else
@@ -106,21 +137,34 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
             open_relay(); //open when score > gate
             if (flash_get_saved_faceinfo(&info, obj->index) == 0)
             {
+
+#if CONFIG_FACE_PASS_ONLY_OUT_UID
+                char str[48];
+                hex2str(info.uid, UID_LEN, str);
+                str[UID_LEN * 2 + 0] = 0xd;
+                str[UID_LEN * 2 + 1] = 0xa;
+                uart_send(str, UID_LEN * 2 + 2);
+#endif /* CONFIG_FACE_PASS_ONLY_OUT_UID */
+
                 if (g_board_cfg.brd_soft_cfg.cfg.out_fea == 2)
                 {
+#if (CONFIG_FACE_PASS_ONLY_OUT_UID == 0)
                     //output real time feature
                     protocol_send_face_info(obj,
                                             obj->score, info.uid, g_board_cfg.brd_soft_cfg.cfg.out_fea ? obj->feature : NULL,
                                             total, current, time);
+#endif /* CONFIG_FACE_PASS_ONLY_OUT_UID */
                 }
                 else
                 {
                     //output stored in flash face feature
                     face_fea_t *face_fea = (face_fea_t *)&(info.info);
+#if (CONFIG_FACE_PASS_ONLY_OUT_UID == 0)
                     protocol_send_face_info(obj,
                                             obj->score, info.uid,
                                             g_board_cfg.brd_soft_cfg.cfg.out_fea ? (face_fea->stat == 1) ? face_fea->fea_ir : face_fea->fea_rgb : NULL,
                                             total, current, time);
+#endif /* CONFIG_FACE_PASS_ONLY_OUT_UID */
                 }
             }
             else

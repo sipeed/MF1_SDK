@@ -280,6 +280,9 @@ menu "Application configuration"
 		bool "enable flash led"
 		default n
 
+	config FACE_PASS_ONLY_OUT_UID
+		bool "face pass, protocol output only uid"
+		default n
 	comment "--------------------------------"
 
 	config LCD_VERTICAL
