@@ -152,13 +152,7 @@ to rebuild make system after you **add/delete** source files or edit kconfig fil
 ## Flash (Burn) to board
 
 
-For example, you have one `Maix Go` board:
-
-```
-python3 project.py -B goE -p /dev/ttyUSB1 -b 1500000 flash
-```
-
-For `Maixduino` board:
+For example
 
 ```
 python3 project.py -B maixduino -p /dev/ttyUSB0 -b 1500000 -S flash
