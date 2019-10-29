@@ -5,7 +5,7 @@
 #include "system_config.h"
 
 //每一次大的更改配置结构的时候建议修改版本
-#define CFG_VERSION (0.1f)
+#define CFG_VERSION (0.2f)
 #define CFG_HEADER (0x55AA5558)
 
 typedef struct _board_cfg
@@ -59,10 +59,10 @@ typedef struct _board_cfg
         } cfg;
     } brd_soft_cfg;
 
-    void *user_custom_cfg;
-
     uint8_t wifi_ssid[32];
     uint8_t wifi_passwd[32];
+
+    uint8_t user_custom_cfg[512];
 
 } board_cfg_t __attribute__((aligned(8)));
 

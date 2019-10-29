@@ -20,6 +20,8 @@
 #include "system_config.h"
 #include "global_config.h"
 ///////////////////////////////////////////////////////////////////////////////
+volatile board_cfg_t g_board_cfg;
+
 volatile uint8_t g_key_press = 0;
 volatile uint8_t g_key_long_press = 0;
 uint8_t sKey_dir = 0;
@@ -270,7 +272,9 @@ void board_init(void)
 #ifndef CONFIG_NOT_MF1_BOARD
     //build for MF1
     my_dvp_init(8);
-    my_dvp_set_xclk_rate(48000000);
+    // my_dvp_set_xclk_rate(48000000);
+    my_dvp_set_xclk_rate(36000000);
+    // my_dvp_set_xclk_rate(24000000);
 #else
     //build for Others
     dvp_init(8);

@@ -1,10 +1,10 @@
 
 if(CONFIG_COMPONENT_KENDRYTE_SDK_ENABLE)
-    ################# Add include #################
+################# Add include #################
     list(APPEND ADD_INCLUDE 
                             "kendryte-standalone-sdk/lib/bsp/include"
                             "kendryte-standalone-sdk/lib/drivers/include"
-                            "kendryte-standalone-sdk/lib/nncase/include"
+                            # "kendryte-standalone-sdk/lib/nncase/include"
                             "kendryte-standalone-sdk/lib/utils/include"
                             "kendryte-standalone-sdk/third_party/xtl/include"
         )
@@ -14,22 +14,28 @@ if(CONFIG_COMPONENT_KENDRYTE_SDK_ENABLE)
     ############## Add source files ###############
     append_srcs_dir(ADD_SRCS "kendryte-standalone-sdk/lib/bsp")
     append_srcs_dir(ADD_SRCS "kendryte-standalone-sdk/lib/drivers")
-    append_srcs_dir(ADD_SRCS "kendryte-standalone-sdk/lib/nncase")
-    FILE(GLOB_RECURSE NNCASE_SRC
-        "kendryte-standalone-sdk/lib/nncase/*.c"
-        "kendryte-standalone-sdk/lib/nncase/*.cpp"
-        )
+    
+    # append_srcs_dir(ADD_SRCS "kendryte-standalone-sdk/lib/nncase")
+    # FILE(GLOB_RECURSE NNCASE_SRC
+    #     "kendryte-standalone-sdk/lib/nncase/*.c"
+    #     "kendryte-standalone-sdk/lib/nncase/*.cpp"
+    #     )
+
     append_srcs_dir(ADD_SRCS "src")
-    set(ADD_ASM_SRCS "kendryte-standalone-sdk/lib/bsp/crt.S"
-                        )
-    list(APPEND ADD_SRCS  ${ADD_ASM_SRCS} ${NNCASE_SRC})
+    set(ADD_ASM_SRCS "kendryte-standalone-sdk/lib/bsp/crt.S")
+
+    # list(APPEND ADD_SRCS  ${ADD_ASM_SRCS} ${NNCASE_SRC})
+    list(APPEND ADD_SRCS  ${ADD_ASM_SRCS} )
+
     # list(REMOVE_ITEM COMPONENT_SRCS "src/test.c")
+
     SET_PROPERTY(SOURCE ${ADD_ASM_SRCS} PROPERTY LANGUAGE C)
     SET_SOURCE_FILES_PROPERTIES(${ADD_ASM_SRCS} PROPERTIES COMPILE_FLAGS "-x assembler-with-cpp -D __riscv64")
     ###############################################
 
     ###### Add required/dependent components ######
-    list(APPEND ADD_REQUIREMENTS stdc++ m)
+    # list(APPEND ADD_REQUIREMENTS stdc++ m)
+    list(APPEND ADD_REQUIREMENTS  m)
     ###############################################
 
     ############ Add static libs ##################

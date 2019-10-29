@@ -121,8 +121,10 @@ typedef struct
     uint8_t check_ir_face; //1 check, 0 not check, not support now
     uint8_t auto_out_fea;  //1 yes, 0 no
 
-    uint8_t use_flash_led;    //when night, use flash led
-    uint8_t no_face_ctrl_lcd; //if no face, close lcd
+    uint8_t night_threshold; //camera 650, judge night threshold,default 60
+
+    uint8_t use_flash_led;     //1 when dark, use flash led
+    uint8_t no_face_close_lcd; //1 enable, 0 disable
 
     float detect_threshold;
     float compare_threshold;
@@ -164,7 +166,7 @@ typedef struct
 
     void (*lcd_convert_cb)(void);
 
-    void (*lcd_close_bl_cb)(void);
+    void (*lcd_close_cb)(void);
 } face_lib_callback_t;
 
 ///////////////////////////////////////////////////////////////////////////////

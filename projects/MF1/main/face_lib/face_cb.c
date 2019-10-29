@@ -147,7 +147,7 @@ void lcd_convert_cb(void)
 ///////////////////////////////////////////////////////////////////////////////
 void lcd_close_bl_cb(void)
 {
-    if(lcd_bl_stat == 1)
+    if (lcd_bl_stat == 1)
     {
         lcd_bl_stat = 0;
         set_lcd_bl(0);
@@ -160,7 +160,7 @@ void lcd_close_bl_cb(void)
 ///////////////////////////////////////////////////////////////////////////////
 void lcd_refresh_cb(void)
 {
-    if(lcd_bl_stat == 0)
+    if (lcd_bl_stat == 0)
     {
         lcd_bl_stat = 1;
         set_lcd_bl(1);
@@ -234,9 +234,17 @@ void protocol_record_face(proto_record_face_cfg_t *cfg)
     return;
 }
 ///////////////////////////////////////////////////////////////////////////////
+static uint64_t lass_have_face_time = 0;
+
 void detected_face_cb(face_recognition_ret_t *face)
 {
+    uint64_t tim = 0;
     uint32_t face_cnt = face->result->face_obj_info.obj_number;
+
+    if (face_cnt > 0)
+    {
+        lass_have_face_time = sysctl_get_time_us();
+    }
 
     for (uint32_t i = 0; i < face_cnt; i++)
     {
@@ -256,7 +264,7 @@ void detected_face_cb(face_recognition_ret_t *face)
 
         if (proto_record_flag)
         {
-            uint64_t tim = sysctl_get_time_us();
+            tim = sysctl_get_time_us();
             tim = (tim - proto_record_start_time) / 1000 / 1000;
 
             if (tim > record_cfg.time_out_s)
@@ -352,7 +360,6 @@ _exit:
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
 #if CONFIG_CAMERA_GC0328_DUAL
 /* ir check pass or auto pass */
 void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
@@ -360,6 +367,12 @@ void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
     uint32_t face_cnt = 0;
     face_obj_t *face_info = NULL;
     uint64_t tim = sysctl_get_time_us();
+
+    /* 判断上一次检测到人脸的时间来判断红外补光灯是否亮着. */
+    if ((tim - lass_have_face_time) > 3 * 1000 * 1000)
+    {
+        return;
+    }
 
     if (ir_check)
     {

@@ -1,6 +1,8 @@
 if(CONFIG_COMPONENT_DRIVERS_ENABLE)
 
     list(APPEND ADD_INCLUDE "sd_card/include"
+                            #mem
+                            "mem_macro"
                             #lcd
                             "lcd/include"
                             "lcd/lcd_st7789/include"

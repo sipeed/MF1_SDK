@@ -9,14 +9,17 @@
 #include "sysctl.h"
 #include "board.h"
 #include "face_lib.h"
+#include "system_config.h"
 #include "global_config.h"
 
 ///////////////////////////////////////////////////////////////////////////////
-volatile face_save_info_t g_face_save_info;
-volatile board_cfg_t g_board_cfg;
-volatile int flash_all_face_have_ir_fea = 0;
+// volatile face_save_info_t g_face_save_info;
+// volatile static uint8_t uid_table[FACE_DATA_MAX_COUNT][UID_LEN];
 
-volatile static uint8_t uid_table[FACE_DATA_MAX_COUNT][UID_LEN];
+volatile LOCK_IN_SECTION(DATA) face_save_info_t g_face_save_info;
+volatile static LOCK_IN_SECTION(DATA) uint8_t uid_table[FACE_DATA_MAX_COUNT][UID_LEN];
+
+volatile int flash_all_face_have_ir_fea = 0;
 ///////////////////////////////////////////////////////////////////////////////
 
 static int get_face_id(void)
@@ -465,7 +468,10 @@ uint8_t flash_load_cfg(board_cfg_t *cfg)
 
     stat = w25qxx_read_data(BOARD_CFG_ADDR, (uint8_t *)cfg, sizeof(board_cfg_t));
 
-    if (cfg->header == CFG_HEADER && stat == W25QXX_OK && cfg->version == (float)CFG_VERSION)
+    if ((cfg->header == CFG_HEADER) &&       /* Header正确 */
+        (stat == W25QXX_OK) &&               /* 读flash正常 */
+        (cfg->version == (float)CFG_VERSION) /* Version正确*/
+    )
     {
         sha256_hard_calculate((uint8_t *)(cfg + 32), sizeof(board_cfg_t) - 32, sha256);
         if (memcmp(cfg->cfg_sha256, sha256, 32) == 0)
@@ -495,7 +501,7 @@ uint8_t flash_save_cfg(board_cfg_t *cfg)
 
     sha256_hard_calculate((uint8_t *)(cfg + 32), sizeof(board_cfg_t) - 32, cfg->cfg_sha256);
 
-    printf("boardcfg checksum:\r\n");
+    printf("boardcfg checksum:");
     for (uint8_t i = 0; i < 32; i++)
     {
         printf("%02X", cfg->cfg_sha256[i]);
@@ -535,7 +541,7 @@ uint8_t flash_cfg_print(board_cfg_t *cfg)
     printf("    %-16s : %d\r\n", "relay_high", cfg->brd_hard_cfg.uart_relay_key.relay_high);
     printf("    %-16s : %d\r\n", "relay_low", cfg->brd_hard_cfg.uart_relay_key.relay_low);
 
-    printf("    %-16s : %08X\r\n", "user_custom_cfg", (uint32_t)cfg->user_custom_cfg);
+    // printf("    %-16s : %08X\r\n", "user_custom_cfg", (uint32_t)cfg->user_custom_cfg);
 
     return;
 }
@@ -547,7 +553,6 @@ uint8_t flash_cfg_set_default(board_cfg_t *cfg)
     cfg->header = CFG_HEADER;
     cfg->version = (float)CFG_VERSION;
     cfg->cfg_right_flag = 1;
-    cfg->user_custom_cfg = NULL;
 
     cfg->brd_soft_cfg.out_threshold = (float)FACE_RECGONITION_THRESHOLD;
 
@@ -609,6 +614,11 @@ uint8_t flash_cfg_set_default(board_cfg_t *cfg)
 
     cfg->brd_hard_cfg.uart_relay_key.relay_high = CONFIG_RELAY_HIGH_PIN;
     cfg->brd_hard_cfg.uart_relay_key.relay_low = CONFIG_RELAY_LOWX_PIN;
+
+    memset(cfg->wifi_ssid, 0, sizeof(cfg->wifi_ssid));
+    memset(cfg->wifi_passwd, 0, sizeof(cfg->wifi_passwd));
+
+    memset(cfg->user_custom_cfg, 0, sizeof(cfg->user_custom_cfg));
 
     return;
 }
