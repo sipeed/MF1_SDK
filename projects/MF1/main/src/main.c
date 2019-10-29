@@ -326,7 +326,7 @@ int main(void)
 #endif
             char *str_del = (char *)malloc(sizeof(char) * 32);
             sprintf(str_del, "Factory Reset...");
-            if (lcd_dis_list_add_str(1, 1, 16, 0, str_del, 0, 0, RED, 1) == NULL)
+            if (lcd_dis_list_add_str(1, 1, 16, 0, str_del, LCD_OFT, 0, RED, 1) == NULL)
             {
                 printk("add dis str failed\r\n");
             }

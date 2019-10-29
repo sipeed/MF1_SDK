@@ -34,8 +34,6 @@ static uint16_t DisLcd_W, DisLcd_H;
 static uint16_t DisX_Off, DisY_Off;
 static uint16_t DisImageX_Off, DisImageY_Off;
 
-#define LCD_OFT 40
-
 void face_cb_init(void)
 {
 #if CONFIG_LCD_VERTICAL
@@ -201,7 +199,7 @@ void lcd_draw_pass(void)
     lcd_display_image_alpha(IMG_FACE_PASS_ADDR, 80);
 
     face_lib_draw_flag = 1;
-    set_RGB_LED(RLED);
+    set_RGB_LED(GLED);
     msleep(500); //this delay can modify
     set_RGB_LED(0);
     return;
@@ -298,7 +296,7 @@ void detected_face_cb(face_recognition_ret_t *face)
                 lcd_display_image_alpha(IMG_RECORD_FACE_ADDR, 128);
                 face_lib_draw_flag = 1;
 
-                set_RGB_LED(GLED);
+                set_RGB_LED(BLED);
                 msleep(500); //this delay can modify
                 set_RGB_LED(0);
             }
@@ -334,7 +332,7 @@ void detected_face_cb(face_recognition_ret_t *face)
                     lcd_display_image_alpha(IMG_RECORD_FACE_ADDR, 128);
 
                     face_lib_draw_flag = 1;
-                    set_RGB_LED(GLED);
+                    set_RGB_LED(BLED);
                     msleep(500); //this delay can modify
                     set_RGB_LED(0);
                 }

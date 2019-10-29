@@ -88,7 +88,8 @@ static int protocol_port_recv_cb(void *ctx)
                 if ((tmp == g_pkt_head.pkt_json_end_2) && ((cJSON_recv_buf[recv_cur_pos - 2] == g_pkt_head.pkt_json_end_1) || (recv_cur_pos > PROTOCOL_BUF_LEN - 1)))
                 {
                     memcpy(cJSON_prase_buf, cJSON_recv_buf, recv_cur_pos - 2);
-                    cJSON_recv_buf[recv_cur_pos - 2] = 0;
+                    memset(cJSON_recv_buf, 0, sizeof(cJSON_recv_buf));
+                    cJSON_prase_buf[recv_cur_pos - 2] = 0;
                     recv_over_flag = 1;
                     start_recv_flag = 0;
                     return 0;
