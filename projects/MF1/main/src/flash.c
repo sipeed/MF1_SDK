@@ -468,12 +468,13 @@ uint8_t flash_load_cfg(board_cfg_t *cfg)
 
     stat = w25qxx_read_data(BOARD_CFG_ADDR, (uint8_t *)cfg, sizeof(board_cfg_t));
 
-    if ((cfg->header == CFG_HEADER) &&       /* Header正确 */
-        (stat == W25QXX_OK) &&               /* 读flash正常 */
+    if ((stat == W25QXX_OK) &&               /* 读flash正常 */
+        (cfg->header == CFG_HEADER) &&       /* Header正确 */
         (cfg->version == (float)CFG_VERSION) /* Version正确*/
     )
     {
-        sha256_hard_calculate((uint8_t *)(cfg + 32), sizeof(board_cfg_t) - 32, sha256);
+        sha256_hard_calculate((uint8_t *)cfg + 32, sizeof(board_cfg_t) - 32, sha256);
+
         if (memcmp(cfg->cfg_sha256, sha256, 32) == 0)
         {
             cfg->cfg_right_flag = 1;
@@ -481,6 +482,7 @@ uint8_t flash_load_cfg(board_cfg_t *cfg)
         }
         else
         {
+            printf("board cfg sha256 error\r\n");
             return 0;
         }
     }
@@ -499,7 +501,7 @@ uint8_t flash_save_cfg(board_cfg_t *cfg)
 
     cfg->cfg_right_flag = 0;
 
-    sha256_hard_calculate((uint8_t *)(cfg + 32), sizeof(board_cfg_t) - 32, cfg->cfg_sha256);
+    sha256_hard_calculate((uint8_t *)cfg + 32, sizeof(board_cfg_t) - 32, cfg->cfg_sha256);
 
     printf("boardcfg checksum:");
     for (uint8_t i = 0; i < 32; i++)

@@ -3,6 +3,7 @@
 #include "face_lib.h"
 #include "flash.h"
 #include "lcd.h"
+#include "camera.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 volatile uint8_t recv_over_flag = 0;
@@ -210,6 +211,11 @@ static void init_lcd_cam(board_cfg_t *brd_cfg)
 
     camera_set_hmirror(cam_hmirror);
     camera_set_vflip(cam_flip);
+
+#if CONFIG_CAMERA_GC0328_DUAL
+    /* FIXME: face_lib have a BUG!!!*/
+    camera_init(CAM_GC0328_DUAL);
+#endif /* CONFIG_CAMERA_GC0328_DUAL */
 
     return;
 }
