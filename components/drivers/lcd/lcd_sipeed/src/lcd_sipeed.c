@@ -7,6 +7,7 @@
 #include "sleep.h"
 #include "timer.h"
 #include "spi.h"
+#include "printf.h"
 
 #include "mem_macro.h"
 
@@ -20,9 +21,15 @@ extern void sipeed_spi_send_data_dma(uint8_t spi_num, uint8_t chip_select,
                                      uint8_t dma_chn, const uint8_t *data_buf, size_t buf_len);
 
 ///////////////////////////////////////////////////////////////////////////////
+/* common 800x480 lcd, 5 or 7 inch */
+static void lcd_800_480_init(void);
+static void lcd_800_480_irq_rs_sync(void);
+
+///////////////////////////////////////////////////////////////////////////////
 volatile uint8_t dis_flag = 0;
 
-static int32_t PageCount = 0;
+static volatile int32_t PageCount = 0;
+
 static uint8_t *disp_buf = NULL;
 static uint8_t *disp_banner_buf = NULL;
 
@@ -78,38 +85,11 @@ static void lcd_sipeed_send_dat(uint8_t *DataBuf, uint32_t Length)
     sipeed_spi_send_data_dma(LCD_SIPEED_SPI_DEV, LCD_SIPEED_SPI_SS, DMAC_CHANNEL2, _IOMEM_PADDR(DataBuf), Length);
 }
 
-static void irq_RS_Sync(void)
-{
-    if (PageCount < SIPEED_LCD_H * LCD_YUP)
-    {
-        dis_flag = 1;
-        if (PageCount >= 0)
-        {
-            lcd_sipeed_send_dat(&disp_buf[PageCount / LCD_YUP * SIPEED_LCD_W * 2], SIPEED_LCD_W * 2);
-            dmac_wait_done(DMAC_CHANNEL2);
-            for (int i = 0; i < 30; i++)
-            {
-                asm volatile("nop");
-            };
-            if (SIPEED_LCD_BANNER_W)
-            {
-                lcd_sipeed_send_dat(&disp_banner_buf[PageCount * SIPEED_LCD_BANNER_W * 2], SIPEED_LCD_BANNER_W * 2);
-            }
-        }
-    }
-    else if (PageCount > LCD_SIPEED_FRAME_END_LINE - 1 && dis_flag)
-    {
-        dis_flag = 0;
-    }
-    PageCount++;
-    return;
-}
-
 //excute in 50Hz lcd refresh irq
-static void lcd_sipeed_display(uint8_t block)
+static void lcd_sipeed_display(void)
 {
     gpiohs_irq_disable(CONFIG_LCD_GPIOHS_DCX);
-    PageCount = -1;
+    PageCount = -(LCD_VBP - LCD_INIT_LINE);
 
     spi_init(LCD_SIPEED_SPI_DEV, SPI_WORK_MODE_0, SPI_FF_OCTAL, 32, 0);
     lcd_sipeed_send_cmd(LCD_FRAME_START);
@@ -119,26 +99,27 @@ static void lcd_sipeed_display(uint8_t block)
 
     gpiohs_set_drive_mode(CONFIG_LCD_GPIOHS_DCX, GPIO_DM_INPUT);
     gpiohs_set_pin_edge(CONFIG_LCD_GPIOHS_DCX, GPIO_PE_RISING);
-    gpiohs_set_irq(CONFIG_LCD_GPIOHS_DCX, 3, irq_RS_Sync);
 
-    if (block)
-    {
-        while (PageCount < LCD_SIPEED_FRAME_END_LINE)
-        {
-            msleep(1);
-        }; //等待的同时可以做其实事情	//50ms
-    }
+#if CONFIG_TYPE_800_480_57_INCH
+    gpiohs_set_irq(CONFIG_LCD_GPIOHS_DCX, 3, lcd_800_480_irq_rs_sync);
+#else
+    printk("Unknown LCD Type\r\n");
+    while (1)
+        ;
+#endif
 }
 
 static int timer_callback(void *ctx)
 {
     dis_flag = 1;
-    lcd_sipeed_display(0);
+    lcd_sipeed_display();
     return 0;
 }
 
 static void lcd_sipeed_config(lcd_t *lcd)
 {
+    uint8_t tmp = 40;
+
     gpiohs_set_drive_mode(CONFIG_LCD_GPIOHS_DCX, GPIO_DM_OUTPUT);
     gpiohs_set_pin(CONFIG_LCD_GPIOHS_DCX, GPIO_PV_HIGH);
 
@@ -149,21 +130,19 @@ static void lcd_sipeed_config(lcd_t *lcd)
 
     spi_init(LCD_SIPEED_SPI_DEV, SPI_WORK_MODE_0, SPI_FF_OCTAL, 32, 0);
     spi_set_clk_rate(LCD_SIPEED_SPI_DEV, LCD_SIPEED_SPI_FREQ);
-    //480x272:40/50M测试可用,搭配100M，9M时钟
-    //800x480:50/60/70M 配166~125/25M 或 40M 配111/100/83 :16.66
-    //似乎FIFO最高速率到不了200M，只能使用6分频166M
-    lcd_sipeed_send_cmd(LCD_BL_ON);
-    lcd_sipeed_send_cmd(LCD_FRAME_START);
-    lcd_sipeed_send_cmd(LCD_DISOLAY_ON);
 
-    timer_init(1);
-
-    uint8_t tmp = 40;
-
+#if CONFIG_TYPE_800_480_57_INCH
+    lcd_800_480_init();
 #if CONFIG_TYPE_SIPEED_7_INCH
-    tmp = 25;
+    tmp = 28;
+#endif /* CONFIG_TYPE_SIPEED_7_INCH */
+#else
+    printk("Unknown LCD Type\r\n");
+    while (1)
+        ;
 #endif
 
+    timer_init(1);
     timer_set_interval(1, 1, tmp * 1000 * 1000);
     //SPI传输时间(dis_flag=1)约20ms，需要留出10~20ms给缓冲区准备(dis_flag=0)
     //如果图像中断处理时间久，可以调慢FPGA端的像素时钟，但是注意不能比刷屏中断慢(否则就会垂直滚动画面)。
@@ -215,3 +194,64 @@ uint8_t lcd_sipeed_config_disp_buf(uint8_t *lcd_disp_buf, uint8_t *lcd_disp_bann
     disp_banner_buf = lcd_disp_banner_buf;
     return 0;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+static void lcd_800_480_init(void)
+{
+    lcd_sipeed_send_cmd(LCD_BL_ON);
+    lcd_sipeed_send_cmd(LCD_WRITE_REG | LCD_ADDR_VBP);
+    lcd_sipeed_send_cmd(LCD_VBP);
+    lcd_sipeed_send_cmd(LCD_WRITE_REG | LCD_ADDR_H);
+    lcd_sipeed_send_cmd(LCD_HEIGHT / 4);
+    lcd_sipeed_send_cmd(LCD_WRITE_REG | LCD_ADDR_VFP);
+    lcd_sipeed_send_cmd(LCD_VFP);
+    lcd_sipeed_send_cmd(LCD_WRITE_REG | LCD_ADDR_HBP);
+    lcd_sipeed_send_cmd(LCD_HBP);
+    lcd_sipeed_send_cmd(LCD_WRITE_REG | LCD_ADDR_W);
+    lcd_sipeed_send_cmd(LCD_WIDTH / 4);
+    lcd_sipeed_send_cmd(LCD_WRITE_REG | LCD_ADDR_HFP);
+    lcd_sipeed_send_cmd(LCD_HFP);
+
+    //b7:0 dis,1 en; b6: 0x,1y; b[5:3]: mul part1; b[2:0]: mul part2
+    lcd_sipeed_send_cmd(LCD_WRITE_REG | LCD_ADDR_DIVCFG);
+    lcd_sipeed_send_cmd((LCD_SCALE_ENABLE << 7) | (LCD_SCALE_X << 6) | (LCD_SCALE_2X2 << 3) | (LCD_SCALE_NONE << 0));
+    lcd_sipeed_send_cmd(LCD_WRITE_REG | LCD_ADDR_POS);
+    lcd_sipeed_send_cmd(640 / 4);
+
+    lcd_sipeed_send_cmd(LCD_FRAME_START);
+    lcd_sipeed_send_cmd(LCD_DISOLAY_ON);
+}
+
+static void lcd_800_480_irq_rs_sync(void)
+{
+    if (PageCount >= 0)
+    {
+        if (PageCount < LCD_HEIGHT)
+        {
+            dis_flag = 1;
+            lcd_sipeed_send_dat(&disp_buf[(PageCount / 2) * SIPEED_LCD_W * 2], SIPEED_LCD_W * 2 + LCD_LINE_FIX_PIXEL * 2);
+            dmac_wait_done(DMAC_CHANNEL2);
+            for (int i = 0; i < 30; i++)
+            {
+                asm volatile("nop");
+            };
+            if (SIPEED_LCD_BANNER_W)
+            {
+                lcd_sipeed_send_dat(&disp_banner_buf[PageCount * SIPEED_LCD_BANNER_W * 2], SIPEED_LCD_BANNER_W * 2 + LCD_LINE_FIX_PIXEL * 2);
+            }
+        }
+        else if ((PageCount >= (LCD_HEIGHT + LCD_VFP - 1)))
+        {
+            dis_flag = 0;
+        }
+    }
+
+    PageCount++;
+    return;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////

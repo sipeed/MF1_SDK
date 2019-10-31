@@ -38,17 +38,10 @@ menu "Drivers configuration"
 			choice LCD_SIPEED_TYPE
 				depends on LCD_TYPE_SIPEED
 				bool "lcd size"
-				default TYPE_480_272_4_3_INCH
+				default TYPE_800_480_57_INCH
 
 				config TYPE_800_480_57_INCH
 					bool "800x480 5 inch and 7 inch"
-
-				config TYPE_480_272_4_3_INCH
-					bool "480x272 4.3 inch"
-
-				config TYPE_1024_600
-					bool "1024x600 "
-					default n
 
 			endchoice
 

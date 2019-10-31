@@ -19,19 +19,31 @@ static void uart_send(char *buf, size_t len);
 face_recognition_cfg_t face_recognition_cfg = {
     .check_ir_face = 1,
     .auto_out_fea = 0,
+
+    .night_threshold = 60,
+
+#if 0 //CONFIG_ENABLE_FLASH_LED
+    .use_flash_led = 1,
+#else
+    .use_flash_led = 0,
+#endif
+    .no_face_close_lcd = 0,
+
     .detect_threshold = 0.0,
     .compare_threshold = 0.0,
 };
 
-face_lib_callback_t face_recognition_cb = (face_lib_callback_t){
+face_lib_callback_t face_recognition_cb = {
     .proto_send = uart_send,
     .proto_record_face = protocol_record_face,
 
     .detected_face_cb = detected_face_cb,
     .fake_face_cb = fake_face_cb,
     .pass_face_cb = pass_face_cb,
+
     .lcd_refresh_cb = lcd_refresh_cb,
     .lcd_convert_cb = lcd_convert_cb,
+    .lcd_close_cb = NULL,
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -223,6 +235,14 @@ int main(void)
             face_recognition_cfg.auto_out_fea = (uint8_t)g_board_cfg.brd_soft_cfg.cfg.auto_out_fea;
             face_recognition_cfg.compare_threshold = (float)g_board_cfg.brd_soft_cfg.out_threshold;
             face_lib_run(&face_recognition_cfg);
+        }
+
+        static volatile uint8_t cnt = 0;
+        cnt++;
+        if (cnt > 10)
+        {
+            cnt = 0;
+            printk("heap:%ldKB\r\n", get_free_heap_size() / 1024);
         }
 
         /* get key state */

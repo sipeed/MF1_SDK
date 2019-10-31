@@ -191,6 +191,13 @@ void set_IR_LED(int state)
     gpiohs_set_pin(CONFIG_INFRARED_GPIOHS_NUM, state);
     return;
 }
+
+void set_W_LED(int state)
+{
+    // gpiohs_set_pin(CONFIG_INFRARED_GPIOHS_NUM, state);
+    return;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 void web_set_RGB_LED(uint8_t val[3])
 {
@@ -222,6 +229,9 @@ void board_init(void)
 
     set_IR_LED(0);
 
+    /* Flash init */
+    flash_init();
+
     /* DVP init */
 #ifndef CONFIG_NOT_MF1_BOARD
     //build for MF1
@@ -239,6 +249,19 @@ void board_init(void)
     dvp_set_image_format(DVP_CFG_RGB_FORMAT);
     dvp_set_image_size(CONFIG_CAMERA_RESOLUTION_WIDTH, CONFIG_CAMERA_RESOLUTION_HEIGHT);
 
+    dvp_set_ai_addr((uint32_t)_IOMEM_ADDR(kpu_image),
+                    (uint32_t)(_IOMEM_ADDR(kpu_image) + CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT),
+                    (uint32_t)(_IOMEM_ADDR(kpu_image) + CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2));
+
+    dvp_set_display_addr((uint32_t)_IOMEM_ADDR(cam_image));
+    dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 0);
+    dvp_disable_auto();
+
+    /* DVP interrupt config */
+    plic_set_priority(IRQN_DVP_INTERRUPT, 1);
+    plic_irq_register(IRQN_DVP_INTERRUPT, dvp_irq, NULL);
+    plic_irq_enable(IRQN_DVP_INTERRUPT);
+
 #if CONFIG_CAMERA_OV2640
     camera_init(CAM_OV2640);
 #elif CONFIG_CAMERA_GC0328_SINGLE
@@ -249,17 +272,6 @@ void board_init(void)
     printf("unknown camera type!!!\r\n");
 #endif
 
-    dvp_set_ai_addr((uint32_t)_IOMEM_ADDR(kpu_image),
-                    (uint32_t)(_IOMEM_ADDR(kpu_image) + CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT),
-                    (uint32_t)(_IOMEM_ADDR(kpu_image) + CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2));
-
-    dvp_set_display_addr((uint32_t)_IOMEM_ADDR(cam_image));
-    dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 0);
-    dvp_disable_auto();
-
-    /* Flash init */
-    flash_init();
-
     /* LCD init */
 #if CONFIG_LCD_TYPE_ST7789
     lcd_init(LCD_ST7789);
@@ -269,21 +281,14 @@ void board_init(void)
     extern uint8_t *lcd_banner_image;
     extern uint8_t lcd_sipeed_config_disp_buf(uint8_t * lcd_disp_buf, uint8_t * lcd_disp_banner_buf);
 
-    w25qxx_read_data(((SIPEED_LCD_BANNER_H == 480) ? IMG_BAR_800480_ADDR : IMG_BAR_480272_ADDR),
-                     lcd_banner_image, SIPEED_LCD_BANNER_W * SIPEED_LCD_BANNER_H * 2);
+    w25qxx_read_data(IMG_BAR_800480_ADDR, lcd_banner_image, SIPEED_LCD_BANNER_W * SIPEED_LCD_BANNER_H * 2);
 
     lcd_sipeed_config_disp_buf(lcd_image, lcd_banner_image);
 
     lcd_init(LCD_SIPEED);
     // (((r << 8) & 0xF800) | ((g << 3) & 0x7E0) | (b >> 3))
     lcd_clear((((1 << 8) & 0xF800) | ((107 << 3) & 0x7E0) | (168 >> 3)));
-
 #endif /*CONFIG_LCD_TYPE_ST7789*/
-
-    /* DVP interrupt config */
-    plic_set_priority(IRQN_DVP_INTERRUPT, 1);
-    plic_irq_register(IRQN_DVP_INTERRUPT, dvp_irq, NULL);
-    plic_irq_enable(IRQN_DVP_INTERRUPT);
 
     /* enable global interrupt */
     sysctl_enable_irq();

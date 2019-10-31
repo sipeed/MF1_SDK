@@ -455,8 +455,6 @@ int flash_get_saved_faceinfo(face_info_t *info, uint32_t index)
     return (i < FACE_DATA_MAX_COUNT) ? 0 : -1;
 }
 
-// BOARD_CFG_ADDR
-// BOARD_CFG_LEN
 uint8_t flash_load_cfg(board_cfg_t *cfg)
 {
     w25qxx_status_t stat;
@@ -464,9 +462,13 @@ uint8_t flash_load_cfg(board_cfg_t *cfg)
 
     stat = w25qxx_read_data(BOARD_CFG_ADDR, (uint8_t *)cfg, sizeof(board_cfg_t));
 
-    if (cfg->header == CFG_HEADER && stat == W25QXX_OK)
+    if ((stat == W25QXX_OK) &&               /* 读flash正常 */
+        (cfg->header == CFG_HEADER) &&       /* Header正确 */
+        (cfg->version == (float)CFG_VERSION) /* Version正确*/
+    )
     {
-        sha256_hard_calculate((uint8_t *)cfg, sizeof(board_cfg_t) - 32, sha256); //34是因为结构体8字节对齐，导致尾部多了2字节
+        sha256_hard_calculate((uint8_t *)cfg + 32, sizeof(board_cfg_t) - 32, sha256);
+
         if (memcmp(cfg->cfg_sha256, sha256, 32) == 0)
         {
             cfg->cfg_right_flag = 1;
@@ -474,6 +476,7 @@ uint8_t flash_load_cfg(board_cfg_t *cfg)
         }
         else
         {
+            printf("board cfg sha256 error\r\n");
             return 0;
         }
     }
@@ -492,14 +495,14 @@ uint8_t flash_save_cfg(board_cfg_t *cfg)
 
     cfg->cfg_right_flag = 0;
 
-    sha256_hard_calculate((uint8_t *)cfg, sizeof(board_cfg_t) - 32, cfg->cfg_sha256);
+    sha256_hard_calculate((uint8_t *)cfg + 32, sizeof(board_cfg_t) - 32, cfg->cfg_sha256);
 
-    printk("boardcfg checksum:\r\n");
+    printf("boardcfg checksum:");
     for (uint8_t i = 0; i < 32; i++)
     {
-        printk("%02X", cfg->cfg_sha256[i]);
+        printf("%02X", cfg->cfg_sha256[i]);
     }
-    printk("\r\n");
+    printf("\r\n");
 
     stat = w25qxx_write_data(BOARD_CFG_ADDR, (uint8_t *)cfg, sizeof(board_cfg_t));
 
@@ -547,7 +550,6 @@ uint8_t flash_cfg_set_default(board_cfg_t *cfg)
 
     cfg->header = CFG_HEADER;
     cfg->cfg_right_flag = 0;
-    cfg->user_custom_cfg = NULL;
 
     cfg->brd_soft_cfg.out_threshold = (float)FACE_RECGONITION_THRESHOLD;
 
@@ -609,6 +611,11 @@ uint8_t flash_cfg_set_default(board_cfg_t *cfg)
 
     cfg->brd_hard_cfg.uart_relay_key.relay_high = CONFIG_RELAY_HIGH_PIN;
     cfg->brd_hard_cfg.uart_relay_key.relay_low = CONFIG_RELAY_LOWX_PIN;
+
+    // memset(cfg->wifi_ssid, 0, sizeof(cfg->wifi_ssid));
+    // memset(cfg->wifi_passwd, 0, sizeof(cfg->wifi_passwd));
+
+    // memset(cfg->user_custom_cfg, 0, sizeof(cfg->user_custom_cfg));
 
     return;
 }
