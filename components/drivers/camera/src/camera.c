@@ -22,8 +22,7 @@ int camera_read_id(uint16_t *manuf_id, uint16_t *device_id)
 {
     if (camera.camera_read_id)
     {
-        camera.camera_read_id(&camera, manuf_id, device_id);
-        return 0;
+        return camera.camera_read_id(&camera, manuf_id, device_id);
     }
     return 1;
 }
@@ -34,8 +33,7 @@ int camera_set_hmirror(uint8_t val)
 
     if (camera.camera_set_hmirror)
     {
-        camera.camera_set_hmirror(&camera, val);
-        return 0;
+        return camera.camera_set_hmirror(&camera, val);
     }
 
     return 1;
@@ -47,8 +45,7 @@ int camera_set_vflip(uint8_t val)
 
     if (camera.camera_set_vflip)
     {
-        camera.camera_set_vflip(&camera, val);
-        return 0;
+        return camera.camera_set_vflip(&camera, val);
     }
     return 1;
 }
@@ -57,8 +54,16 @@ int camera_config(void)
 {
     if (camera.camera_config)
     {
-        camera.camera_config(&camera);
-        return 0;
+        return camera.camera_config(&camera);
+    }
+    return 1;
+}
+
+int camera_modify_reg(uint8_t reg_data[][2])
+{
+    if (camera.camera_modify_reg)
+    {
+        return camera.camera_modify_reg(&camera, reg_data);
     }
     return 1;
 }

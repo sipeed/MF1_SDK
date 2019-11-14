@@ -212,6 +212,13 @@ static void init_lcd_cam(board_cfg_t *brd_cfg)
     camera_set_hmirror(cam_hmirror);
     camera_set_vflip(cam_flip);
 
+    // uint8_t new_reg[][2] = {
+    //     {0x17, 0x14},
+    //     {0, 0},
+    // };
+
+    // camera_modify_reg(new_reg);
+
 #if CONFIG_CAMERA_GC0328_DUAL
     /* FIXME: face_lib have a BUG!!!*/
     camera_init(CAM_GC0328_DUAL);

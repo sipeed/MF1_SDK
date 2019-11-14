@@ -4,7 +4,14 @@
 
 #include "dvp.h"
 #include "fpioa.h"
-#include "system_config.h"
+
+#include "global_config.h"
+///////////////////////////////////////////////////////////////////////////////
+// #include "system_config.h"
+#define CAM_SCL_PIN (41)
+#define CAM_SDA_650_PIN (42)
+#define CAM_SDA_850_PIN (40)
+
 ///////////////////////////////////////////////////////////////////////////////
 
 #define BANK_SEL 0xFF
@@ -108,6 +115,8 @@ int ov2640_init(camera_t *camera)
         camera->camera_set_hmirror = ov2640_set_hmirror;
         camera->camera_set_vflip = ov2640_set_vflip;
 
+        camera->camera_modify_reg = NULL;
+        
         return 0;
     }
     return 1;
