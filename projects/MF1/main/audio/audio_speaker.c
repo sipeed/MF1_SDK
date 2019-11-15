@@ -7,7 +7,11 @@
 #include "stdio.h"
 #include "sysctl.h"
 #include "face_lib.h"
+#include "es8374.h"
 
+#if USE_ES8374
+extern volatile uint8_t g_es8374_init_flag;
+#endif
 
 audio_speaker_t audio_speaker;
 uint16_t zero_buf[SPEAKER_FRAME_LENGTH];
@@ -15,7 +19,15 @@ uint32_t i2s_tx_buf[SPEAKER_FRAME_LENGTH * 2];
 
 static void audio_speaker_io_mux_init()
 {
-    // I2S OUT BUZZER
+
+
+#if USE_ES8374
+    fpioa_set_function(SPEAKER_I2S_OUT, FUNC_I2S0_OUT_D2);
+    fpioa_set_function(SPEAKER_I2S_SCLK, FUNC_I2S0_SCLK);
+    fpioa_set_function(SPEAKER_I2S_WS, FUNC_I2S0_WS);
+    fpioa_set_function(SPEAKER_I2S_MCLK, FUNC_I2S0_MCLK);
+#else    
+        // I2S OUT BUZZER
     fpioa_set_function(SPEAKER_I2S_OUT_D1, FUNC_I2S2_OUT_D1);
     fpioa_set_function(SPEAKER_I2S_SCLK, FUNC_I2S2_SCLK);
     fpioa_set_function(SPEAKER_I2S_WS, FUNC_I2S2_WS);
@@ -23,6 +35,7 @@ static void audio_speaker_io_mux_init()
     fpioa_set_function(SPEAKER_PA_PIN, FUNC_GPIOHS0 + SPEAKER_PA_IO_NUM);
     gpiohs_set_drive_mode(SPEAKER_PA_IO_NUM, GPIO_DM_OUTPUT);
     gpiohs_set_pin(SPEAKER_PA_IO_NUM, GPIO_PV_HIGH);
+#endif
 }
 
 static void i2s_parse_voice(i2s_device_number_t device_num, uint32_t *buf, const uint8_t *pcm, size_t length, size_t bits_per_sample,
@@ -139,8 +152,6 @@ static int audio_speaker_timer_tx_irq(void *ctx)
 void audio_speaker_init()
 {
     audio_speaker_t *speaker = &audio_speaker;
-    sysctl_pll_set_freq(SYSCTL_PLL2, 45158400UL);
-    audio_speaker_io_mux_init();
     speaker->ispaly = 0;
     speaker->volume = 1;
 
@@ -156,12 +167,57 @@ void audio_speaker_init()
     speaker->play_state = PLAY_STATE_STOP;
     speaker->play_buffer = NULL;
 
+
+#if USE_ES8374
+    audio_speaker_io_mux_init();
+    if(!g_es8374_init_flag)
+    {
+        printf("esflag:1!\r\n");
+        sysctl_pll_set_freq(SYSCTL_PLL2, 262144000UL);
+        int ret;
+        es8374_i2s_iface_t iface;
+        iface.bits = ES8374_BIT_LENGTH_16BITS;
+        iface.fmt = ES8374_I2S_NORMAL;
+        iface.mode = ES8374_MODE_SLAVE;
+        iface.samples = ES8374_16K_SAMPLES;
+
+        es8374_config_t cfg;
+        cfg.adc_input = ES8374_ADC_INPUT_LINE1;
+        cfg.dac_output = ES8374_DAC_OUTPUT_LINE1;
+        cfg.es8374_mode = ES8374_MODE_BOTH;
+        cfg.i2s_iface = iface;
+        ret = es8374_init(&cfg);
+        
+        if(ret != 0)
+        {
+            printf("\r\nes8374 init fail\r\n");
+        }else
+        {
+            printf("\r\nes8374 init ok!!!\r\n");
+        }
+        es8374_ctrl_state(cfg.es8374_mode, ES8374_CTRL_START);
+
+        maix_i2s_init(SPEAKER_I2S_DEVICE, 0x3, 0x30);
+        sysctl_clock_set_threshold(SYSCTL_THRESHOLD_I2S0_M, 31);
+        i2s_tx_channel_config(SPEAKER_I2S_DEVICE, ES8374_TX_CHANNEL, RESOLUTION_16_BIT, SCLK_CYCLES_32, TRIGGER_LEVEL_4, STANDARD_MODE);
+        i2s_rx_channel_config(SPEAKER_I2S_DEVICE, ES8374_RX_CHANNEL, RESOLUTION_16_BIT, SCLK_CYCLES_32, TRIGGER_LEVEL_4, STANDARD_MODE);
+        i2s_set_sample_rate(SPEAKER_I2S_DEVICE, SPEAKER_SAMPLE_RATE);
+        es8374_set_voice_volume(96);
+        //es8374_write_reg(0x1e, 0xA4);
+        g_es8374_init_flag = 1;
+
+    }
+#else
+    sysctl_pll_set_freq(SYSCTL_PLL2, 45158400UL);
+    audio_speaker_io_mux_init();
+
+
     i2s_init(speaker->i2s_device_num, I2S_TRANSMITTER, 0xC);
     i2s_tx_channel_config(speaker->i2s_device_num, speaker->i2s_channel_num,
         RESOLUTION_16_BIT, SCLK_CYCLES_32,
         TRIGGER_LEVEL_4, RIGHT_JUSTIFYING_MODE);
     i2s_set_sample_rate(speaker->i2s_device_num, speaker->sample_rate);
-
+#endif
 
     timer_init(speaker->timer_device);
     timer_irq_register(speaker->timer_device, speaker->timer_channel, 0, 7, audio_speaker_timer_tx_irq, speaker);
@@ -175,7 +231,11 @@ void audio_speaker_deinit()
     audio_speaker_t *speaker = &audio_speaker;
     timer_irq_unregister(speaker->timer_device, speaker->timer_channel);
     timer_set_enable(speaker->timer_device, speaker->timer_channel, 0);
+#if USE_ES8374
+    es8374_deinit();
+#else
     gpiohs_set_pin(SPEAKER_PA_IO_NUM, GPIO_PV_LOW);
+#endif
 }
 
 void audio_speaker_set_sample_rate(uint32_t sample_rate)

@@ -5,8 +5,12 @@
 #include "gpiohs.h"
 #include "sysctl.h"
 #include "face_lib.h"
+#include "es8374.h"
 
 //#define SWAP16(x) ((x&0x00ff) << 8 | (x&0xff00) >> 8)
+#if USE_ES8374
+extern volatile uint8_t g_es8374_init_flag;
+#endif
 
 audio_mic_t audio_mic;
 uint32_t g_rx_dma_buf[MIC_FRAME_LENGTH * 4];
@@ -14,10 +18,20 @@ uint32_t g_index;
 
 static void audio_mic_io_mux_init()
 {
+
+#if USE_ES8374
+    fpioa_set_function(MIC_I2S_IN,    FUNC_I2S0_IN_D0);
+    fpioa_set_function(MIC_I2S_WS,    FUNC_I2S0_WS);
+    fpioa_set_function(MIC_I2S_SCLK,  FUNC_I2S0_SCLK);
+    fpioa_set_function(MIC_I2S_MCLK,  FUNC_I2S0_MCLK);
+#else
     // I2S IN MIC
     fpioa_set_function(MIC_I2S_IN_D0, FUNC_I2S0_IN_D0);
     fpioa_set_function(MIC_I2S_WS,    FUNC_I2S0_WS);
     fpioa_set_function(MIC_I2S_SCLK,  FUNC_I2S0_SCLK);
+
+#endif
+
 }
 
 static int audio_mic_dma_rx_irq(void *ctx)
@@ -73,9 +87,6 @@ static int audio_mic_dma_rx_irq(void *ctx)
 void audio_mic_init()
 {
     audio_mic_t *mic = &audio_mic;
-    sysctl_pll_set_freq(SYSCTL_PLL2, 45158400UL);
-    audio_mic_io_mux_init();
-
     mic->i2s_device_num = MIC_I2S_DEVICE;
     mic->i2s_channel_num = MIC_I2S_CHANNEL;
     mic->dmac_channel = MIC_DMAC_CHANNEL;
@@ -86,12 +97,54 @@ void audio_mic_init()
     mic->recv_state = RECV_STATE_IDLE;
     mic->recv_buffer = NULL;
 
+#if USE_ES8374
+    audio_mic_io_mux_init();
+
+    if(!g_es8374_init_flag)
+    {
+        sysctl_pll_set_freq(SYSCTL_PLL2, 262144000UL);
+        int ret;
+        es8374_i2s_iface_t iface;
+        iface.bits = ES8374_BIT_LENGTH_16BITS;
+        iface.fmt = ES8374_I2S_NORMAL;
+        iface.mode = ES8374_MODE_SLAVE;
+        iface.samples = ES8374_16K_SAMPLES;
+
+        es8374_config_t cfg;
+        cfg.adc_input = ES8374_ADC_INPUT_LINE1;
+        cfg.dac_output = ES8374_DAC_OUTPUT_LINE1;
+        cfg.es8374_mode = ES8374_MODE_BOTH;
+        cfg.i2s_iface = iface;
+        ret = es8374_init(&cfg);
+        
+        if(ret != 0)
+        {
+            printf("\r\nes8374 init fail\r\n");
+        }else
+        {
+            printf("\r\nes8374 init ok!!!\r\n");
+        }
+        es8374_ctrl_state(cfg.es8374_mode, ES8374_CTRL_START);
+
+        maix_i2s_init(MIC_I2S_DEVICE, 0x3, 0x30);
+        sysctl_clock_set_threshold(SYSCTL_THRESHOLD_I2S0_M, 31);
+        i2s_tx_channel_config(MIC_I2S_DEVICE, ES8374_TX_CHANNEL, RESOLUTION_16_BIT, SCLK_CYCLES_32, TRIGGER_LEVEL_4, STANDARD_MODE);
+        i2s_rx_channel_config(MIC_I2S_DEVICE, ES8374_RX_CHANNEL, RESOLUTION_16_BIT, SCLK_CYCLES_32, TRIGGER_LEVEL_4, STANDARD_MODE);
+        i2s_set_sample_rate(MIC_I2S_DEVICE, MIC_SAMPLE_RATE);
+        es8374_set_voice_volume(96);
+        g_es8374_init_flag = 1;
+    }
+
+#else
+    sysctl_pll_set_freq(SYSCTL_PLL2, 45158400UL);
+    audio_mic_io_mux_init();
+
     i2s_init(mic->i2s_device_num, I2S_RECEIVER, 0x3);
     i2s_rx_channel_config(mic->i2s_device_num, mic->i2s_channel_num, 
         RESOLUTION_16_BIT, SCLK_CYCLES_32, 
         TRIGGER_LEVEL_4, STANDARD_MODE);
     i2s_set_sample_rate(mic->i2s_device_num, mic->sample_rate);
-
+#endif
     //dmac_init();
     dmac_irq_register(mic->dmac_channel, audio_mic_dma_rx_irq, mic, 6);
 
@@ -100,6 +153,10 @@ void audio_mic_deinit()
 {
     audio_mic_t *mic = &audio_mic;
     dmac_irq_unregister(mic->dmac_channel);
+#if USE_ES8374
+    es8374_deinit();
+    g_es8374_init_flag = 0;
+#endif
 }
 
 void audio_mic_set_sample_rate(uint32_t sample_rate)

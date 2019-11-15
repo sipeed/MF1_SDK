@@ -6,16 +6,34 @@
 #include "dmac.h"
 #include "i2s.h"
 
-#define MIC_I2S_IN_D0 20
-#define MIC_I2S_WS    19
-#define MIC_I2S_SCLK  18
+#define USE_ES8374 0
+
+#if USE_ES8374
+#include "es8374.h"
+#include "maix_i2s.h"
+#define MIC_I2S_IN    ES8374_I2S_DOUT
+#define MIC_I2S_WS    ES8374_I2S_WS
+#define MIC_I2S_SCLK  ES8374_I2S_SCLK
+
+#define MIC_I2S_MCLK ES8374_I2S_MCLK
+
+#define MIC_I2S_DEVICE  ES8374_I2S_DEVICE
+#define MIC_I2S_CHANNEL ES8374_RX_CHANNEL
+#define MIC_DMAC_CHANNEL ES8374_RX_DMAC_CHANNEL
+#else
+
+#define MIC_I2S_IN_D0 20    
+#define MIC_I2S_WS    19   
+#define MIC_I2S_SCLK  18   
 
 #define MIC_I2S_DEVICE    I2S_DEVICE_0
 #define MIC_I2S_CHANNEL   I2S_CHANNEL_0
 #define MIC_DMAC_CHANNEL  DMAC_CHANNEL3
+#endif
 
 #define MIC_SAMPLE_RATE   (16000)
 #define MIC_FRAME_LENGTH  (512)
+
 
 typedef enum _audio_recv_mode_t{
     RECV_MODE_ALWAYS,
