@@ -1,243 +1,188 @@
 menu "Application configuration"
 
-	# board pin config
-
-	menu "Pin configuration"
-		menu "LCD Pin configuration"
-			config LCD_PIN_BL
-				int "LCD Pin BL"
-				default 9
-			config LCD_PIN_RST
-				int "LCD Pin RST"
-				default 37
-			config LCD_PIN_DCX
-				int "LCD Pin DCX"
-				default 38
-			config LCD_PIN_WRX
-				int "LCD Pin WRX"
-				default 36
-			config LCD_PIN_SCK
-				int "LCD Pin SCK"
-				default 39
-		endmenu
-
-		menu "SPI TF card configuration"
-			config TF_SPI_PIN_SCLK
-				int "SPI TF card SCLK pin number"
-				default 27
-			config TF_SPI_PIN_MOSI
-				int "SPI TF card MOSI pin number"
-				default 28
-			config TF_SPI_PIN_MISO
-				int "SPI TF card MISO pin number"
-				default 26
-			config TF_SPI_PIN_CS
-				int "SPI TF card CS pin number"
-				default 29
-		endmenu
-
-		menu "UART PORT configuration"
-			config PROTOCOL_UART_PORT_TX_PIN
-				int "Protocol uart port TX pin"
-				default 5
-			config PROTOCOL_UART_PORT_RX_PIN
-				int "Protocol uart port RX pin"
-				default 4
-			config DEBUG_UART_PORT_TX_PIN
-				int "Debug uart port TX pin"
-				default 10
-			config DEBUG_UART_PORT_RX_PIN
-				int "Debug uart port RX pin"
-				default 11
-			config JPEG_OUTPUT_PORT_TX
-				depends on ENABLE_OUTPUT_JPEG
-				int "Jpeg output uart pot tx"
-				default 30
-			config JPEG_OUTPUT_PORT_RX
-				depends on ENABLE_OUTPUT_JPEG
-				int "Jpeg output uart pot rx"
-				default 31
-			config PROTOCOL_DEBUG_UART_PIN_SWAP
-				bool "Swap protocol uart pin and debug pin"
-				default n
-		endmenu
-
-		menu "Key configuration"
-			config FUNCTION_KEY_PIN
-				int "Function key pin number"
-				default 24
-		endmenu
-
-		menu "Infrared LED configuration"
-			config INFRARED_LED_PIN
-				int "Infrared LED pin number"
-				default 32
-		endmenu
-
-		menu "LED configuration"
-			depends on ENABLE_RGB_LED
-			config LED_R_PIN
-				int "LED red pin number"
-				default 21
-			config LED_G_PIN
-				int "LED blue pin number"
-				default 22
-			config LED_B_PIN
-				int "LED green pin number"
-				default 23
-		endmenu
-
-		menu "FLASH LED configuration"
-			depends on ENABLE_FLASH_LED
-			config FLASH_LED_PIN
-				int "FLASH LED pin number"
-				default 18
-		endmenu
-
-		menu "Relay configuration"
-			config RELAY_LOWX_PIN
-				int "Releay lowx pin"
-				default 12
-			config RELAY_HIGH_PIN
-				int "Relay hight pin"
-				default 13
-		endmenu
-
-		menu "WiFi configuration"
-			depends on NET_ESP8285
-
-			config WIFI_PIN_TX
-				int "WiFi UART TX pin"
-				default 6
-			config WIFI_PIN_RX
-				int "WiFi UART RX pin"
-				default 7
-			config WIFI_PIN_ENABLE
-				int "WiFi UART enable pin"
-				default 8
-			config WIFI_PIN_SPI_SCLK
-				int "WiFi simulate SPI SCLK pin"
-				default 1
-			config WIFI_PIN_SPI_MOSI
-				int "WiFi simulate SPI MOSI pin"
-				default 3
-			config WIFI_PIN_SPI_MISO
-				int "WiFi simulate SPI MISO pin"
-				default 2
-			config WIFI_PIN_SPI_CS
-				int "WiFi simulate SPI CS pin"
-				default 0
-		endmenu
-
-		menu "W5500 configuration"
-			depends on NET_W5500
-
-			#default config should change
-
-			config ETH_PIN_MOSI
-				int "Ethernet Spi mosi pin"
-				default 13
-
-			config ETH_PIN_MISO
-				int "Ethernet Spi miso pin"
-				default 12
-
-			config ETH_PIN_SCLK
-				int "Ethernet Spi sclk pin"
-				default 14
-
-			config ETH_PIN_CS
-				int "Ethernet Spi cs pin"
-				default 31
-
-			config ETH_PIN_RST
-				int "Ethernet rst pin"
-				---help---
-				default not use this one pin
-		endmenu
-
-	endmenu
-
-	# board fpioa func config
-
 	menu "Peripheral configuration"
 
-		comment "!!! LCD AND SPI TF USE 0-5 !!!"
-
-
 		menu "Key configuration"
-			config FUNCTION_KEY_GPIOHS_NUM
-				int "GPIOHS number for function key"
+
+			config ENABLE_KEY
+				bool "enable key"
+				default y
+
+			config PIN_NUM_USER_KEY
+				depends on ENABLE_KEY
+				int "User Key pin number"
+				default 24
+
+			config GPIOHS_NUM_USER_KEY
+				depends on ENABLE_KEY
+				int "User Key gpiohs number"
 				default 6
-		endmenu
 
-		menu "Infrared LED configuration"
-			config INFRARED_GPIOHS_NUM
-				int "Infrared LED GPIOHS number"
-				default 7
-		endmenu
-
-		menu "LED configuration"
-			depends on ENABLE_RGB_LED
-			config LED_R_GPIOHS_NUM
-				int "LED red GPIOHS number"
-				default 8
-			config LED_G_GPIOHS_NUM
-				int "LED blue GPIOHS number"
-				default 9
-			config LED_B_GPIOHS_NUM
-				int "LED green GPIOHS number"
-				default 10
-		endmenu
-
-		menu "FLASH LED configuration"
-			depends on ENABLE_FLASH_LED
-			config FLASH_LED_GPIOHS_NUM
-				int "FLASH LED GPIOHS number"
-				default 15 #notice it
+			config USER_KEY_PRESS_VOL
+				depends on ENABLE_KEY
+				int "User key press High or Low"
+				range 0 1
+				default 1
 		endmenu
 
 		menu "Relay configuration"
-			config RELAY_LOWX_GPIOHS_NUM
-				int "Releay lowx gpiohs num"
-				default 11
-			config RELAY_HIGH_GPIOHS_NUM
-				int "Relay hight gpiohs num"
-				default 12
+
+			config ENABLE_RELAY
+				bool "enable relay"
+				default y
+
+			config RELAY_NUM
+				depends on ENABLE_RELAY
+				int "relay num"
+				range 1 2
+				default 2
+
+			menu "Relay Pin configuration"
+				depends on ENABLE_RELAY
+
+				if RELAY_NUM >= 1
+				config PIN_NUM_RELAY_1
+					int "relay 1 pin number"
+					default 12
+				endif
+
+				if RELAY_NUM >= 2
+					config PIN_NUM_RELAY_2
+						int "relay 2 pin number"
+						default 13
+				endif
+			endmenu
+
+			menu "Relay Pin Func configuration"
+				depends on ENABLE_RELAY
+				if RELAY_NUM >= 1
+					config GPIOHS_NUM_RELAY_1
+						int "relay 1 gpiohs number"
+						default 7
+				endif
+				if RELAY_NUM >= 2
+					config GPIOHS_NUM_RELAY_2
+						int "relay 2 gpiohs number"
+						default 8
+				endif
+			endmenu
+
+			if RELAY_NUM >= 1
+				config RELAY_1_OPEN_VOL
+					int "relay 1 open high or low"
+					range 0 1
+					default 1
+			endif
+
+			if RELAY_NUM >= 2
+				config RELAY_2_OPEN_VOL
+					int "relay 2 open high or low"
+					range 0 1
+					default 0
+			endif
 		endmenu
 
-		menu "WiFi configuration"
-			depends on NET_ESP8285
-			config WIFI_GPIO_NUM_UART_TX
-				int "GPIO number, set WiFi UART TX to RX mod when use UART of esp32"
-				default 0
-			config WIFI_GPIO_NUM_UART_RX
-				int "GPIO number, set WiFi UART RX to RX mod when use UART of esp32"
-				default 1
-			config WIFI_GPIOHS_NUM_ENABLE
-				int "GPIOHS num of WiFi's enable pin"
-				default 13
-			config WIFI_GPIOHS_NUM_CS
-				int "GPIOHS num of WiFi's CS pin(soft cs)"
+		comment "Above init in Uart Proto..."
+
+		menu "IR Led configuration"
+
+			config ENABLE_IR_LED
+				bool "enable IR Led"
+				default y
+
+			config PIN_NUM_IR_LED
+				depends on ENABLE_IR_LED
+				int "IR Led pin number"
+				default 32
+
+			config GPIOHS_NUM_IR_LED
+				depends on ENABLE_IR_LED
+				int "IR Led gpiohs number"
+				default 9
+		endmenu
+
+		menu "Flash Led configuration"
+
+			config ENABLE_FLASH_LED
+				bool "enable flash led"
+				default n
+
+			config PIN_NUM_FLASH_LED
+				depends on ENABLE_FLASH_LED
+				int "flash led pin number"
+				default 18
+
+			config GPIOHS_NUM_FLASH_LED
+				depends on ENABLE_FLASH_LED
+				int "flash led gpiohs number"
+				default 10
+		endmenu
+
+		menu "RGB Led configuration"
+
+			config ENABLE_RGB_LED
+				bool "enable rgb led"
+				default y
+
+			menu "RGB Led Pin configuration"
+				depends on ENABLE_RGB_LED
+
+				config PIN_NUM_RGB_LED_R
+					int "RGB Led Red pin number"
+					default 21
+
+				config PIN_NUM_RGB_LED_G
+					int "RGB Led Green pin number"
+					default 22
+
+				config PIN_NUM_RGB_LED_B
+					int "RGB Led Blue pin number"
+					default 23
+			endmenu
+
+			menu "RGB Led Pin Func configuration"
+				depends on ENABLE_RGB_LED
+
+				config GPIOHS_NUM_RGB_LED_R
+					int "RGB Led Red gpiohs number"
+					default 11
+
+				config GPIOHS_NUM_RGB_LED_G
+					int "RGB Led Green gpiohs number"
+					default 12
+
+				config GPIOHS_NUM_RGB_LED_B
+					int "RGB Led Blue gpiohs number"
+					default 13
+			endmenu
+		endmenu
+
+		menu "LCD BackLight configuration"
+
+			config ENABLE_LCD_BL
+				bool "enable lcd bl"
+				default y
+
+			config PIN_NUM_LCD_BL
+				depends on ENABLE_LCD_BL
+				int "lcd bl pin number"
+				default 9
+
+			config GPIOHS_NUM_LCD_BL
+				depends on ENABLE_LCD_BL
+				int "lcd bl gpiohs number"
 				default 14
-		endmenu
-
-		menu "W5500 configuration"
-			depends on NET_W5500
-
-			config ETH_GPIOHS_NUM_CS
-				int "GPIOHS num of Ethernet W5500's cs pin"
-				default 15
-
-			config ETH_GPIOHS_NUM_RST
-				int "GPIOHS num of Ethernet W5500's rst pin"
-				default 16
+			
+			config LCD_BL_OPEN_VOL
+				depends on ENABLE_LCD_BL
+				int "lcd bl open vol high or low"
+				range 0 1
+				default 0
 		endmenu
 
 	endmenu
 
-
-	menu "network"
+	menu "NetWork"
 		config NET_ENABLE
 			bool "enable network"
 			default n
@@ -249,40 +194,175 @@ menu "Application configuration"
 
 			config NET_ESP8285
 				bool "wifi, use esp8285"
+				select ENABLE_WIFI
 				---help---
 				MF1 with M1w have a esp8285
 
 			config NET_W5500
 				bool "ethernet, use w5500"
+				select ENABLE_W5500
 				---help---
 				should have a extended w5500 board
 		endchoice
+
+		menu "WiFi configuration"
+			depends on NET_ESP8285
+
+			config ENABLE_WIFI
+				bool "enable wifi over esp8285"
+				default y
+
+			menu "WiFi Pin configuration"
+				config PIN_NUM_WIFI_EN
+					int "WiFi enable pin number"
+					default 8
+				config PIN_NUM_WIFI_TX
+					int "wifi TX pin number"
+					default 6
+				config PIN_NUM_WIFI_RX
+					int "wifi RX pin number"
+					default 7
+
+				comment "-------------------------"	
+
+				config PIN_NUM_WIFI_SPI_SCLK 
+					depends on ENABLE_WIFI
+					int "WiFi simulate SPI SCLK pin"
+					default 1
+				config PIN_NUM_WIFI_SPI_MOSI
+					depends on ENABLE_WIFI
+					int "WiFi simulate SPI MOSI pin"
+					default 3
+				config PIN_NUM_WIFI_SPI_MISO
+					depends on ENABLE_WIFI
+					int "WiFi simulate SPI MISO pin"
+					default 2
+				config PIN_NUM_WIFI_SPI_CS
+					depends on ENABLE_WIFI
+					int "WiFi simulate SPI CS pin"
+					default 0
+			endmenu
+
+			menu "WiFi Pin Func configuration"
+			config GPIOHS_NUM_WIFI_EN 
+				int "WiFi enable gpiohs number"
+				default 15
+
+			config GPIO_NUM_WIFI_TX
+				int "WiFi Tx gpiohs number"
+				default 0
+
+			config GPIO_NUM_WIFI_RX
+				int "WiFi Rx gpiohs number"
+				default 1
+
+			comment "-------------------------"	
+
+			config GPIOHS_NUM_WIFI_SPI_CS
+				depends on ENABLE_WIFI
+				int "WiFi Spi Cs gpiohs number"
+				default 16
+			endmenu
+		endmenu
+
+		menu "W500 configuration"
+			depends on NET_W5500
+
+			config ENABLE_W5500
+				bool "enable ethernet over w5500"
+				default n
+
+			menu "W5500 configuration"
+				depends on ENABLE_W5500
+
+				config PIN_NUM_ETH_W5500_MOSI 
+					int "Ethernet Spi mosi pin"
+					default 13
+
+				config PIN_NUM_ETH_W5500_MISO
+					int "Ethernet Spi miso pin"
+					default 12
+
+				config PIN_NUM_ETH_W5500_SCLK
+					int "Ethernet Spi sclk pin"
+					default 14
+
+				config PIN_NUM_ETH_W5500_CS
+					int "Ethernet Spi cs pin"
+					default 31
+
+				config PIN_NUM_ETH_W5500_RST
+					int "Ethernet rst pin"
+					---help---
+					default not use this one pin
+			endmenu
+
+			menu "W5500 configuration"
+				depends on ENABLE_W5500
+
+				config ETH_GPIOHS_NUM_CS
+					int "GPIOHS num of Ethernet W5500's cs pin"
+					default 15
+
+				config ETH_GPIOHS_NUM_RST
+					int "GPIOHS num of Ethernet W5500's rst pin"
+					default 16
+			endmenu
+		endmenu
+
 	endmenu
 
-	menu "Output Jpeg configuration"
-		config ENABLE_OUTPUT_JPEG
-			bool "enable output jpeg via uart"
-			select ENABLE_CQUEUE
-			select ENABLE_JPEG_ENCODE
+	menu "Uart Protocol"
+		config ENABLE_UART_PROTOCOL
+			bool "enable uart proto"
+			default y
+
+		menu "Uart Proto Pin configuration"
+			depends on ENABLE_UART_PROTOCOL
+			config PIN_NUM_UART_PROTO_TX 
+				int "Protocol uart port TX pin"
+				default 5
+			config PIN_NUM_UART_PROTO_RX
+				int "Protocol uart port RX pin"
+				default 4
+			config PIN_NUM_UART_DEBUG_TX 
+				int "Debug uart port TX pin"
+				default 10
+			config PIN_NUM_UART_DEBUG_RX
+				int "Debug uart port RX pin"
+				default 11
+			config SWAP_UART_PROTO_DEBUG
+				bool "Swap protocol uart pin and debug pin"
+				default n
+		endmenu
+
+		menu "Output Jpeg configuration"
+			depends on ENABLE_UART_PROTOCOL
+
+			config ENABLE_OUTPUT_JPEG
+				bool "enable output jpeg via uart"
+				select ENABLE_CQUEUE
+				select ENABLE_JPEG_ENCODE
+				default n
+
+			config OUTPUT_JPEG_UART_BAUD
+				depends on ENABLE_OUTPUT_JPEG
+				int "output jpeg uart baud"
+				default 921600
+
+			config JPEG_OUTPUT_PORT_TX
+				depends on ENABLE_OUTPUT_JPEG
+				int "Jpeg output uart pot tx"
+				default 30
+		endmenu
+
+		config FACE_PASS_ONLY_OUT_UID
+			depends on ENABLE_UART_PROTOCOL
+			bool "face pass, protocol output only uid"
 			default n
-		config OUTPUT_JPEG_UART_BAUD
-			depends on ENABLE_OUTPUT_JPEG
-			int "output jpeg uart baud"
-			default 921600
+
 	endmenu
 
-	comment "--------------------------------"
-
-	config ENABLE_RGB_LED
-		bool "enable rgb led"
-		default y
-	config ENABLE_FLASH_LED
-		bool "enable flash led"
-		default n
-
-	config FACE_PASS_ONLY_OUT_UID
-		bool "face pass, protocol output only uid"
-		default n
 	comment "--------------------------------"
 
 	config LCD_VERTICAL
@@ -297,7 +377,7 @@ menu "Application configuration"
 		bool "Lcd display hortizontal"
 		default n
 		---help---
-		2.4 or 2.8 inch lcd, display hortizontal
+		2.4 or 2.8 inch lcd with (320 x 240), display hortizontal
 
 	config NOT_MF1_BOARD
 		bool "not MF1 board"
@@ -306,10 +386,6 @@ menu "Application configuration"
 		build for Bit,Go,DOck or Othres
 
 	comment "--------------------------------"
-
-	config FUNCTION_KEY_PRESS_VOLTAGE_HIGH
-		bool "Voltage is high when key pressed"
-		default y
 
 	config SHORT_PRESS_FUNCTION_KEY_RECORD_FACE
 		bool "Short press button to record face"

@@ -391,6 +391,7 @@ void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
 
         for (uint32_t i = 0; i < face_cnt; i++)
         {
+            /* FIXME: 这里怎么配置??? */
             if (g_board_cfg.brd_soft_cfg.cfg.out_fea == 2)
             {
                 face_info = (face_obj_t *)&(face->result->face_obj_info.obj[i]);

@@ -594,28 +594,34 @@ uint8_t flash_cfg_set_default(board_cfg_t *cfg)
     cfg->brd_hard_cfg.lcd_cam.lcd_flip = 0;
 #endif
 
-    cfg->brd_hard_cfg.uart_relay_key.key = CONFIG_FUNCTION_KEY_PIN;
-
-#if CONFIG_FUNCTION_KEY_PRESS_VOLTAGE_HIGH
-    cfg->brd_hard_cfg.uart_relay_key.key_dir = 1;
+#if !CONFIG_ENABLE_KEY
+#error "Must enable Key"
 #else
-    cfg->brd_hard_cfg.uart_relay_key.key_dir = 0;
+    cfg->brd_hard_cfg.uart_relay_key.key = CONFIG_PIN_NUM_USER_KEY;
 #endif
 
-#if CONFIG_PROTOCOL_DEBUG_UART_PIN_SWAP
-    cfg->brd_hard_cfg.uart_relay_key.log_rx = CONFIG_PROTOCOL_UART_PORT_RX_PIN;
-    cfg->brd_hard_cfg.uart_relay_key.log_tx = CONFIG_PROTOCOL_UART_PORT_TX_PIN;
-    cfg->brd_hard_cfg.uart_relay_key.port_rx = CONFIG_DEBUG_UART_PORT_RX_PIN;
-    cfg->brd_hard_cfg.uart_relay_key.port_tx = CONFIG_DEBUG_UART_PORT_TX_PIN;
-#else
-    cfg->brd_hard_cfg.uart_relay_key.log_rx = CONFIG_DEBUG_UART_PORT_RX_PIN;
-    cfg->brd_hard_cfg.uart_relay_key.log_tx = CONFIG_DEBUG_UART_PORT_TX_PIN;
-    cfg->brd_hard_cfg.uart_relay_key.port_rx = CONFIG_PROTOCOL_UART_PORT_RX_PIN;
-    cfg->brd_hard_cfg.uart_relay_key.port_tx = CONFIG_PROTOCOL_UART_PORT_TX_PIN;
-#endif
+    cfg->brd_hard_cfg.uart_relay_key.key_dir = CONFIG_USER_KEY_PRESS_VOL;
 
-    cfg->brd_hard_cfg.uart_relay_key.relay_high = CONFIG_RELAY_HIGH_PIN;
-    cfg->brd_hard_cfg.uart_relay_key.relay_low = CONFIG_RELAY_LOWX_PIN;
+#if CONFIG_ENABLE_UART_PROTOCOL
+#if CONFIG_SWAP_UART_PROTO_DEBUG
+    cfg->brd_hard_cfg.uart_relay_key.log_rx = CONFIG_PIN_NUM_UART_PROTO_RX;
+    cfg->brd_hard_cfg.uart_relay_key.log_tx = CONFIG_PIN_NUM_UART_PROTO_TX;
+    cfg->brd_hard_cfg.uart_relay_key.port_rx = CONFIG_PIN_NUM_UART_DEBUG_RX;
+    cfg->brd_hard_cfg.uart_relay_key.port_tx = CONFIG_PIN_NUM_UART_DEBUG_TX;
+#else
+    cfg->brd_hard_cfg.uart_relay_key.log_rx = CONFIG_PIN_NUM_UART_DEBUG_RX;
+    cfg->brd_hard_cfg.uart_relay_key.log_tx = CONFIG_PIN_NUM_UART_DEBUG_TX;
+    cfg->brd_hard_cfg.uart_relay_key.port_rx = CONFIG_PIN_NUM_UART_PROTO_RX;
+    cfg->brd_hard_cfg.uart_relay_key.port_tx = CONFIG_PIN_NUM_UART_PROTO_TX;
+#endif /* CONFIG_SWAP_UART_PROTO_DEBUG */
+#endif /* CONFIG_ENABLE_UART_PROTOCOL */
+
+#if CONFIG_RELAY_NUM != 2
+#error "relay number must be 2"
+#else
+    cfg->brd_hard_cfg.uart_relay_key.relay_high = CONFIG_PIN_NUM_RELAY_1;
+    cfg->brd_hard_cfg.uart_relay_key.relay_low = CONFIG_PIN_NUM_RELAY_2;
+#endif
 
     memset(cfg->wifi_ssid, 0, sizeof(cfg->wifi_ssid));
     memset(cfg->wifi_passwd, 0, sizeof(cfg->wifi_passwd));

@@ -1,5 +1,6 @@
 #include "nt35310.h"
 
+#include "fpioa.h"
 #include "gpiohs.h"
 #include "spi.h"
 
@@ -12,23 +13,28 @@
 
 static void set_dcx_control(void)
 {
-    gpiohs_set_pin(CONFIG_LCD_GPIOHS_DCX, GPIO_PV_LOW);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_LCD_DCX, GPIO_PV_LOW);
 }
 
 static void set_dcx_data(void)
 {
-    gpiohs_set_pin(CONFIG_LCD_GPIOHS_DCX, GPIO_PV_HIGH);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_LCD_DCX, GPIO_PV_HIGH);
 }
 
 void tft_hard_init(void)
 {
+    fpioa_set_function(CONFIG_PIN_NUM_LCD_RST, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_LCD_RST);
+    fpioa_set_function(CONFIG_PIN_NUM_LCD_DCX, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_LCD_DCX);
+    fpioa_set_function(CONFIG_PIN_NUM_LCD_WRX, FUNC_SPI0_SS3);
+    fpioa_set_function(CONFIG_PIN_NUM_LCD_SCK, FUNC_SPI0_SCLK);
+
     /* setup lcd_dcx pin */
-    gpiohs_set_drive_mode(CONFIG_LCD_GPIOHS_DCX, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(CONFIG_LCD_GPIOHS_DCX, GPIO_PV_HIGH);
+    gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_LCD_DCX, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_LCD_DCX, GPIO_PV_HIGH);
 
     /* setup lcd_rst pin */
-    gpiohs_set_drive_mode(CONFIG_LCD_GPIOHS_RST, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(CONFIG_LCD_GPIOHS_RST, GPIO_PV_HIGH);
+    gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_LCD_RST, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_LCD_RST, GPIO_PV_HIGH);
 
     spi_init(SPI_CHANNEL, SPI_WORK_MODE_0, SPI_FF_OCTAL, 8, 0);
     spi_set_clk_rate(SPI_CHANNEL, CONFIG_LCD_CLK_FREQ_MHZ * 1000000);

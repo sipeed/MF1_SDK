@@ -63,7 +63,7 @@ void update_key_state(void)
 
         if (v_time_now - g_gpio_time > 10 * 1000) /* press 10 ms  scan qrcode */
         {
-            if (gpiohs_get_pin(CONFIG_FUNCTION_KEY_GPIOHS_NUM) == !sKey_dir)
+            if (gpiohs_get_pin(CONFIG_GPIOHS_NUM_USER_KEY) == !sKey_dir)
             {
                 g_key_press = 1;
                 g_gpio_flag = 0;
@@ -72,7 +72,7 @@ void update_key_state(void)
 
         if (v_time_now - g_gpio_time > 2 * 1000 * 1000) /* long press 2s */
         {
-            if (gpiohs_get_pin(CONFIG_FUNCTION_KEY_GPIOHS_NUM) == sKey_dir)
+            if (gpiohs_get_pin(CONFIG_GPIOHS_NUM_USER_KEY) == sKey_dir)
             {
                 g_key_long_press = 1;
                 g_gpio_flag = 0;
@@ -110,50 +110,42 @@ static void io_mux_init(void)
     fpioa_set_function(42, FUNC_CMOS_RST);
 #endif
 
-    /* LCD */
-    fpioa_set_function(CONFIG_LCD_PIN_RST, FUNC_GPIOHS0 + CONFIG_LCD_GPIOHS_RST);
-    fpioa_set_function(CONFIG_LCD_PIN_DCX, FUNC_GPIOHS0 + CONFIG_LCD_GPIOHS_DCX);
-    fpioa_set_function(CONFIG_LCD_PIN_WRX, FUNC_SPI0_SS3);
-    fpioa_set_function(CONFIG_LCD_PIN_SCK, FUNC_SPI0_SCLK);
-
-#if CONFIG_LCD_TYPE_SIPEED
-    fpioa_set_io_driving(LCD_SCK_PIN, FPIOA_DRIVING_7);
-#endif
-
     /* change to 1.8V */
     sysctl_set_spi0_dvp_data(1);
 
-    //LCD BL
-    fpioa_set_function(CONFIG_LCD_PIN_BL, FUNC_TIMER1_TOGGLE1);
-    pwm_init(TIMER_PWM);
-    pwm_set_frequency(TIMER_PWM, TIMER_PWM_CHN, 1000, 0.95); //neg, 1 dark
-    pwm_set_enable(TIMER_PWM, TIMER_PWM_CHN, 1);
-
+#if CONFIG_ENABLE_IR_LED
     //IR LED
-    fpioa_set_function(CONFIG_INFRARED_LED_PIN, FUNC_GPIOHS0 + CONFIG_INFRARED_GPIOHS_NUM);
-    gpiohs_set_drive_mode(CONFIG_INFRARED_GPIOHS_NUM, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(CONFIG_INFRARED_GPIOHS_NUM, 1);
+    fpioa_set_function(CONFIG_PIN_NUM_IR_LED, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_IR_LED);
+    gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_IR_LED, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_IR_LED, 1);
+#endif /* CONFIG_ENABLE_IR_LED */
+
+#if CONFIG_ENABLE_FLASH_LED
+    fpioa_set_function(CONFIG_PIN_NUM_FLASH_LED, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_FLASH_LED);
+    gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_FLASH_LED, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_FLASH_LED, 1);
+#endif /* CONFIG_ENABLE_FLASH_LED */
 
 #if CONFIG_ENABLE_RGB_LED
     //RGB LED
-    fpioa_set_function(CONFIG_LED_R_PIN, FUNC_GPIOHS0 + CONFIG_LED_R_GPIOHS_NUM);
-    gpiohs_set_drive_mode(CONFIG_LED_R_GPIOHS_NUM, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(CONFIG_LED_R_GPIOHS_NUM, 1);
+    fpioa_set_function(CONFIG_PIN_NUM_RGB_LED_R, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_RGB_LED_R);
+    gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_RGB_LED_R, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_RGB_LED_R, 1);
 
-    fpioa_set_function(CONFIG_LED_G_PIN, FUNC_GPIOHS0 + CONFIG_LED_G_GPIOHS_NUM);
-    gpiohs_set_drive_mode(CONFIG_LED_G_GPIOHS_NUM, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(CONFIG_LED_G_GPIOHS_NUM, 1);
+    fpioa_set_function(CONFIG_PIN_NUM_RGB_LED_G, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_RGB_LED_G);
+    gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_RGB_LED_G, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_RGB_LED_G, 1);
 
-    fpioa_set_function(CONFIG_LED_B_PIN, FUNC_GPIOHS0 + CONFIG_LED_B_GPIOHS_NUM);
-    gpiohs_set_drive_mode(CONFIG_LED_B_GPIOHS_NUM, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(CONFIG_LED_B_GPIOHS_NUM, 1);
+    fpioa_set_function(CONFIG_PIN_NUM_RGB_LED_B, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_RGB_LED_B);
+    gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_RGB_LED_B, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_RGB_LED_B, 1);
 #endif /* CONFIG_ENABLE_RGB_LED */
 
-#if CONFIG_ENABLE_FLASH_LED
-    fpioa_set_function(CONFIG_FLASH_LED_PIN, FUNC_GPIOHS0 + CONFIG_FLASH_LED_GPIOHS_NUM);
-    gpiohs_set_drive_mode(CONFIG_FLASH_LED_GPIOHS_NUM, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(CONFIG_FLASH_LED_GPIOHS_NUM, 1);
-#endif /* CONFIG_ENABLE_FLASH_LED */
+#if CONFIG_ENABLE_LCD_BL
+    fpioa_set_function(CONFIG_PIN_NUM_LCD_BL, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_LCD_BL);
+    gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_LCD_BL, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_LCD_BL, 1 - CONFIG_LCD_BL_OPEN_VOL);
+#endif /* CONFIG_ENABLE_LCD_BL */
 
 #if CONFIG_NET_ENABLE
 #if CONFIG_NET_ESP8285
@@ -199,47 +191,35 @@ static void io_mux_init(void)
 ///////////////////////////////////////////////////////////////////////////////
 void set_IR_LED(int state)
 {
-    gpiohs_set_pin(CONFIG_INFRARED_GPIOHS_NUM, state);
+#if CONFIG_ENABLE_IR_LED
+    // gpiohs_set_pin(CONFIG_GPIOHS_NUM_IR_LED, state);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_IR_LED, 1);
+#endif /* CONFIG_ENABLE_IR_LED */
     return;
 }
 
 void set_W_LED(int state)
 {
 #if CONFIG_ENABLE_FLASH_LED
-    gpiohs_set_pin(CONFIG_FLASH_LED_GPIOHS_NUM, state ? 0 : 1);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_FLASH_LED, state ? 0 : 1);
 #endif /* CONFIG_ENABLE_FLASH_LED */
     return;
 }
 
 void set_lcd_bl(int stat)
 {
-    //     if (stat)
-    //     {
-    //         //LCD BL
-    //         fpioa_set_function(CONFIG_LCD_PIN_BL, FUNC_TIMER1_TOGGLE1);
-    //         pwm_init(TIMER_PWM);
-    // #if CONFIG_DETECT_VERTICAL
-    //         pwm_set_frequency(TIMER_PWM, TIMER_PWM_CHN, 1000, 1); //neg, 1 dark
-    // #else
-    //         pwm_set_frequency(TIMER_PWM, TIMER_PWM_CHN, 1000, 0.95); //neg, 1 dark
-    // #endif
-    //         pwm_set_enable(TIMER_PWM, TIMER_PWM_CHN, 1);
-    //     }
-    //     else
-    //     {
-    //         fpioa_set_function(CONFIG_LCD_PIN_BL, FUNC_GPIOHS0 + LCD_BL_HS_NUM);
-    //         gpiohs_set_drive_mode(LCD_BL_HS_NUM, GPIO_DM_OUTPUT);
-    //         gpiohs_set_pin(LCD_BL_HS_NUM, 1);
-    //     }
+#if CONFIG_ENABLE_LCD_BL
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_LCD_BL, stat ? CONFIG_LCD_BL_OPEN_VOL : 1 - CONFIG_LCD_BL_OPEN_VOL);
+#endif /* CONFIG_ENABLE_LCD_BL */
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 void web_set_RGB_LED(uint8_t val[3])
 {
 #if CONFIG_ENABLE_RGB_LED
-    gpiohs_set_pin(CONFIG_LED_R_GPIOHS_NUM, (val[0]) ? 0 : 1);
-    gpiohs_set_pin(CONFIG_LED_G_GPIOHS_NUM, (val[1]) ? 0 : 1);
-    gpiohs_set_pin(CONFIG_LED_B_GPIOHS_NUM, (val[2]) ? 0 : 1);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_RGB_LED_R, (val[0]) ? 0 : 1);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_RGB_LED_G, (val[1]) ? 0 : 1);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_RGB_LED_B, (val[2]) ? 0 : 1);
 #endif
     return;
 }
@@ -248,9 +228,9 @@ void set_RGB_LED(int state)
 {
 #if CONFIG_ENABLE_RGB_LED
     state = state & 0x07;
-    gpiohs_set_pin(CONFIG_LED_R_GPIOHS_NUM, (state & RLED) ? 0 : 1);
-    gpiohs_set_pin(CONFIG_LED_G_GPIOHS_NUM, (state & GLED) ? 0 : 1);
-    gpiohs_set_pin(CONFIG_LED_B_GPIOHS_NUM, (state & BLED) ? 0 : 1);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_RGB_LED_R, (state & RLED) ? 0 : 1);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_RGB_LED_G, (state & GLED) ? 0 : 1);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_RGB_LED_B, (state & BLED) ? 0 : 1);
 #endif
     return;
 }

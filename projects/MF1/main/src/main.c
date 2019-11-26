@@ -8,6 +8,8 @@
 #include "lcd.h"
 #include "lcd_dis.h"
 
+#include "wdt.h"
+
 #if CONFIG_ENABLE_OUTPUT_JPEG
 #include "cQueue.h"
 #include "core1.h"
@@ -61,8 +63,8 @@ static void open_relay(void)
 {
     uint64_t tim = sysctl_get_time_us();
 
-    gpiohs_set_pin(CONFIG_RELAY_LOWX_GPIOHS_NUM, 1);
-    gpiohs_set_pin(CONFIG_RELAY_HIGH_GPIOHS_NUM, 0);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_RELAY_1, CONFIG_RELAY_1_OPEN_VOL);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_RELAY_2, CONFIG_RELAY_2_OPEN_VOL);
 
     last_open_relay_time_in_s = tim / 1000 / 1000;
     relay_open_flag = 1;
@@ -70,8 +72,40 @@ static void open_relay(void)
 
 static void close_relay(void)
 {
-    gpiohs_set_pin(CONFIG_RELAY_LOWX_GPIOHS_NUM, 0);
-    gpiohs_set_pin(CONFIG_RELAY_HIGH_GPIOHS_NUM, 1);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_RELAY_1, 1 - CONFIG_RELAY_1_OPEN_VOL);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_RELAY_2, 1 - CONFIG_RELAY_2_OPEN_VOL);
+}
+
+//FIXME: 这个不能多核公用
+int wdt_irq_core0(void *ctx)
+{
+    static int s_wdt_irq_cnt = 0;
+    s_wdt_irq_cnt++;
+    if (s_wdt_irq_cnt < 2)
+    {
+        wdt_clear_interrupt(0);
+    }
+    else
+    {
+        while (1)
+        {
+            sysctl_reset(SYSCTL_RESET_SOC);
+        };
+    }
+    return 0;
+}
+
+#define WATCH_DOG_TIMEOUT_MS (8 * 1000)
+#define WATCH_DOG_FEED_TIME_MS (1 * 1000)
+
+void watchdog_init(uint8_t id)
+{
+    wdt_start(id, WATCH_DOG_TIMEOUT_MS, wdt_irq_core0);
+}
+
+void watchdog_feed(uint8_t id)
+{
+    wdt_feed(id);
 }
 
 #if CONFIG_FACE_PASS_ONLY_OUT_UID
@@ -117,6 +151,7 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
 
     last_pass_time = tim;
 
+#if CONFIG_ENABLE_UART_PROTOCOL
     /* output feature */
     if (g_board_cfg.brd_soft_cfg.cfg.auto_out_fea)
     {
@@ -139,7 +174,6 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
             open_relay(); //open when score > gate
             if (flash_get_saved_faceinfo(&info, obj->index) == 0)
             {
-
 #if CONFIG_FACE_PASS_ONLY_OUT_UID
                 char str[48];
                 hex2str(info.uid, UID_LEN, str);
@@ -179,7 +213,7 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
             printk("face score not pass\r\n");
         }
     }
-
+#endif /* CONFIG_ENABLE_UART_PROTOCOL */
     if (g_board_cfg.brd_soft_cfg.cfg.auto_out_fea == 0)
     {
         lcd_draw_pass();
@@ -187,6 +221,7 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
     return;
 }
 
+#if CONFIG_ENABLE_UART_PROTOCOL
 //recv: {"version":1,"type":"test"}
 //send: {"version":1,"type":"test","code":0,"msg":"test"}
 void test_cmd(cJSON *root)
@@ -230,9 +265,11 @@ protocol_custom_cb_t user_custom_cmd[] = {
     {.cmd = "test", .cmd_cb = test_cmd},
     {.cmd = "test2", .cmd_cb = test2_cmd},
 };
+#endif /* CONFIG_ENABLE_UART_PROTOCOL */
 
 int main(void)
 {
+    static uint64_t last_feed_ms = 0;
     uint64_t tim = 0;
 
     board_init();
@@ -261,6 +298,10 @@ int main(void)
 
     face_lib_regisiter_callback(&face_recognition_cb);
 
+#if !CONFIG_ENABLE_UART_PROTOCOL
+    init_lcd_cam(&g_board_cfg);
+    init_relay_key_pin(&g_board_cfg);
+#else
 #if CONFIG_NET_ENABLE
     protocol_init_device(&g_board_cfg, 1);
 #if CONFIG_NET_ESP8285
@@ -269,9 +310,11 @@ int main(void)
 #elif CONFIG_NET_W5500
     extern void demo_w5500(void);
     demo_w5500();
-#endif
-#endif
+#endif /* CONFIG_NET_ESP8285 */
+#endif /* CONFIG_NET_ENABLE */
+#endif /* CONFIG_ENABLE_OUTPUT_JPEG */
 
+#if CONFIG_ENABLE_UART_PROTOCOL
 #if CONFIG_ENABLE_OUTPUT_JPEG
     /* 这个需要可配置 */
     fpioa_set_function(CONFIG_JPEG_OUTPUT_PORT_TX, FUNC_UART1_TX + UART_DEV2 * 2);
@@ -289,13 +332,24 @@ int main(void)
     protocol_regesiter_user_cb(&user_custom_cmd[0], sizeof(user_custom_cmd) / sizeof(user_custom_cmd[0]));
     protocol_init_device(&g_board_cfg, 0);
     protocol_send_init_done();
+#endif /* CONFIG_ENABLE_UART_PROTOCOL */
+
+    /* all cfg, if modify by uart, must reboot to get effect */
+    face_recognition_cfg.auto_out_fea = (uint8_t)g_board_cfg.brd_soft_cfg.cfg.auto_out_fea;
+    face_recognition_cfg.compare_threshold = (float)g_board_cfg.brd_soft_cfg.out_threshold;
+
+    set_lcd_bl(1);
+
+    watchdog_init(0); /* init watch dog */
 
     while (1)
     {
+#if CONFIG_ENABLE_UART_PROTOCOL
         if (!jpeg_recv_start_flag)
+#endif /* CONFIG_ENABLE_UART_PROTOCOL */
         {
-            face_recognition_cfg.auto_out_fea = (uint8_t)g_board_cfg.brd_soft_cfg.cfg.auto_out_fea;
-            face_recognition_cfg.compare_threshold = (float)g_board_cfg.brd_soft_cfg.out_threshold;
+            // face_recognition_cfg.auto_out_fea = (uint8_t)g_board_cfg.brd_soft_cfg.cfg.auto_out_fea;
+            // face_recognition_cfg.compare_threshold = (float)g_board_cfg.brd_soft_cfg.out_threshold;
             face_lib_run(&face_recognition_cfg);
         }
 
@@ -345,13 +399,6 @@ int main(void)
             relay_open_flag = 0;
         }
 
-        /******Process uart protocol********/
-        if (recv_over_flag)
-        {
-            protocol_prase(cJSON_prase_buf);
-            recv_over_flag = 0;
-        }
-
         if (lcd_bl_stat == 0)
         {
             static uint8_t led_cnt = 0, led_stat = 0;
@@ -362,6 +409,25 @@ int main(void)
                 led_stat ^= 0x1;
                 set_RGB_LED(led_stat ? GLED : 0);
             }
+        }
+
+        //feed
+        tim = sysctl_get_time_us();
+        tim /= 1000; //ms
+        if ((tim - last_feed_ms) > WATCH_DOG_FEED_TIME_MS)
+        {
+            // printk("heap:%ld KB\r\n", get_free_heap_size() / 1024);
+            printk("feed wdt\r\n");
+            last_feed_ms = tim;
+            watchdog_feed(0);
+        }
+
+#if CONFIG_ENABLE_UART_PROTOCOL
+        /******Process uart protocol********/
+        if (recv_over_flag)
+        {
+            protocol_prase(cJSON_prase_buf);
+            recv_over_flag = 0;
         }
 
         if (jpeg_recv_start_flag)
@@ -383,5 +449,6 @@ int main(void)
                 jpeg_recv_start_flag = 0;
             }
         }
+#endif /* CONFIG_ENABLE_UART_PROTOCOL */
     }
 }

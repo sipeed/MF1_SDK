@@ -5,6 +5,9 @@
 #include "lcd.h"
 #include "camera.h"
 
+#include "global_config.h"
+
+#if CONFIG_ENABLE_UART_PROTOCOL
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 volatile uint8_t recv_over_flag = 0;
 volatile uint8_t jpeg_recv_start_flag = 0;
@@ -151,8 +154,9 @@ static void init_board_uart_port(board_cfg_t *brd_cfg)
     fpioa_set_function(log_tx, FUNC_UART1_TX + DBG_UART_NUM * 2);
     fpioa_set_function(log_rx, FUNC_UART1_RX + DBG_UART_NUM * 2);
 }
+#endif /* CONFIG_ENABLE_UART_PROTOCOL */
 
-static void init_relay_key_pin(board_cfg_t *brd_cfg)
+void init_relay_key_pin(board_cfg_t *brd_cfg)
 {
     uint8_t key_dir, key_pin, relay_0_pin, relay_1_pin;
 
@@ -164,35 +168,35 @@ static void init_relay_key_pin(board_cfg_t *brd_cfg)
     printk("board key relay cfg:\r\n\tkey:%d\tkey_dir:%d\trelay_high:%d\trelay_low:%d\r\n", key_pin, key_dir, relay_1_pin, relay_0_pin);
 
     //setup key low
-    fpioa_set_function(relay_0_pin, FUNC_GPIOHS0 + CONFIG_RELAY_LOWX_GPIOHS_NUM);
-    gpiohs_set_drive_mode(CONFIG_RELAY_LOWX_GPIOHS_NUM, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(CONFIG_RELAY_LOWX_GPIOHS_NUM, 0);
+    fpioa_set_function(relay_0_pin, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_RELAY_1);
+    gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_RELAY_1, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_RELAY_1, 1 - CONFIG_RELAY_1_OPEN_VOL);
 
     //setup key high
-    fpioa_set_function(relay_1_pin, FUNC_GPIOHS0 + CONFIG_RELAY_HIGH_GPIOHS_NUM);
-    gpiohs_set_drive_mode(CONFIG_RELAY_HIGH_GPIOHS_NUM, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(CONFIG_RELAY_HIGH_GPIOHS_NUM, 1);
+    fpioa_set_function(relay_1_pin, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_RELAY_2);
+    gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_RELAY_2, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_RELAY_2, 1 - CONFIG_RELAY_2_OPEN_VOL);
 
     //set up key
-    fpioa_set_function(key_pin, FUNC_GPIOHS0 + CONFIG_FUNCTION_KEY_GPIOHS_NUM); //KEY
+    fpioa_set_function(key_pin, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_USER_KEY); //KEY
     if (key_dir)
     {
-        gpiohs_set_drive_mode(CONFIG_FUNCTION_KEY_GPIOHS_NUM, GPIO_DM_INPUT_PULL_DOWN);
-        gpiohs_set_pin_edge(CONFIG_FUNCTION_KEY_GPIOHS_NUM, GPIO_PE_RISING);
+        gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_USER_KEY, GPIO_DM_INPUT_PULL_DOWN);
+        gpiohs_set_pin_edge(CONFIG_GPIOHS_NUM_USER_KEY, GPIO_PE_RISING);
     }
     else
     {
-        gpiohs_set_drive_mode(CONFIG_FUNCTION_KEY_GPIOHS_NUM, GPIO_DM_INPUT_PULL_UP);
-        gpiohs_set_pin_edge(CONFIG_FUNCTION_KEY_GPIOHS_NUM, GPIO_PE_FALLING);
+        gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_USER_KEY, GPIO_DM_INPUT_PULL_UP);
+        gpiohs_set_pin_edge(CONFIG_GPIOHS_NUM_USER_KEY, GPIO_PE_FALLING);
     }
-    gpiohs_irq_register(CONFIG_FUNCTION_KEY_GPIOHS_NUM, 2, irq_gpiohs, NULL);
+    gpiohs_irq_register(CONFIG_GPIOHS_NUM_USER_KEY, 2, irq_gpiohs, NULL);
 
     sKey_dir = key_dir;
 
     return;
 }
 
-static void init_lcd_cam(board_cfg_t *brd_cfg)
+void init_lcd_cam(board_cfg_t *brd_cfg)
 {
     uint8_t lcd_dir, lcd_flip, lcd_hmirror, cam_flip, cam_hmirror;
 
@@ -227,6 +231,7 @@ static void init_lcd_cam(board_cfg_t *brd_cfg)
     return;
 }
 
+#if CONFIG_ENABLE_UART_PROTOCOL
 //init uart port
 int8_t protocol_init_device(board_cfg_t *brd_cfg, uint8_t op)
 {
@@ -279,11 +284,13 @@ int8_t protocol_init_device(board_cfg_t *brd_cfg, uint8_t op)
 
     return 0;
 }
+#endif /* CONFIG_ENABLE_UART_PROTOCOL */
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void protocol_start_recv_jpeg(void)
 {
     printk("protocol_start_recv_jpeg\r\n");
-
+#if CONFIG_ENABLE_UART_PROTOCOL
     jpeg_recv_start_flag = 1;
     recv_jpeg_flag = 1;
     jpeg_recv_len = 0;
@@ -296,12 +303,13 @@ void protocol_start_recv_jpeg(void)
     dvp_set_output_enable(1, 0);
 
     dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 0);
+#endif /* CONFIG_ENABLE_UART_PROTOCOL */
 }
 
 void protocol_stop_recv_jpeg(void)
 {
     printk("protocol_stop_recv_jpeg\r\n");
-
+#if CONFIG_ENABLE_UART_PROTOCOL
     jpeg_recv_start_flag = 0;
     recv_jpeg_flag = 0;
 
@@ -315,6 +323,7 @@ void protocol_stop_recv_jpeg(void)
 
     dvp_clear_interrupt(DVP_STS_FRAME_START | DVP_STS_FRAME_FINISH);
     dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 1);
+#endif /* CONFIG_ENABLE_UART_PROTOCOL */
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

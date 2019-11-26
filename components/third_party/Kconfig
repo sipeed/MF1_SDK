@@ -3,5 +3,6 @@ menu "Third party config"
     config OOFATFS_ENABLE
 			bool "Enbale oofatfs"
 			default n
+			select ENABLE_SD_CARD
 endmenu
 

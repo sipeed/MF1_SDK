@@ -1,95 +1,13 @@
 
-
-config COMPONENT_DRIVERS_ENABLE
-	bool "Enbale drivers component"
-	default y
-	select COMPONENT_KENDRYTE_SDK_ENABLE
-
 menu "Drivers configuration"
-	depends on COMPONENT_DRIVERS_ENABLE
 
-	menu "LCD configuration"
-		choice LCD_TYPE
-			bool "LCD driver type"
-			default LCD_TYPE_ST7789
+    # camera
+    osource "${SDK_PATH}/components/drivers/camera/Kconfig"
 
-			config LCD_TYPE_ST7789
-				bool "LCD use ST7789"
-			config LCD_TYPE_SIPEED
-				bool "LCD use sipeed board"
-		endchoice
+    # lcd
+    osource "${SDK_PATH}/components/drivers/lcd/Kconfig"
 
-		menu "Lcd ( Display ) configuration"
-
-			config LCD_WIDTH
-				depends on LCD_TYPE_ST7789
-				int "Lcd display size width"
-				default 240
-			config LCD_HEIGHT
-				depends on LCD_TYPE_ST7789
-				int "Lcd display size height"
-				default 240
-
-			config LCD_CLK_FREQ_MHZ
-				int "lcd clk frequency MHZ"
-				default 15
-		endmenu
-
-		menu "LCD Pin Func configuration"
-			config LCD_GPIOHS_DCX
-				int "LCD Pin DCX bind with GPIOHS num"
-				default 0
-			config LCD_GPIOHS_RST
-				int "LCD Pin RST bind with GPIOHS num"
-				default 1
-		endmenu
-	endmenu
-
-	menu "Camera( Sensor ) configuration"
-		comment "!!!DONT MODIFY CAMERA_RESOLUTION!!!"
-
-		choice CAMERA_TYPE
-			bool "Camera type"
-			default CAMERA_GC0328_DUAL
-
-			config CAMERA_OV2640
-				bool "single ov2640"
-				select NOT_MF1_BOARD
-			config CAMERA_GC0328_SINGLE
-				bool "single gc0328"
-			config CAMERA_GC0328_DUAL
-				bool "dual gc0328, IR+RGB"
-		endchoice
-
-		config CAMERA_RESOLUTION_WIDTH
-			int "Camera resolution width"
-			default 320
-		config CAMERA_RESOLUTION_HEIGHT
-			int "Camera resolution height"
-			default 240
-	endmenu
-
-	menu "SPI TF card configuration"
-		config SD_CARD_ENABLE
-			bool "Enable SPI TF card"
-			default n
-
-		menu "SPI TF card Pin Func configuration"
-			depends on SD_CARD_ENABLE
-			config TF_SPI_GPIOHS_NUM_SCLK
-				int "SPI TF card GPIOHS simulate SCK number"
-				default 2
-			config TF_SPI_GPIOHS_NUM_MOSI
-				int "SPI TF card GPIOHS simulate MOSI number"
-				default 3
-			config TF_SPI_GPIOHS_NUM_MISO
-				int "SPI TF card GPIOHS simulate MISO number"
-				default 4
-			config TF_SPI_GPIOHS_NUM_CS
-				int "SPI TF card GPIOHS simulate CS number"
-				default 5
-		endmenu
-	endmenu
+    # sd_card
+    osource "${SDK_PATH}/components/drivers/sd_card/Kconfig"
 
 endmenu
-

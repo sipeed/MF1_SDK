@@ -23,4 +23,7 @@ int8_t protocol_init_device(board_cfg_t *brd_cfg, uint8_t op);
 void protocol_start_recv_jpeg(void);
 void protocol_stop_recv_jpeg(void);
 
+void init_relay_key_pin(board_cfg_t *brd_cfg);
+void init_lcd_cam(board_cfg_t *brd_cfg);
+
 #endif

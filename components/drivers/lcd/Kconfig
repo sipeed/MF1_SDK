@@ -1,0 +1,66 @@
+
+menu "LCD configuration"
+
+    config ENABLE_LCD
+        bool "enable lcd"
+        default y
+
+    choice LCD_TYPE
+        depends on ENABLE_LCD
+
+        bool "LCD driver type"
+        default LCD_TYPE_ST7789
+
+        config LCD_TYPE_ST7789
+            bool "LCD use ST7789"
+        config LCD_TYPE_SIPEED
+            bool "LCD use sipeed board, not support now"
+    endchoice
+
+    menu "Lcd ( Display ) configuration"
+        depends on ENABLE_LCD
+
+        config LCD_WIDTH
+            depends on LCD_TYPE_ST7789
+            int "Lcd display size width"
+            default 240
+        config LCD_HEIGHT
+            depends on LCD_TYPE_ST7789
+            int "Lcd display size height"
+            default 240
+
+        config LCD_CLK_FREQ_MHZ
+            depends on LCD_TYPE_ST7789
+            int "lcd clk frequency MHZ"
+            default 15
+    endmenu
+
+    menu "LCD Pin configuration"
+        depends on ENABLE_LCD
+
+        config PIN_NUM_LCD_RST
+            int "LCD Pin RST"
+            default 37
+        config PIN_NUM_LCD_DCX
+            int "LCD Pin DCX"
+            default 38
+        config PIN_NUM_LCD_WRX
+            int "LCD Pin WRX"
+            default 36
+        config PIN_NUM_LCD_SCK
+            int "LCD Pin SCK"
+            default 39
+    endmenu
+
+    menu "LCD Pin Func configuration"
+        depends on ENABLE_LCD
+
+        config GPIOHS_NUM_LCD_DCX
+            int "LCD Pin DCX bind with GPIOHS num"
+            default 0
+        config GPIOHS_NUM_LCD_RST
+            int "LCD Pin RST bind with GPIOHS num"
+            default 1
+    endmenu
+
+endmenu
