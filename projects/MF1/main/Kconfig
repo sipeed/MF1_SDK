@@ -384,6 +384,11 @@ menu "Application configuration"
 		default n
 		---help---
 		build for Bit,Go,DOck or Othres
+		
+	config ENABLE_SD_OTA
+		bool "support OTA from sd card"
+		default n
+		select OOFATFS_ENABLE
 
 	comment "--------------------------------"
 

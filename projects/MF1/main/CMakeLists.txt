@@ -1,8 +1,7 @@
 ############### Add include ###################
-list(APPEND ADD_INCLUDE "audio"
+list(APPEND ADD_INCLUDE "include"
                         "face_lib"
                         "uart_recv"
-                        "include"
                         #esp8285
                         "network/esp8285"
                         "network/esp8285/http"
@@ -20,13 +19,21 @@ list(APPEND ADD_INCLUDE "audio"
                         "network/w5500/spi"
                         "network/w5500/src"
                         "network/w5500/src/utility"
+                        #sd_op
+                        "sd_op/include"
     )
 # list(APPEND ADD_PRIVATE_INCLUDE "")
 ###############################################
 
 ############ Add source files #################
-append_srcs_dir(ADD_SRCS "audio")
+append_srcs_dir(ADD_SRCS "src")
 append_srcs_dir(ADD_SRCS "face_lib")
+append_srcs_dir(ADD_SRCS "uart_recv")
+
+if(CONFIG_ENABLE_SD_OTA)
+    append_srcs_dir(ADD_SRCS "sd_op/src")
+    list(APPEND ADD_REQUIREMENTS  third_party)
+endif()
 
 if(CONFIG_NET_ENABLE)
     if(CONFIG_NET_ESP8285)
@@ -38,9 +45,6 @@ if(CONFIG_NET_ENABLE)
     endif()
     list(APPEND ADD_SRCS ${NETWORK_SRC})
 endif()
-
-append_srcs_dir(ADD_SRCS "src")
-append_srcs_dir(ADD_SRCS "uart_recv")
 
 # aux_source_directory(src ADD_SRCS)
 # list(REMOVE_ITEM COMPONENT_SRCS "src/test2.c")
