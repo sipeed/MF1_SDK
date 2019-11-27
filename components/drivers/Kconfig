@@ -7,6 +7,9 @@ menu "Drivers configuration"
     # lcd
     osource "${SDK_PATH}/components/drivers/lcd/Kconfig"
 
+	#rtc
+	osource "${SDK_PATH}/components/drivers/rtc/Kconfig"
+    
     # sd_card
     osource "${SDK_PATH}/components/drivers/sd_card/Kconfig"
 

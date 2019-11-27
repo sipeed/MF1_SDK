@@ -1,0 +1,65 @@
+menu "RTC configuration"
+
+    config ENABLE_RTC
+        bool "enable rtc"
+        default n
+
+    choice RTC_TYPE
+        depends on ENABLE_RTC
+        bool "RTC Type"
+        default RTC_TYPE_BM8563
+
+        config RTC_TYPE_GM1302
+            bool "rtc use gm1302"
+
+        config RTC_TYPE_BM8563
+            bool "rtc use bm8563"
+    endchoice
+
+    menu "GM1302 Pin configuration"
+        depends on RTC_TYPE_GM1302
+
+        config PIN_NUM_RTC_GM1302_RST 
+            int "RTC GM1302 Pin RST"
+            default 11
+        config PIN_NUM_RTC_GM1302_DAT 
+            int "RTC GM1302 Pin DAT"
+            default 13
+        config PIN_NUM_RTC_GM1302_CLK 
+            int "RTC GM1302 Pin CLK"
+            default 12
+    endmenu
+
+    menu "GM1302 Pin Func configuration"
+        depends on RTC_TYPE_GM1302
+        config GPIOHS_NUM_RTC_GM1302_RST 
+            int "RTC GM1302 GPIOHS RST num"
+            default 6
+        config GPIOHS_NUM_RTC_GM1302_DAT
+            int "RTC GM1302 GPIOHS DAT num"
+            default 7
+        config GPIOHS_NUM_RTC_GM1302_CLK
+            int "RTC GM1302 GPIOHS CLK num"
+            default 8
+    endmenu
+
+    menu "RTC BM8563 Pin configuration"
+        depends on RTC_TYPE_BM8563
+        config PIN_NUM_RTC_BM8563_SDA
+            int "RTC BM8563 Pin SDA"
+            default 31
+        config PIN_NUM_RTC_BM8563_SCL
+            int "RTC BM8563 Pin SCL"
+            default 30
+    endmenu
+
+    menu "RTC BM8563 Pin Func configuration"
+        depends on RTC_TYPE_BM8563
+        config GPIOHS_NUM_RTC_BM8563_SDA
+            int "RTC BM8563 GPIOHS SDA"
+            default 6
+        config GPIOHS_NUM_RTC_BM8563_SCL
+            int "RTC BM8563 GPIOHS SCL"
+            default 7
+    endmenu
+endmenu
