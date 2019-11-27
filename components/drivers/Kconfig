@@ -1,6 +1,9 @@
 
 menu "Drivers configuration"
 
+    #audio
+    osource "${SDK_PATH}/components/drivers/audio/Kconfig"
+
     # camera
     osource "${SDK_PATH}/components/drivers/camera/Kconfig"
 

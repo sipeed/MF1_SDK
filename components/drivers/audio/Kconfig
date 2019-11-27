@@ -1,0 +1,68 @@
+menu "Audio Speaker"
+    config ENABLE_SPK
+        bool "enable speaker"
+        default n
+    
+    choice SPK_TYPE
+        depends on ENABLE_SPK
+        bool "speaker type"
+        default SPK_TYPE_PT8211
+
+        config SPK_TYPE_ES8374
+            bool "speaker use es8374"
+        
+        config SPK_TYPE_PT8211
+            bool "speaker use pt8211"
+    endchoice
+
+    menu "ES8374 Pin configuration"
+        depends on SPK_TYPE_ES8374
+
+        config PIN_NUM_ES8374_MCLK
+            int "es8374 pin mclk"
+            default 19
+        config PIN_NUM_ES8374_DIN
+            int "es8374 pin din"
+            default 18
+        config PIN_NUM_ES8374_DOUT
+            int "es8374 pin dout"
+            default 34
+        config PIN_NUM_ES8374_SCLK
+            int "es8374 pin sclk"
+            default 35
+        config PIN_NUM_ES8374_WS
+            int "es8374 pin ws"
+            default 33
+
+        config PIN_NUM_ES8374_I2C_SDA
+            int "es8374 pin i2c sda"
+            default 31
+
+        config PIN_NUM_ES8374_I2C_SCL
+            int "es8374 pin i2c scl"
+            default 30
+    endmenu
+
+    menu "PT8211 configuration"
+        depends on SPK_TYPE_PT8211
+
+        config PIN_NUM_PT8211_DAT
+            int "pt8211 dat pin num"
+            default 18
+        config PIN_NUM_PT8211_CLK
+            int "pt8211 clk pin num"
+            default 35
+        config PIN_NUM_PT8211_WS
+            int "pt8211 ws pin num"
+            default 33
+        config PIN_NUM_PT8211_PA_EN
+            int "pt8211 pa_en pin num"
+            default 11
+
+        comment "------------------------------------------"
+
+        config GPIO_NUM_PT8211_PA_EN
+            int "gpio num of pt8211 pa en"
+            default 2
+    endmenu
+endmenu
