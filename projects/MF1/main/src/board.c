@@ -11,9 +11,13 @@
 #include "sysctl.h"
 #include "uart.h"
 #include "uarths.h"
+#include "rtc.h"
 
+#include "audio.h"
 #include "camera.h"
 #include "lcd.h"
+#include "sipeed_rtc.h"
+
 #include "flash.h"
 #include "face_lib.h"
 
@@ -21,7 +25,7 @@
 #include "global_config.h"
 ///////////////////////////////////////////////////////////////////////////////
 volatile board_cfg_t g_board_cfg;
-
+volatile uint8_t g_rtc_tick_flag = 0;
 volatile uint8_t g_key_press = 0;
 volatile uint8_t g_key_long_press = 0;
 uint8_t sKey_dir = 0;
@@ -117,13 +121,13 @@ static void io_mux_init(void)
     //IR LED
     fpioa_set_function(CONFIG_PIN_NUM_IR_LED, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_IR_LED);
     gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_IR_LED, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(CONFIG_GPIOHS_NUM_IR_LED, 1);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_IR_LED, 1 - CONFIG_IR_LED_OPEN_VOL);
 #endif /* CONFIG_ENABLE_IR_LED */
 
 #if CONFIG_ENABLE_FLASH_LED
     fpioa_set_function(CONFIG_PIN_NUM_FLASH_LED, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_FLASH_LED);
     gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_FLASH_LED, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(CONFIG_GPIOHS_NUM_FLASH_LED, 1);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_FLASH_LED, 1 - CONFIG_FLASH_LED_OPEN_VOL);
 #endif /* CONFIG_ENABLE_FLASH_LED */
 
 #if CONFIG_ENABLE_RGB_LED
@@ -176,12 +180,12 @@ static void io_mux_init(void)
     fpioa_set_function(CONFIG_WIFI_PIN_SPI_SCLK, FUNC_SPI1_SCLK);                         //CLK
 #elif CONFIG_NET_W5500
     /* ETH */
-    fpioa_set_function(CONFIG_ETH_PIN_CS, FUNC_GPIOHS0 + CONFIG_ETH_GPIOHS_NUM_CS); //CSS
+    fpioa_set_function(CONFIG_PIN_NUM_ETH_W5500_CS, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_W5500_CS); //CSS
     // fpioa_set_function(CONFIG_ETH_PIN_RST, FUNC_GPIOHS0 + CONFIG_ETH_GPIOHS_NUM_RST); //RST
 
-    fpioa_set_function(CONFIG_ETH_PIN_MISO, FUNC_SPI1_D1);   //MISO
-    fpioa_set_function(CONFIG_ETH_PIN_MOSI, FUNC_SPI1_D0);   //MOSI
-    fpioa_set_function(CONFIG_ETH_PIN_SCLK, FUNC_SPI1_SCLK); //CLK
+    fpioa_set_function(CONFIG_PIN_NUM_ETH_W5500_MISO, FUNC_SPI1_D1);   //MISO
+    fpioa_set_function(CONFIG_PIN_NUM_ETH_W5500_MOSI, FUNC_SPI1_D0);   //MOSI
+    fpioa_set_function(CONFIG_PIN_NUM_ETH_W5500_SCLK, FUNC_SPI1_SCLK); //CLK
 #else
 #error("no net if select")
 #endif
@@ -192,8 +196,8 @@ static void io_mux_init(void)
 void set_IR_LED(int state)
 {
 #if CONFIG_ENABLE_IR_LED
-    // gpiohs_set_pin(CONFIG_GPIOHS_NUM_IR_LED, state);
-    gpiohs_set_pin(CONFIG_GPIOHS_NUM_IR_LED, 1);
+    // gpiohs_set_pin(CONFIG_GPIOHS_NUM_IR_LED, state ? CONFIG_IR_LED_OPEN_VOL : 1 - CONFIG_IR_LED_OPEN_VOL);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_IR_LED, CONFIG_IR_LED_OPEN_VOL);
 #endif /* CONFIG_ENABLE_IR_LED */
     return;
 }
@@ -201,7 +205,8 @@ void set_IR_LED(int state)
 void set_W_LED(int state)
 {
 #if CONFIG_ENABLE_FLASH_LED
-    gpiohs_set_pin(CONFIG_GPIOHS_NUM_FLASH_LED, state ? 0 : 1);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_FLASH_LED, state ? CONFIG_FLASH_LED_OPEN_VOL : 1 - CONFIG_FLASH_LED_OPEN_VOL);
+    // gpiohs_set_pin(CONFIG_GPIOHS_NUM_FLASH_LED, CONFIG_FLASH_LED_OPEN_VOL);
 #endif /* CONFIG_ENABLE_FLASH_LED */
     return;
 }
@@ -236,6 +241,100 @@ void set_RGB_LED(int state)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+#if CONFIG_ENABLE_RTC
+static int rtc_tick_cb(void *ctx)
+{
+    printk("rtc\r\n");
+    g_rtc_tick_flag = 1;
+    return 0;
+}
+#endif /* CONFIG_ENABLE_RTC */
+
+#if CONFIG_ENABLE_WECHAT
+void update_rtc_time(mqtt_rtc_time_t *rtc_time)
+{
+    int year, month, day, hour, min, sec;
+
+    if (rtc_time == NULL)
+    {
+        return;
+    }
+
+    year = rtc_time->year;
+    month = rtc_time->mon;
+    day = rtc_time->day;
+    hour = rtc_time->hour;
+    min = rtc_time->min;
+    sec = rtc_time->sec;
+
+    rtc_timer_set(year, month, day, hour, min, sec);
+
+#if CONFIG_ENABLE_RTC
+    struct sipeed_rtc_time time;
+    time.tm_sec = (uint8_t)sec;
+    time.tm_min = (uint8_t)min;
+    time.tm_hour = (uint8_t)hour;
+    time.tm_mday = (uint8_t)day;
+    time.tm_mon = (uint8_t)month;
+    time.tm_year = (uint16_t)year;
+    sipeed_rtc_write_time(&time);
+#endif /* CONFIG_ENABLE_RTC */
+
+    update_time();
+    return;
+}
+
+uint64_t rtc_get_time_timestamp(mqtt_rtc_time_t *rtc_time)
+{
+    int year, mon, day, hour, min, sec;
+    uint64_t timestamp = 0;
+
+    rtc_timer_get(&year, &mon, &day, &hour, &min, &sec);
+
+    printk("read time: %04d-%02d-%02d %02d:%02d:%02d\r\n", year, mon, day, hour, min, sec);
+
+    //January and February are counted as months 13 and 14 of the previous year
+    if (mon <= 2)
+    {
+        mon += 12;
+        year -= 1;
+    }
+
+    hour -= 8; /* 东八区 */
+    //Convert years to days
+    timestamp = (365 * year) + (year / 4) - (year / 100) + (year / 400);
+    //Convert months to days
+    timestamp += (30 * mon) + (3 * (mon + 1) / 5) + day;
+    //Unix time starts on January 1st, 1970
+    timestamp -= 719561;
+    //Convert days to seconds
+    timestamp *= 86400;
+    //Add hours, minutes and seconds
+    timestamp += (3600 * hour) + (60 * min) + sec;
+
+    printk("timestamp: %ld\r\n", timestamp);
+
+    if (rtc_time)
+    {
+        rtc_time->year = year;
+        rtc_time->mon = mon;
+        rtc_time->day = day;
+        rtc_time->hour = hour;
+        rtc_time->min = min;
+        rtc_time->sec = sec;
+
+        rtc_time->time_stamp = timestamp;
+    }
+
+    return timestamp;
+}
+#endif /* CONFIG_ENABLE_WECHAT */
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 void board_init(void)
 {
     /* Set CPU and dvp clk */
@@ -246,14 +345,45 @@ void board_init(void)
     plic_init();
     io_mux_init();
 
+    /* Flash init */
+    flash_init();
+
     set_IR_LED(0);
+
+#if CONFIG_ENABLE_SPK
+#if CONFIG_SPK_TYPE_ES8374
+    audio_init(AUDIO_TYPE_ES8374);
+#elif CONFIG_SPK_TYPE_PT8211
+    audio_init(AUDIO_TYPE_PT8211);
+#endif /* CONFIG_SPK_TYPE_ES8374 */
+#endif /* CONFIG_ENABLE_SPK */
+
+#if CONFIG_ENABLE_RTC
+#if CONFIG_RTC_TYPE_GM1302
+    sipeed_rtc_init(RTC_TYPE_GM1302);
+#elif CONFIG_RTC_TYPE_BM8563
+    sipeed_rtc_init(RTC_TYPE_BM8563);
+#endif /* CONFIG_RTC_TYPE_GM1302 */
+
+    /* here we use K210's RTC */
+    struct sipeed_rtc_time t2;
+
+    sipeed_rtc_read_time(&t2);
+    printk("set rtc: %04d-%02d-%02d %02d:%02d:%02d %d\r\n", t2.tm_year, t2.tm_mon, t2.tm_mday,
+           t2.tm_hour, t2.tm_min, t2.tm_sec, t2.tm_wday);
+
+    rtc_init();
+    rtc_timer_set(t2.tm_year, t2.tm_mon, t2.tm_mday,
+                  t2.tm_hour, t2.tm_min, t2.tm_sec);
+    rtc_tick_irq_register(0, RTC_INT_MINUTE, rtc_tick_cb, NULL, 2);
+#endif /* CONFIG_ENABLE_RTC */
 
     /* DVP init */
 #ifndef CONFIG_NOT_MF1_BOARD
     //build for MF1
     my_dvp_init(8);
-    // my_dvp_set_xclk_rate(48000000);
-    my_dvp_set_xclk_rate(36000000);
+    my_dvp_set_xclk_rate(48000000);
+    // my_dvp_set_xclk_rate(36000000);
     // my_dvp_set_xclk_rate(24000000);
 #else
     //build for Others
@@ -281,9 +411,6 @@ void board_init(void)
     dvp_set_display_addr((uint32_t)display_image);
     dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 0);
     dvp_disable_auto();
-
-    /* Flash init */
-    flash_init();
 
     /* LCD init */
 #if CONFIG_LCD_TYPE_ST7789

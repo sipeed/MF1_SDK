@@ -33,8 +33,8 @@ void eth_w5500_spi_init(void)
     printf("hard spi\r\n");
 
     /* init cs */
-    gpiohs_set_drive_mode(CONFIG_ETH_GPIOHS_NUM_CS, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(CONFIG_ETH_GPIOHS_NUM_CS, 1);
+    gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_W5500_CS, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_W5500_CS, 1);
 
 #if 0 
     /* init rst */
@@ -76,13 +76,13 @@ void eth_w5500_reset(uint8_t val)
 //lib call
 void eth_w5500_spi_cs_sel(void)
 {
-    gpiohs_set_pin(CONFIG_ETH_GPIOHS_NUM_CS, 0);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_W5500_CS, 0);
     return;
 }
 
 void eth_w5500_spi_cs_desel(void)
 {
-    gpiohs_set_pin(CONFIG_ETH_GPIOHS_NUM_CS, 1);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_W5500_CS, 1);
     return;
 }
 

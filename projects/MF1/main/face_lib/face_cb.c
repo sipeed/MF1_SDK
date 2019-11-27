@@ -9,6 +9,7 @@
 #include "lcd_dis.h"
 
 #include "lcd.h"
+#include "audio.h"
 
 #include "global_config.h"
 
@@ -200,7 +201,20 @@ void lcd_draw_pass(void)
 
     face_lib_draw_flag = 1;
     set_RGB_LED(GLED);
-    msleep(500); //this delay can modify
+
+#if CONFIG_ENABLE_SPK
+    printk("play\r\n");
+    uint8_t *wav_data = malloc((AUDIO_PASS_SIZE));
+    uint32_t wav_size = 34 * 512; //17920;
+    if (wav_data)
+    {
+        w25qxx_read_data(AUDIO_PASS_ADDR, wav_data, AUDIO_PASS_SIZE);
+        audio_play(wav_data + (AUDIO_PASS_SIZE - wav_size - 2048), wav_size + 256);
+        free(wav_data);
+    }
+#else
+    msleep(200); //this delay can modify
+#endif
     set_RGB_LED(0);
     return;
 }

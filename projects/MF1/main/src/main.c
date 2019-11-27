@@ -63,8 +63,12 @@ static void open_relay(void)
 {
     uint64_t tim = sysctl_get_time_us();
 
+#if CONFIG_RELAY_NUM >= 1
     gpiohs_set_pin(CONFIG_GPIOHS_NUM_RELAY_1, CONFIG_RELAY_1_OPEN_VOL);
+#if CONFIG_RELAY_NUM >= 2
     gpiohs_set_pin(CONFIG_GPIOHS_NUM_RELAY_2, CONFIG_RELAY_2_OPEN_VOL);
+#endif /* CONFIG_RELAY_NUM */
+#endif /* CONFIG_RELAY_NUM */
 
     last_open_relay_time_in_s = tim / 1000 / 1000;
     relay_open_flag = 1;
@@ -72,8 +76,12 @@ static void open_relay(void)
 
 static void close_relay(void)
 {
+#if CONFIG_RELAY_NUM >= 1
     gpiohs_set_pin(CONFIG_GPIOHS_NUM_RELAY_1, 1 - CONFIG_RELAY_1_OPEN_VOL);
+#if CONFIG_RELAY_NUM >= 2
     gpiohs_set_pin(CONFIG_GPIOHS_NUM_RELAY_2, 1 - CONFIG_RELAY_2_OPEN_VOL);
+#endif /* CONFIG_RELAY_NUM */
+#endif /* CONFIG_RELAY_NUM */
 }
 
 //FIXME: 这个不能多核公用
@@ -213,6 +221,8 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
             printk("face score not pass\r\n");
         }
     }
+#else
+    open_relay();
 #endif /* CONFIG_ENABLE_UART_PROTOCOL */
     if (g_board_cfg.brd_soft_cfg.cfg.auto_out_fea == 0)
     {
@@ -301,6 +311,15 @@ int main(void)
 #if !CONFIG_ENABLE_UART_PROTOCOL
     init_lcd_cam(&g_board_cfg);
     init_relay_key_pin(&g_board_cfg);
+#if CONFIG_NET_ENABLE
+#if CONFIG_NET_ESP8285
+    extern void demo_esp8285(void);
+    demo_esp8285();
+#elif CONFIG_NET_W5500
+    extern void demo_w5500(void);
+    demo_w5500();
+#endif /* CONFIG_NET_ESP8285 */
+#endif /* CONFIG_NET_ENABLE */
 #else
 #if CONFIG_NET_ENABLE
     protocol_init_device(&g_board_cfg, 1);

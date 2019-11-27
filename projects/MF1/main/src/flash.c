@@ -569,7 +569,13 @@ uint8_t flash_cfg_set_default(board_cfg_t *cfg)
     //brd_hard_cfg
 #if CONFIG_LCD_VERTICAL
     cfg->brd_hard_cfg.lcd_cam.cam_flip = 0;
+
+#if CONFIG_BOARD_TYPE_MF1
     cfg->brd_hard_cfg.lcd_cam.cam_hmirror = 0;
+#elif CONFIG_BOARD_TYPE_CLIENT_1
+    cfg->brd_hard_cfg.lcd_cam.cam_hmirror = 1;
+#endif /* CONFIG_BOARD_TYPE_MF1 */
+
     cfg->brd_hard_cfg.lcd_cam.lcd_dir = 0;
     cfg->brd_hard_cfg.lcd_cam.lcd_flip = 0;
     cfg->brd_hard_cfg.lcd_cam.lcd_hmirror = 0;
@@ -616,12 +622,18 @@ uint8_t flash_cfg_set_default(board_cfg_t *cfg)
 #endif /* CONFIG_SWAP_UART_PROTO_DEBUG */
 #endif /* CONFIG_ENABLE_UART_PROTOCOL */
 
+#if CONFIG_ENABLE_UART_PROTOCOL
 #if CONFIG_RELAY_NUM != 2
 #error "relay number must be 2"
-#else
+#endif /* CONFIG_RELAY_NUM != 2 */
+#endif /* CONFIG_ENABLE_UART_PROTOCOL */
+
+#if CONFIG_RELAY_NUM >= 1
     cfg->brd_hard_cfg.uart_relay_key.relay_high = CONFIG_PIN_NUM_RELAY_1;
+#if CONFIG_RELAY_NUM >= 2
     cfg->brd_hard_cfg.uart_relay_key.relay_low = CONFIG_PIN_NUM_RELAY_2;
-#endif
+#endif /* CONFIG_RELAY_NUM */
+#endif /* CONFIG_RELAY_NUM */
 
     memset(cfg->wifi_ssid, 0, sizeof(cfg->wifi_ssid));
     memset(cfg->wifi_passwd, 0, sizeof(cfg->wifi_passwd));

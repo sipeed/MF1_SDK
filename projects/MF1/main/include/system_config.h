@@ -51,8 +51,8 @@
 #define IMG_QR_TIMEOUT_ADDR                         (IMG_RECORD_FACE_ADDR + (116 * 1024 * 6))
 ///////////////////////////////////////////////////////////////////////////////
 // AUDIO DATA
-#define AUDIO_DATA_ADDR                             (0xE00000)
-
+#define AUDIO_PASS_ADDR                             (0xE00000)
+#define AUDIO_PASS_SIZE                             (36096)
 /* clang-format on */
 
 #endif

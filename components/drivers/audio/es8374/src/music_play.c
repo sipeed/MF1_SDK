@@ -113,7 +113,6 @@ void maix_i2s_play(i2s_device_number_t device_num, dmac_channel_number_t channel
 void i2s_io_mux_init()
 {
     fpioa_set_function(CONFIG_PIN_NUM_ES8374_MCLK, FUNC_I2S0_MCLK + 11 * ES8374_I2S_DEVICE);
-    //fpioa_set_function(34, FUNC_I2S0_MCLK);
     fpioa_set_function(CONFIG_PIN_NUM_ES8374_SCLK, FUNC_I2S0_SCLK + 11 * ES8374_I2S_DEVICE);
     fpioa_set_function(CONFIG_PIN_NUM_ES8374_WS, FUNC_I2S0_WS + 11 * ES8374_I2S_DEVICE);
     fpioa_set_function(CONFIG_PIN_NUM_ES8374_DOUT, FUNC_I2S0_IN_D0 + 11 * ES8374_I2S_DEVICE);

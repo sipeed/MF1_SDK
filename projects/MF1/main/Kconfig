@@ -99,6 +99,12 @@ menu "Application configuration"
 				depends on ENABLE_IR_LED
 				int "IR Led gpiohs number"
 				default 9
+
+			config IR_LED_OPEN_VOL
+				depends on ENABLE_IR_LED
+				int "IR Led Open High or Low"
+				range 0 1
+				default 1
 		endmenu
 
 		menu "Flash Led configuration"
@@ -116,6 +122,12 @@ menu "Application configuration"
 				depends on ENABLE_FLASH_LED
 				int "flash led gpiohs number"
 				default 10
+
+			config FLASH_LED_OPEN_VOL
+				depends on ENABLE_FLASH_LED
+				int "FLASH Led Open High or Low"
+				range 0 1
+				default 1
 		endmenu
 
 		menu "RGB Led configuration"
@@ -272,7 +284,7 @@ menu "Application configuration"
 				bool "enable ethernet over w5500"
 				default n
 
-			menu "W5500 configuration"
+			menu "W5500 Pin configuration"
 				depends on ENABLE_W5500
 
 				config PIN_NUM_ETH_W5500_MOSI 
@@ -297,14 +309,14 @@ menu "Application configuration"
 					default not use this one pin
 			endmenu
 
-			menu "W5500 configuration"
+			menu "W5500 Pin Func configuration"
 				depends on ENABLE_W5500
 
-				config ETH_GPIOHS_NUM_CS
+				config GPIOHS_NUM_W5500_CS
 					int "GPIOHS num of Ethernet W5500's cs pin"
 					default 15
 
-				config ETH_GPIOHS_NUM_RST
+				config GPIOHS_NUM_W5500_RST
 					int "GPIOHS num of Ethernet W5500's rst pin"
 					default 16
 			endmenu
@@ -361,6 +373,21 @@ menu "Application configuration"
 			bool "face pass, protocol output only uid"
 			default n
 
+	endmenu
+
+	menu "Board Type Select"
+
+		choice BBOARD_TYPE
+			bool "board type"
+			default BOARD_TYPE_MF1
+
+		config BOARD_TYPE_MF1
+			bool "default MF1 board"
+		config BOARD_TYPE_CLIENT_1
+			bool "client 1 board"
+			help
+			client 1's board
+		endchoice
 	endmenu
 
 	comment "--------------------------------"

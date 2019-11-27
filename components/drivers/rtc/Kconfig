@@ -34,13 +34,13 @@ menu "RTC configuration"
         depends on RTC_TYPE_GM1302
         config GPIOHS_NUM_RTC_GM1302_RST 
             int "RTC GM1302 GPIOHS RST num"
-            default 6
+            default 17
         config GPIOHS_NUM_RTC_GM1302_DAT
             int "RTC GM1302 GPIOHS DAT num"
-            default 7
+            default 18
         config GPIOHS_NUM_RTC_GM1302_CLK
             int "RTC GM1302 GPIOHS CLK num"
-            default 8
+            default 19
     endmenu
 
     menu "RTC BM8563 Pin configuration"
@@ -57,9 +57,9 @@ menu "RTC configuration"
         depends on RTC_TYPE_BM8563
         config GPIOHS_NUM_RTC_BM8563_SDA
             int "RTC BM8563 GPIOHS SDA"
-            default 6
+            default 17
         config GPIOHS_NUM_RTC_BM8563_SCL
             int "RTC BM8563 GPIOHS SCL"
-            default 7
+            default 18
     endmenu
 endmenu

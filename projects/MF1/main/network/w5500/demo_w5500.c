@@ -82,17 +82,17 @@ void demo_w5500(void)
     printf("demo_w5500\r\n");
 
     printk("W5500:\r\n");
-    printf("      MOSI:%d\r\n", CONFIG_ETH_PIN_MOSI);
-    printf("      MISO:%d\r\n", CONFIG_ETH_PIN_MISO);
-    printf("      SCLK:%d\r\n", CONFIG_ETH_PIN_SCLK);
-    printf("        CS:%d\r\n", CONFIG_ETH_PIN_CS);
+    printf("      MOSI:%d\r\n", CONFIG_PIN_NUM_ETH_W5500_MOSI);
+    printf("      MISO:%d\r\n", CONFIG_PIN_NUM_ETH_W5500_MISO);
+    printf("      SCLK:%d\r\n", CONFIG_PIN_NUM_ETH_W5500_SCLK);
+    printf("        CS:%d\r\n", CONFIG_PIN_NUM_ETH_W5500_CS);
     // printf("      RST:%d\r\n", CONFIG_ETH_PIN_RST);
 
     /* 和继电器分配的IO有冲突 */
-    fpioa_set_function(CONFIG_ETH_PIN_CS, FUNC_GPIOHS0 + CONFIG_ETH_GPIOHS_NUM_CS); //CSS
-    fpioa_set_function(CONFIG_ETH_PIN_MISO, FUNC_SPI1_D1);                          //MISO
-    fpioa_set_function(CONFIG_ETH_PIN_MOSI, FUNC_SPI1_D0);                          //MOSI
-    fpioa_set_function(CONFIG_ETH_PIN_SCLK, FUNC_SPI1_SCLK);                        //CLK
+    fpioa_set_function(CONFIG_PIN_NUM_ETH_W5500_CS, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_W5500_CS); //CSS
+    fpioa_set_function(CONFIG_PIN_NUM_ETH_W5500_MISO, FUNC_SPI1_D1);                            //MISO
+    fpioa_set_function(CONFIG_PIN_NUM_ETH_W5500_MOSI, FUNC_SPI1_D0);                            //MOSI
+    fpioa_set_function(CONFIG_PIN_NUM_ETH_W5500_SCLK, FUNC_SPI1_SCLK);                          //CLK
 
     //初始化spi
     eth_w5500_spi_init();

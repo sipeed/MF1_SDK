@@ -162,20 +162,21 @@ void init_relay_key_pin(board_cfg_t *brd_cfg)
 
     key_dir = brd_cfg->brd_hard_cfg.uart_relay_key.key_dir;
     key_pin = brd_cfg->brd_hard_cfg.uart_relay_key.key;
-    relay_0_pin = brd_cfg->brd_hard_cfg.uart_relay_key.relay_low;
-    relay_1_pin = brd_cfg->brd_hard_cfg.uart_relay_key.relay_high;
+    relay_0_pin = brd_cfg->brd_hard_cfg.uart_relay_key.relay_high;
+    relay_1_pin = brd_cfg->brd_hard_cfg.uart_relay_key.relay_low;
 
     printk("board key relay cfg:\r\n\tkey:%d\tkey_dir:%d\trelay_high:%d\trelay_low:%d\r\n", key_pin, key_dir, relay_1_pin, relay_0_pin);
 
-    //setup key low
+#if CONFIG_RELAY_NUM >= 1
     fpioa_set_function(relay_0_pin, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_RELAY_1);
     gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_RELAY_1, GPIO_DM_OUTPUT);
     gpiohs_set_pin(CONFIG_GPIOHS_NUM_RELAY_1, 1 - CONFIG_RELAY_1_OPEN_VOL);
-
-    //setup key high
+#if CONFIG_RELAY_NUM >= 2
     fpioa_set_function(relay_1_pin, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_RELAY_2);
     gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_RELAY_2, GPIO_DM_OUTPUT);
     gpiohs_set_pin(CONFIG_GPIOHS_NUM_RELAY_2, 1 - CONFIG_RELAY_2_OPEN_VOL);
+#endif /* CONFIG_RELAY_NUM */
+#endif /* CONFIG_RELAY_NUM */
 
     //set up key
     fpioa_set_function(key_pin, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_USER_KEY); //KEY
