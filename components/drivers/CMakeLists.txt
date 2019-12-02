@@ -6,7 +6,6 @@ list(APPEND ADD_INCLUDE "sd_card/include"
                         #lcd
                         "lcd/include"
                         "lcd/lcd_st7789/include"
-                        "lcd/lcd_sipeed/include"
                         #camera
                         "camera/include"
                         "camera/ov2640/include"
@@ -21,8 +20,14 @@ list(APPEND ADD_INCLUDE "sd_card/include"
     if(CONFIG_LCD_TYPE_ST7789)
         append_srcs_dir(ADD_SRCS    "lcd/lcd_st7789/src")
     elseif(CONFIG_LCD_TYPE_SIPEED)
-        append_srcs_dir(ADD_SRCS    "lcd/lcd_sipeed/src")
-    
+        if(CONFIG_LCD_SIPEED_V2)
+            append_srcs_dir(ADD_SRCS    "lcd/lcd_sipeed_v2/src")
+            list(APPEND ADD_INCLUDE     "lcd/lcd_sipeed_v2/include")
+        else()
+            append_srcs_dir(ADD_SRCS    "lcd/lcd_sipeed_v1/src")
+            list(APPEND ADD_INCLUDE     "lcd/lcd_sipeed_v1/include")
+        endif()
+        
         if(CONFIG_TYPE_800_480_57_INCH)
             list(APPEND ADD_DEFINITIONS -DSIPEED_LCD_W=322
                                         -DSIPEED_LCD_H=240

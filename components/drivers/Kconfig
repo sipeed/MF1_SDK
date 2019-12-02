@@ -11,7 +11,7 @@ menu "Drivers configuration"
 	menu "LCD configuration"
 		choice LCD_TYPE
 			bool "LCD driver type"
-			default LCD_TYPE_ST7789
+			default LCD_TYPE_SIPEED
 
 			config LCD_TYPE_ST7789
 				bool "LCD use ST7789"
@@ -42,7 +42,6 @@ menu "Drivers configuration"
 
 				config TYPE_800_480_57_INCH
 					bool "800x480 5 inch and 7 inch"
-
 			endchoice
 
 			config TYPE_SIPEED_7_INCH
@@ -50,6 +49,10 @@ menu "Drivers configuration"
 				bool "7 inch lcd, is little special"
 				default n
 
+			config LCD_SIPEED_V2
+				depends on LCD_TYPE_SIPEED
+				bool "lcd sipeed v2"
+				default n
 		endmenu
 
 		menu "LCD Pin Func configuration"

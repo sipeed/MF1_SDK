@@ -154,6 +154,7 @@ static void lcd_dis_list_draw_pic(uint8_t *image, uint16_t img_w, uint16_t img_h
 #else //TODO: fix here on small lcd
     my_w25qxx_read_data((uint32_t)(dis_pic->flash_addr), img_dst.img_addr, img_size, W25QXX_STANDARD); //4ms
 #endif
+    //FIXME: 这里可以更新到最新小内存占用的。
     image_rgb565_mix_pic_with_alpha(&img_src, &img_dst, dis_pic->alpha); //12ms
     return;
 }

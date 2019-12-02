@@ -213,6 +213,7 @@ void lcd_display_image_alpha(uint32_t pic_addr, uint16_t pic_w, uint16_t pic_h, 
     while (dis_flag)
     {
     }; //等待中断刷完屏
+    //FIXME:这里更新到最新操作少的
     image_rgb565_paste_img(pDisImage, DisLcd_W, DisLcd_H,
                            pCamImage, CamImage_W, CamImage_H,
                            DisImageX_Off, DisImageY_Off);
