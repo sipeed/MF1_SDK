@@ -353,9 +353,9 @@ int main(void)
     protocol_send_init_done();
 #endif /* CONFIG_ENABLE_UART_PROTOCOL */
 
-    /* all cfg, if modify by uart, must reboot to get effect */
-    face_recognition_cfg.auto_out_fea = (uint8_t)g_board_cfg.brd_soft_cfg.cfg.auto_out_fea;
-    face_recognition_cfg.compare_threshold = (float)g_board_cfg.brd_soft_cfg.out_threshold;
+    // /* all cfg, if modify by uart, must reboot to get effect */
+    // face_recognition_cfg.auto_out_fea = (uint8_t)g_board_cfg.brd_soft_cfg.cfg.auto_out_fea;
+    // face_recognition_cfg.compare_threshold = (float)g_board_cfg.brd_soft_cfg.out_threshold;
 
     set_lcd_bl(1);
 
@@ -367,8 +367,8 @@ int main(void)
         if (!jpeg_recv_start_flag)
 #endif /* CONFIG_ENABLE_UART_PROTOCOL */
         {
-            // face_recognition_cfg.auto_out_fea = (uint8_t)g_board_cfg.brd_soft_cfg.cfg.auto_out_fea;
-            // face_recognition_cfg.compare_threshold = (float)g_board_cfg.brd_soft_cfg.out_threshold;
+            face_recognition_cfg.auto_out_fea = (uint8_t)g_board_cfg.brd_soft_cfg.cfg.auto_out_fea;
+            face_recognition_cfg.compare_threshold = (float)g_board_cfg.brd_soft_cfg.out_threshold;
             face_lib_run(&face_recognition_cfg);
         }
 
