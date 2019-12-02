@@ -1,9 +1,0 @@
-
-config COMPONENT_BOARDS_ENABLE
-        bool "Enbale boards component"
-        default n
-
-menu "Board config"
-    depends on COMPONENT_BOARDS_ENABLE
-endmenu
-
