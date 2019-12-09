@@ -10,6 +10,7 @@ void image_rgb888_roate_left90(uint8_t *out, uint8_t *src, uint16_t w,
 
 void convert_rgb565_order(uint16_t *image, uint16_t w, uint16_t h);
 
+void image_rgb565_roate_right90_lessmem(uint16_t *buf, uint16_t w, uint16_t h);
 void image_rgb565_roate_right90(uint16_t *out, uint16_t *src, uint16_t w,
                                 uint16_t h);
 void image_rgb565_roate_left90(uint16_t *out, uint16_t *src, uint16_t w,
@@ -50,7 +51,10 @@ typedef struct
   uint16_t h;
 } mix_image_t;
 
-void image_rgb565_mix_pic_with_alpha(mix_image_t *img_src, mix_image_t *img_dst,
-                                     uint32_t alpha);
+void image_rgb565_mix_pic_with_alpha_lessmem(mix_image_t *img_src, mix_image_t *img_dst,
+                                             uint32_t dst_addr, uint32_t alpha, uint8_t del_white,
+                                             int (*flash_read_data)(uint32_t addr, uint8_t *data_buf, uint32_t length));
+
+void image_rgb565_mix_pic_with_alpha(mix_image_t *img_src, mix_image_t *img_dst, uint32_t alpha, uint8_t del_white);
 
 #endif

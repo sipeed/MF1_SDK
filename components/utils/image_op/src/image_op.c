@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -65,7 +66,40 @@ void convert_rgb565_order(uint16_t *image, uint16_t w, uint16_t h)
         }
     }
 }
+///////////////////////////////////////////////////////////////////////////////
+#define LOOP_UNIT()                         \
+    {                                       \
+        next = h - 1 - i / w + (i % w) * h; \
+        tmp = buf[next];                    \
+        buf[next] = t;                      \
+        t = tmp;                            \
+        i = next;                           \
+    }
 
+#define I_UNIT(x)    \
+    i = x;           \
+    cycleBegin = i;  \
+    t = buf[i];      \
+    do               \
+    {                \
+        LOOP_UNIT(); \
+        LOOP_UNIT(); \
+    } while (i != cycleBegin);
+
+void image_rgb565_roate_right90_lessmem(uint16_t *buf, uint16_t w, uint16_t h)
+{
+    uint16_t t; //暂存一个交换像素
+    uint16_t tmp;
+    int next;       //下一个像素的地址
+    int cycleBegin; //本轮起始地址
+    int i;          //计数器
+
+    I_UNIT(0);
+    I_UNIT(10);
+    return;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 //FIXME: 需要调用 convert_rgb565_order
 // RGB565 顺时针 90 度
 // 注意旋转90 后，图像数据的宽高会对调，显示时候自己注意
@@ -444,7 +478,9 @@ static uint16_t fast_blender_alpha(uint32_t x, uint32_t y, uint32_t alpha)
     return (uint16_t)((result & 0xFFFF) | (result >> 16));
 }
 
-void image_rgb565_mix_pic_with_alpha(mix_image_t *img_src, mix_image_t *img_dst, uint32_t alpha)
+void image_rgb565_mix_pic_with_alpha_lessmem(mix_image_t *img_src, mix_image_t *img_dst,
+                                             uint32_t dst_addr, uint32_t alpha, uint8_t del_white,
+                                             int (*flash_read_data)(uint32_t addr, uint8_t *data_buf, uint32_t length))
 {
     uint16_t sx, sy, sw, sh;
     uint16_t dx, dy, dw, dh;
@@ -461,7 +497,52 @@ void image_rgb565_mix_pic_with_alpha(mix_image_t *img_src, mix_image_t *img_dst,
 
     if ((dx + dw) > (sw + sx) || (dh + dy) > (sh + sy))
     {
-        printf("[image_rgb565_mix_pic_with_alpha]:image invaild\r\n");
+        // printk("[image_rgb565_mix_pic_with_alpha]:image invaild\r\n");
+        return;
+    }
+
+    //申请一行的大小
+    uint16_t *dst_buf = malloc(dw * 2);
+
+    for (uint16_t i = dy; i < (dy + dh); i++)
+    {
+        //读取一行
+        flash_read_data((uint32_t)(dst_addr + ((i - dy) * dw * 2)), (uint8_t *)dst_buf, dw * 2);
+
+        for (uint16_t j = dx; j < (dx + dw); j++)
+        {
+            *(img_src->img_addr + i * sw + j) = fast_blender_alpha((uint32_t) * (img_src->img_addr + i * sw + j),
+                                                                   (uint32_t) * ((uint16_t *)dst_buf + (j - dx)),
+                                                                   (uint32_t)alpha / 8);
+        }
+    }
+
+    if (dst_buf)
+    {
+        free(dst_buf);
+    }
+
+    return;
+}
+
+void image_rgb565_mix_pic_with_alpha(mix_image_t *img_src, mix_image_t *img_dst, uint32_t alpha, uint8_t del_white)
+{
+    uint16_t sx, sy, sw, sh;
+    uint16_t dx, dy, dw, dh;
+
+    sx = img_src->x;
+    sy = img_src->y;
+    sw = img_src->w;
+    sh = img_src->h;
+
+    dx = img_dst->x;
+    dy = img_dst->y;
+    dw = img_dst->w;
+    dh = img_dst->h;
+
+    if ((dx + dw) > (sw + sx) || (dh + dy) > (sh + sy))
+    {
+        // printk("[image_rgb565_mix_pic_with_alpha]:image invaild\r\n");
         return;
     }
 
@@ -469,6 +550,13 @@ void image_rgb565_mix_pic_with_alpha(mix_image_t *img_src, mix_image_t *img_dst,
     {
         for (uint16_t j = dx; j < (dx + dw); j++)
         {
+            if (del_white)
+            {
+                if ((uint32_t) * (img_dst->img_addr + (i - dy) * dw + (j - dx)) == 0xFFFF)
+                {
+                    continue;
+                }
+            }
             *(img_src->img_addr + i * sw + j) = fast_blender_alpha((uint32_t) * (img_src->img_addr + i * sw + j),
                                                                    (uint32_t) * (img_dst->img_addr + (i - dy) * dw + (j - dx)),
                                                                    (uint32_t)alpha / 8);
