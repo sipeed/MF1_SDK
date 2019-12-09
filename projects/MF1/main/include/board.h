@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <stdint.h>
 
+#include "face_lib.h"
 #include "system_config.h"
 
 #define RLED 1
@@ -19,7 +20,7 @@ extern volatile uint8_t g_key_press;
 extern volatile uint8_t g_key_long_press;
 
 extern uint8_t sKey_dir;
-
+#if 0
 #if (!CONFIG_CAMERA_OV2640 || !CONFIG_CAMERA_GC0328_SINGLE)
 extern uint8_t kpu_image_tmp[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 3];
 #endif
@@ -30,7 +31,11 @@ extern uint8_t display_image_ver[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_
 
 extern uint8_t kpu_image[2][CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 3];
 extern uint8_t display_image[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2];
-
+#else
+extern uint8_t kpu_image[2][CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 3];
+extern uint8_t rgb_image[2][CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2];
+#define display_image (rgb_image[rgb_buf_index])
+#endif
 int irq_gpiohs(void *ctx);
 
 void set_IR_LED(int state);

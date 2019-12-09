@@ -29,7 +29,9 @@ static uint64_t proto_record_start_time = 0;
 uint8_t delay_flag = 0;
 uint8_t lcd_bl_stat = 1; /* 1:on, 0:off */
 
-static uint8_t *pDisImage = NULL;
+#define pDisImage (display_image)
+// static uint8_t *pDisImage = NULL;
+
 static uint16_t DisImage_W, DisImage_H;
 static uint16_t DisLcd_W, DisLcd_H;
 static uint16_t DisX_Off, DisY_Off;
@@ -38,7 +40,7 @@ static uint16_t DisImageX_Off, DisImageY_Off;
 void face_cb_init(void)
 {
 #if CONFIG_LCD_VERTICAL
-    pDisImage = display_image_ver;
+    // pDisImage = display_image_ver;
 
     DisImage_W = CONFIG_CAMERA_RESOLUTION_HEIGHT;
     DisImage_H = CONFIG_CAMERA_RESOLUTION_WIDTH;
@@ -51,7 +53,7 @@ void face_cb_init(void)
     DisImageX_Off = 0;
     DisImageY_Off = 40;
 #else
-    pDisImage = display_image;
+    // pDisImage = display_image;
 
     DisImage_W = CONFIG_CAMERA_RESOLUTION_WIDTH;
     DisImage_H = CONFIG_CAMERA_RESOLUTION_HEIGHT;
@@ -96,7 +98,7 @@ void lcd_display_image_alpha(uint32_t pic_addr, uint32_t alpha)
     }
 
 #if (CONFIG_LCD_WIDTH == 240)
-    convert_320x240_to_240x240(display_image, LCD_OFT);
+    convert_320x240_to_240x240(pDisImage, LCD_OFT);
 #endif
 
     lcd_draw_picture(0, 0, DisLcd_W, DisLcd_H, (uint32_t *)pDisImage);
@@ -110,14 +112,13 @@ void lcd_display_image_alpha(uint32_t pic_addr, uint32_t alpha)
 void lcd_convert_cb(void)
 {
 #if CONFIG_ENABLE_OUTPUT_JPEG
-    send_jpeg_to_core1(display_image);
+    send_jpeg_to_core1(pDisImage);
 #endif /* CONFIG_ENABLE_OUTPUT_JPEG */
 
 #if CONFIG_LCD_VERTICAL
-    //5300us @ 400M
-    convert_rgb565_order((uint16_t *)display_image, CONFIG_CAMERA_RESOLUTION_WIDTH, CONFIG_CAMERA_RESOLUTION_HEIGHT);
-    image_rgb565_roate_right90((uint16_t *)display_image_ver, (uint16_t *)display_image, CONFIG_CAMERA_RESOLUTION_WIDTH, CONFIG_CAMERA_RESOLUTION_HEIGHT);
-    convert_rgb565_order((uint16_t *)display_image_ver, CONFIG_CAMERA_RESOLUTION_HEIGHT, CONFIG_CAMERA_RESOLUTION_WIDTH);
+    convert_rgb565_order((uint16_t *)pDisImage, CONFIG_CAMERA_RESOLUTION_WIDTH, CONFIG_CAMERA_RESOLUTION_HEIGHT);
+    image_rgb565_roate_right90_lessmem((uint16_t *)pDisImage, CONFIG_CAMERA_RESOLUTION_WIDTH, CONFIG_CAMERA_RESOLUTION_HEIGHT);
+    convert_rgb565_order((uint16_t *)pDisImage, CONFIG_CAMERA_RESOLUTION_WIDTH, CONFIG_CAMERA_RESOLUTION_HEIGHT);
 #endif
 
     /* 在这里遍历lcd显示链表*/
@@ -168,7 +169,7 @@ void lcd_refresh_cb(void)
     }
 
 #if (CONFIG_LCD_WIDTH == 240)
-    convert_320x240_to_240x240(display_image, LCD_OFT);
+    convert_320x240_to_240x240(pDisImage, LCD_OFT);
 #endif
 
     lcd_draw_picture(0, 0, DisLcd_W, DisLcd_H, (uint32_t *)pDisImage);
@@ -294,15 +295,15 @@ void detected_face_cb(face_recognition_ret_t *face)
 
                 face_fea_t face_fea;
 
-#if CONFIG_CAMERA_GC0328_DUAL
-                face_fea.stat = 1;
-                memcpy(&(face_fea.fea_ir), face_info->feature, 196);
-                memset(&(face_fea.fea_rgb), 0, 196);
-#else
+                // #if CONFIG_CAMERA_GC0328_DUAL
+                //                 face_fea.stat = 1;
+                //                 memcpy(&(face_fea.fea_ir), face_info->feature, 196);
+                //                 memset(&(face_fea.fea_rgb), 0, 196);
+                // #else
                 face_fea.stat = 0;
                 memcpy(&(face_fea.fea_rgb), face_info->feature, 196);
                 memset(&(face_fea.fea_ir), 0, 196);
-#endif
+                // #endif
                 printf("#######save face\r\n");
                 if (flash_save_face_info(&face_fea, record_cfg.uid, 1, NULL, NULL, NULL) < 0) //image, feature, uid, valid, name, note
                 {
@@ -334,15 +335,15 @@ void detected_face_cb(face_recognition_ret_t *face)
                 {
                     face_fea_t face_fea;
 
-#if CONFIG_CAMERA_GC0328_DUAL
-                    face_fea.stat = 1;
-                    memcpy(&(face_fea.fea_ir), face_info->feature, 196);
-                    memset(&(face_fea.fea_rgb), 0, 196);
-#else
+                    // #if CONFIG_CAMERA_GC0328_DUAL
+                    //                     face_fea.stat = 1;
+                    //                     memcpy(&(face_fea.fea_ir), face_info->feature, 196);
+                    //                     memset(&(face_fea.fea_rgb), 0, 196);
+                    // #else
                     face_fea.stat = 0;
                     memcpy(&(face_fea.fea_rgb), face_info->feature, 196);
                     memset(&(face_fea.fea_ir), 0, 196);
-#endif
+                    // #endif
 
                     printf("#######save face\r\n");
                     if (flash_save_face_info(&face_fea, NULL, 1, NULL, NULL, NULL) < 0) //image, feature, uid, valid, name, note
@@ -493,16 +494,9 @@ uint8_t judge_face_by_keypoint(key_point_t *kp)
     }
 
     sprintf(str, "1:%d", tmp);
-#if DETECT_VERTICAL
-    image_rgb565_draw_string(display_image_ver, str, 16, 0, 16,
-                             RED, NULL,
-                             240, 320);
-#else
-    image_rgb565_draw_string(display_image, str, 16, 0, 16,
+    image_rgb565_draw_string(pDisImage, str, 16, 0, 16,
                              RED, NULL,
                              320, 240);
-#endif
-
     ///////////////////////////////////////////////////////////////////////////////
     tmp = (kp->point[0].y + kp->point[1].y) / 2;
     tmp = kp->point[2].y - tmp;
@@ -521,15 +515,9 @@ uint8_t judge_face_by_keypoint(key_point_t *kp)
     }
 
     sprintf(str, "2:%.4f", percent);
-#if DETECT_VERTICAL
-    image_rgb565_draw_string(display_image_ver, str, 16, 0, 32,
+    image_rgb565_draw_string(pDisImage, str, 16, 0, 32,
                              RED, NULL,
                              240, 320);
-#else
-    image_rgb565_draw_string(display_image, str, 16, 0, 32,
-                             RED, NULL,
-                             320, 240);
-#endif
 
     ///////////////////////////////////////////////////////////////////////////////
     tmp = (kp->point[3].y + kp->point[4].y) / 2;
@@ -547,15 +535,9 @@ uint8_t judge_face_by_keypoint(key_point_t *kp)
         ret++;
     }
     sprintf(str, "3:%.4f", percent);
-#if DETECT_VERTICAL
-    image_rgb565_draw_string(display_image_ver, str, 16, 0, 48,
-                             RED, NULL,
-                             240, 320);
-#else
-    image_rgb565_draw_string(display_image, str, 16, 0, 48,
+    image_rgb565_draw_string(pDisImage, str, 16, 0, 48,
                              RED, NULL,
                              320, 240);
-#endif
     ///////////////////////////////////////////////////////////////////////////////
     return (ret > 0) ? 0 : 1;
 }

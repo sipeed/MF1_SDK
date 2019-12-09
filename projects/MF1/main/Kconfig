@@ -111,7 +111,7 @@ menu "Application configuration"
 
 			config ENABLE_FLASH_LED
 				bool "enable flash led"
-				default n
+				default y
 
 			config PIN_NUM_FLASH_LED
 				depends on ENABLE_FLASH_LED

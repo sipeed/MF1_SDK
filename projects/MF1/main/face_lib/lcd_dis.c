@@ -121,30 +121,69 @@ static void lcd_dis_list_draw_str(uint8_t *image, uint16_t img_w, uint16_t img_h
     return;
 }
 
-static void lcd_dis_list_draw_pic(uint8_t *image, uint16_t img_w, uint16_t img_h, dis_pic_t *dis_pic)
+static w25qxx_status_t slow_w25qxx_read_data(uint32_t addr, uint8_t *data_buf, uint32_t length)
+{
+    return my_w25qxx_read_data(addr, data_buf, length, W25QXX_STANDARD);
+}
+
+void lcd_dis_list_draw_pic(uint8_t *src_img, uint8_t *dst_img, uint8_t del_white, uint16_t img_w, uint16_t img_h, dis_pic_t *dis_pic)
 {
     mix_image_t img_src, img_dst;
+    uint16_t *img_tmp = NULL;
 
-    img_src.img_addr = (uint16_t *)image;
+    img_src.img_addr = (uint16_t *)src_img;
     img_src.w = img_w;
     img_src.h = img_h;
     img_src.x = 0;
     img_src.y = 0;
 
-    uint32_t img_size = dis_pic->w * dis_pic->h * 2;
-#if (CONFIG_CAMERA_GC0328_DUAL == 0)
-    img_dst.img_addr = (uint16_t *)kpu_image[1];
-#else
-    img_dst.img_addr = (uint16_t *)kpu_image_tmp;
-#endif
     img_dst.x = dis_pic->x;
     img_dst.y = dis_pic->y;
     img_dst.w = dis_pic->w;
     img_dst.h = dis_pic->h;
 
-    my_w25qxx_read_data((uint32_t)(dis_pic->flash_addr), img_dst.img_addr, img_size, W25QXX_STANDARD);
+    if (dst_img)
+    {
+        img_dst.img_addr = (uint16_t *)dst_img;
+        image_rgb565_mix_pic_with_alpha(&img_src, &img_dst, dis_pic->alpha, del_white); //12ms
+        return;
+    }
+    else
+    {
+#if 1
+        // image_rgb565_mix_pic_with_alpha_lessmem(&img_src, &img_dst, (uint32_t)(dis_pic->flash_addr), dis_pic->alpha, del_white, w25qxx_read_data); //12ms
+        image_rgb565_mix_pic_with_alpha_lessmem(&img_src, &img_dst, (uint32_t)(dis_pic->flash_addr), dis_pic->alpha, del_white, slow_w25qxx_read_data); //12ms
+    }
+#else
+        uint32_t img_size = dis_pic->w * dis_pic->h * 2;
+#if (CONFIG_CAMERA_GC0328_DUAL == 0)
+        img_dst.img_addr = (uint16_t *)_IOMEM_ADDR(kpu_image[1]);
+#else
+        img_tmp = (uint16_t *)malloc(img_size);
+        printk("%s:%d %ld KB\r\n", __func__, __LINE__, get_free_heap_size() / 1024);
+        if (img_tmp == NULL)
+        {
+            return;
+        }
+        img_dst.img_addr = (uint16_t *)img_tmp;
+#endif
 
-    image_rgb565_mix_pic_with_alpha(&img_src, &img_dst, dis_pic->alpha);
+#if CONFIG_LCD_TYPE_SIPEED
+        w25qxx_read_data((uint32_t)(dis_pic->flash_addr), img_dst.img_addr, img_size);
+#else //TODO: fix here on small lcd
+        my_w25qxx_read_data((uint32_t)(dis_pic->flash_addr), img_dst.img_addr, img_size, W25QXX_STANDARD); //4ms
+#endif
+    }
+
+    image_rgb565_mix_pic_with_alpha(&img_src, &img_dst, dis_pic->alpha, del_white); //12ms
+
+    if (img_tmp)
+    {
+        printk("free(img_tmp)");
+        free(img_tmp);
+    }
+    printk("%s:%d %ld KB\r\n", __func__, __LINE__, get_free_heap_size() / 1024);
+#endif
     return;
 }
 
@@ -156,7 +195,7 @@ void lcd_dis_list_display(uint8_t *image, uint16_t img_w, uint16_t img_h, lcd_di
         lcd_dis_list_draw_str(image, img_w, img_h, (dis_str_t *)(lcd_dis->dis));
         break;
     case DIS_TYPE_PIC:
-        lcd_dis_list_draw_pic(image, img_w, img_h, (dis_str_t *)(lcd_dis->dis));
+        lcd_dis_list_draw_pic(image, NULL, 0, img_w, img_h, (dis_pic_t *)(lcd_dis->dis));
         break;
     default:
         printf("unk dis type\r\n");

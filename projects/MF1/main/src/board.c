@@ -12,6 +12,7 @@
 #include "uart.h"
 #include "uarths.h"
 #include "rtc.h"
+#include "timer.h"
 
 #include "audio.h"
 #include "camera.h"
@@ -31,6 +32,7 @@ volatile uint8_t g_key_long_press = 0;
 uint8_t sKey_dir = 0;
 
 ///////////////////////////////////////////////////////////////////////////////
+#if 0
 #if (CONFIG_CAMERA_GC0328_DUAL)
 uint8_t kpu_image_tmp[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 3] __attribute__((aligned(128)));
 #endif
@@ -41,7 +43,10 @@ uint8_t display_image_ver[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUT
 
 uint8_t kpu_image[2][CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 3] __attribute__((aligned(128)));
 uint8_t display_image[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2] __attribute__((aligned(64)));
-
+#else
+uint8_t kpu_image[2][CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 3] __attribute__((aligned(128)));
+uint8_t rgb_image[2][CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2] __attribute__((aligned(64)));
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 static volatile uint8_t g_gpio_flag = 0;
 static volatile uint64_t g_gpio_time = 0;
@@ -125,9 +130,21 @@ static void io_mux_init(void)
 #endif /* CONFIG_ENABLE_IR_LED */
 
 #if CONFIG_ENABLE_FLASH_LED
-    fpioa_set_function(CONFIG_PIN_NUM_FLASH_LED, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_FLASH_LED);
-    gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_FLASH_LED, GPIO_DM_OUTPUT);
-    gpiohs_set_pin(CONFIG_GPIOHS_NUM_FLASH_LED, 1 - CONFIG_FLASH_LED_OPEN_VOL);
+    // fpioa_set_function(CONFIG_PIN_NUM_FLASH_LED, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_FLASH_LED);
+    // gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_FLASH_LED, GPIO_DM_OUTPUT);
+    // gpiohs_set_pin(CONFIG_GPIOHS_NUM_FLASH_LED, 1 - CONFIG_FLASH_LED_OPEN_VOL);
+
+#define TIMER_NOR 3
+#define TIMER_CHN 0
+#define TIMER_PWM 1
+#define TIMER_PWM_CHN 0
+
+    /* Init timer */
+    fpioa_set_function(CONFIG_PIN_NUM_FLASH_LED, FUNC_TIMER1_TOGGLE1);
+    timer_init(TIMER_NOR);
+    timer_set_enable(TIMER_NOR, TIMER_CHN, 1);
+    pwm_init(TIMER_PWM);
+    pwm_set_frequency(TIMER_PWM, TIMER_PWM_CHN, 1000, 0.01);
 #endif /* CONFIG_ENABLE_FLASH_LED */
 
 #if CONFIG_ENABLE_RGB_LED
@@ -205,7 +222,8 @@ void set_IR_LED(int state)
 void set_W_LED(int state)
 {
 #if CONFIG_ENABLE_FLASH_LED
-    gpiohs_set_pin(CONFIG_GPIOHS_NUM_FLASH_LED, state ? CONFIG_FLASH_LED_OPEN_VOL : 1 - CONFIG_FLASH_LED_OPEN_VOL);
+    pwm_set_enable(TIMER_PWM, TIMER_PWM_CHN, state ? 1 : 0);
+    // gpiohs_set_pin(CONFIG_GPIOHS_NUM_FLASH_LED, state ? CONFIG_FLASH_LED_OPEN_VOL : 1 - CONFIG_FLASH_LED_OPEN_VOL);
     // gpiohs_set_pin(CONFIG_GPIOHS_NUM_FLASH_LED, CONFIG_FLASH_LED_OPEN_VOL);
 #endif /* CONFIG_ENABLE_FLASH_LED */
     return;
@@ -407,8 +425,11 @@ void board_init(void)
     printf("unknown camera type!!!\r\n");
 #endif
 
-    dvp_set_ai_addr((uint32_t)kpu_image, (uint32_t)(kpu_image + CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT), (uint32_t)(kpu_image + CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2));
-    dvp_set_display_addr((uint32_t)display_image);
+    dvp_set_ai_addr(_IOMEM_ADDR(kpu_image[1]),
+                    _IOMEM_ADDR(kpu_image[1]) + CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT,
+                    _IOMEM_ADDR(kpu_image[1]) + CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2);
+    dvp_set_display_addr(rgb_image[1]);
+
     dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 0);
     dvp_disable_auto();
 
