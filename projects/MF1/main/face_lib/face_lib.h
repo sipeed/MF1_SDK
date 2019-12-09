@@ -28,19 +28,40 @@
 #include "sha256.h"
 #include "sysctl.h"
 
-#include "flash.h"
 #include "base64.h"
 #include "board.h"
 #include "cJSON.h"
 #include "camera.h"
-
+#include "flash.h"
 #include "lcd.h"
+#include "lcd_dis.h"
 #include "picojpeg.h"
 #include "picojpeg_util.h"
 
 #include "system_config.h"
 
 /* clang-format off */
+
+#define _IS_IOMEM(x) (!((uint64_t)(&(x))&0x80000000))
+#define _IS_CACHEMEM(x) ((uint64_t)(&(x))&0x80000000)
+#define _IS_IOMEMP(x) (!((uint64_t)(x)&0x80000000))
+#define _IS_CACHEMEMP(x) ((uint64_t)(x)&0x80000000)
+
+#define _IOMEM(x, type) (*(type *)(((uint64_t)&(x))-0x40000000))
+#define _IOMEM_UINT8(x) (*(uint8_t *)(((uint64_t)&(x))-0x40000000))
+#define _IOMEM_ADDR(x) (_IS_IOMEM(x)?(uint64_t)(x):(((uint64_t)&(x))-0x40000000))
+#define _IOMEM_PADDR(p) (_IS_IOMEMP(p)?(uint64_t)(p):(((uint64_t)(p))-0x40000000))
+#define _ADDR(x)	((uint64_t)(x))
+#define _IN_BUF(x, buf)	(_ADDR(x)>=_ADDR(buf) && _ADDR(x)<_ADDR(buf)+sizeof(buf))
+#define CHECK_IOMEM(x) configASSERT(_IS_IOMEM(x))
+#define CHECK_IOMEMP(x) configASSERT(_IS_IOMEMP(x))
+
+#define _CACHE_ADDR(x)                          (_IS_CACHEMEM(x)?(uint64_t)(x):(((uint64_t)&(x))+0x40000000))
+#define _CACHE_PADDR(p)                         (_IS_CACHEMEMP(p)?(uint64_t)(p):(((uint64_t)(p))+0x40000000))
+
+
+#define _MODULE_ADDR(x) (x)
+
 #define FTR_850                             (1)
 #define FTR_650                             (0)
 
@@ -90,6 +111,7 @@ typedef struct
     uint32_t index;
     float score;
     bool pass;
+    int blur;
 } face_obj_t;
 
 typedef struct
@@ -171,6 +193,7 @@ typedef struct
 
 ///////////////////////////////////////////////////////////////////////////////
 extern volatile uint8_t face_lib_draw_flag;
+extern volatile uint8_t rgb_buf_index;
 ///////////////////////////////////////////////////////////////////////////////
 //get face_lib version
 char *face_lib_version(void);
