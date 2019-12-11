@@ -127,7 +127,7 @@ menu "Application configuration"
 				depends on ENABLE_FLASH_LED
 				int "FLASH Led Open High or Low"
 				range 0 1
-				default 1
+				default 0
 		endmenu
 
 		menu "RGB Led configuration"

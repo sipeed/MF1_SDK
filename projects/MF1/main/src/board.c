@@ -130,21 +130,17 @@ static void io_mux_init(void)
 #endif /* CONFIG_ENABLE_IR_LED */
 
 #if CONFIG_ENABLE_FLASH_LED
-    // fpioa_set_function(CONFIG_PIN_NUM_FLASH_LED, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_FLASH_LED);
-    // gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_FLASH_LED, GPIO_DM_OUTPUT);
-    // gpiohs_set_pin(CONFIG_GPIOHS_NUM_FLASH_LED, 1 - CONFIG_FLASH_LED_OPEN_VOL);
+    fpioa_set_function(CONFIG_PIN_NUM_FLASH_LED, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_FLASH_LED);
+    gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_FLASH_LED, GPIO_DM_OUTPUT);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_FLASH_LED, 1 - CONFIG_FLASH_LED_OPEN_VOL);
 
 #define TIMER_NOR 3
 #define TIMER_CHN 0
 #define TIMER_PWM 1
 #define TIMER_PWM_CHN 0
-
     /* Init timer */
-    fpioa_set_function(CONFIG_PIN_NUM_FLASH_LED, FUNC_TIMER1_TOGGLE1);
     timer_init(TIMER_NOR);
-    timer_set_enable(TIMER_NOR, TIMER_CHN, 1);
     pwm_init(TIMER_PWM);
-    pwm_set_frequency(TIMER_PWM, TIMER_PWM_CHN, 1000, 0.01);
 #endif /* CONFIG_ENABLE_FLASH_LED */
 
 #if CONFIG_ENABLE_RGB_LED
@@ -213,8 +209,8 @@ static void io_mux_init(void)
 void set_IR_LED(int state)
 {
 #if CONFIG_ENABLE_IR_LED
-    // gpiohs_set_pin(CONFIG_GPIOHS_NUM_IR_LED, state ? CONFIG_IR_LED_OPEN_VOL : 1 - CONFIG_IR_LED_OPEN_VOL);
-    gpiohs_set_pin(CONFIG_GPIOHS_NUM_IR_LED, CONFIG_IR_LED_OPEN_VOL);
+    gpiohs_set_pin(CONFIG_GPIOHS_NUM_IR_LED, state ? CONFIG_IR_LED_OPEN_VOL : 1 - CONFIG_IR_LED_OPEN_VOL);
+    // gpiohs_set_pin(CONFIG_GPIOHS_NUM_IR_LED, CONFIG_IR_LED_OPEN_VOL);
 #endif /* CONFIG_ENABLE_IR_LED */
     return;
 }
@@ -222,7 +218,21 @@ void set_IR_LED(int state)
 void set_W_LED(int state)
 {
 #if CONFIG_ENABLE_FLASH_LED
-    pwm_set_enable(TIMER_PWM, TIMER_PWM_CHN, state ? 1 : 0);
+
+    if (state)
+    {
+        fpioa_set_function(CONFIG_PIN_NUM_FLASH_LED, FUNC_TIMER1_TOGGLE1);
+        timer_set_enable(TIMER_NOR, TIMER_CHN, 1);
+        pwm_set_frequency(TIMER_PWM, TIMER_PWM_CHN, 5 * 1000, 0.9);
+        pwm_set_enable(TIMER_PWM, TIMER_PWM_CHN, 1);
+    }
+    else
+    {
+        fpioa_set_function(CONFIG_PIN_NUM_FLASH_LED, FUNC_GPIOHS0 + CONFIG_GPIOHS_NUM_FLASH_LED);
+        gpiohs_set_drive_mode(CONFIG_GPIOHS_NUM_FLASH_LED, GPIO_DM_OUTPUT);
+        gpiohs_set_pin(CONFIG_GPIOHS_NUM_FLASH_LED, 1 - CONFIG_FLASH_LED_OPEN_VOL);
+    }
+    // pwm_set_enable(TIMER_PWM, TIMER_PWM_CHN, state ? 0 : 1);
     // gpiohs_set_pin(CONFIG_GPIOHS_NUM_FLASH_LED, state ? CONFIG_FLASH_LED_OPEN_VOL : 1 - CONFIG_FLASH_LED_OPEN_VOL);
     // gpiohs_set_pin(CONFIG_GPIOHS_NUM_FLASH_LED, CONFIG_FLASH_LED_OPEN_VOL);
 #endif /* CONFIG_ENABLE_FLASH_LED */

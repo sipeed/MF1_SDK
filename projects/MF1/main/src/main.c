@@ -210,6 +210,11 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
                                             total, current, time);
 #endif /* CONFIG_FACE_PASS_ONLY_OUT_UID */
                 }
+
+                if (g_board_cfg.brd_soft_cfg.cfg.auto_out_fea == 0)
+                {
+                    lcd_draw_pass();
+                }
             }
             else
             {
@@ -224,10 +229,6 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
 #else
     open_relay();
 #endif /* CONFIG_ENABLE_UART_PROTOCOL */
-    if (g_board_cfg.brd_soft_cfg.cfg.auto_out_fea == 0)
-    {
-        lcd_draw_pass();
-    }
     return;
 }
 
