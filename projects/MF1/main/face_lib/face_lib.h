@@ -148,6 +148,9 @@ typedef struct
     uint8_t use_flash_led;     //1 when dark, use flash led
     uint8_t no_face_close_lcd; //1 enable, 0 disable
 
+    int face_min_width;
+    int face_min_height;
+    
     float detect_threshold;
     float compare_threshold;
 } face_recognition_cfg_t;

@@ -541,3 +541,71 @@ uint8_t judge_face_by_keypoint(key_point_t *kp)
     ///////////////////////////////////////////////////////////////////////////////
     return (ret > 0) ? 0 : 1;
 }
+
+uint8_t check_front_face(key_point_t *kp)
+{
+    char tmp[64];
+
+    int32_t le_x = kp->point[0].x;
+    int32_t le_y = kp->point[0].y;
+    int32_t re_x = kp->point[1].x;
+    int32_t re_y = kp->point[1].y;
+    int32_t nose_x = kp->point[2].x;
+    int32_t nose_y = kp->point[2].y;
+    int32_t lm_x = kp->point[3].x;
+    int32_t lm_y = kp->point[3].y;
+    int32_t rm_x = kp->point[4].x;
+    int32_t rm_y = kp->point[4].y;
+    //check valid
+    if ((le_x - re_x) == 0 || (lm_x - rm_x) == 0)
+    {
+        return 0xff; //error
+    }
+
+#if 0
+    for (uint8_t cnt = 0; cnt < 5; cnt++)
+    {
+        printk("%d %d:%d\r\n", cnt, kp->point[cnt].x, kp->point[cnt].y);
+        image_rgb565_draw_string(pCamImage, "*", 16,
+                                 kp->point[cnt].x - 4, kp->point[cnt].y - 8,
+                                 RED, NULL,
+                                 CamImage_W, CamImage_H);
+    }
+#endif
+
+    //parm1: 斜率 <0.15
+    float slope_eye = fabs(1.0 * (le_y - re_y) / (le_x - re_x));
+    float slope_mouth = fabs(1.0 * (lm_y - rm_y) / (lm_x - rm_x));
+    float slope_avg = (slope_eye + slope_mouth) / 2.0;
+    //parm2: 水平旋转，pan  <0.2
+    float pan_eye = fabs((nose_x - (le_x + re_x) / 2.0) / (le_x - re_x));
+    float pan_mouth = fabs((nose_x - (lm_x + rm_x) / 2.0) / (lm_x - rm_x));
+    float pan_avg = (pan_eye + pan_mouth) / 2.0;
+    //parm3：俯仰角，tilt in 0.05~0.4
+    float tilt_nose = fabs((nose_y - (le_y + re_y + lm_y + rm_y) / 4.0) / (le_y + re_y - lm_y - rm_y));
+
+    sprintf(tmp, "%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\r\n", slope_eye, slope_mouth, slope_avg, pan_eye, pan_mouth, pan_avg, tilt_nose);
+    printk("%s", tmp);
+
+    if (slope_avg > 0.15)
+    {
+        sprintf(tmp, "%.3f", slope_avg);
+        printk("head slope to much! %s\r\n", tmp);
+        return 1;
+    }
+    if (pan_avg > 0.2)
+    {
+        sprintf(tmp, "%.3f", pan_avg);
+        printk("head pan to much! %s\r\n", tmp);
+        return 2;
+    }
+    // if (tilt_nose < 0.05 || tilt_nose > 0.4)
+    if (tilt_nose > 0.05)
+    {
+        sprintf(tmp, "%.3f", tilt_nose);
+        printk("head tilt to much! %s\r\n", tmp);
+        return 3;
+    }
+    printk("head good!\r\n");
+    return 0;
+}

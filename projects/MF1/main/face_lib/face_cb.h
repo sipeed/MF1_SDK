@@ -17,6 +17,7 @@ void lcd_display_image_alpha(uint32_t pic_addr, uint32_t alpha);
 void lcd_draw_pass(void);
 
 uint8_t judge_face_by_keypoint(key_point_t *kp);
+uint8_t check_front_face(key_point_t *kp);
 void protocol_record_face(proto_record_face_cfg_t *cfg);
 
 void detected_face_cb(face_recognition_ret_t *face);

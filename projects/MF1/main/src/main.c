@@ -7,6 +7,7 @@
 
 #include "lcd.h"
 #include "lcd_dis.h"
+#include "user_cmd.h"
 
 #include "wdt.h"
 
@@ -38,6 +39,9 @@ face_recognition_cfg_t face_recognition_cfg = {
 
     .detect_threshold = 0.0,
     .compare_threshold = 0.0,
+
+    .face_min_width = 0,
+    .face_min_height = 0,
 };
 
 face_lib_callback_t face_recognition_cb = {
@@ -232,52 +236,6 @@ void face_pass_callback(face_obj_t *obj, uint32_t total, uint32_t current, uint6
     return;
 }
 
-#if CONFIG_ENABLE_UART_PROTOCOL
-//recv: {"version":1,"type":"test"}
-//send: {"version":1,"type":"test","code":0,"msg":"test"}
-void test_cmd(cJSON *root)
-{
-    cJSON *ret = protocol_gen_header("test", 0, "test");
-    if (ret)
-    {
-        protocol_send(ret);
-    }
-    cJSON_Delete(ret);
-    return;
-}
-
-//recv: {"version":1,"type":"test2","log_tx":10}
-//send: {"1":1,"type":"test2","code":0,"msg":"test2"}
-void test2_cmd(cJSON *root)
-{
-    cJSON *ret = NULL;
-    cJSON *tmp = NULL;
-
-    tmp = cJSON_GetObjectItem(root, "log_tx");
-    if (tmp == NULL)
-    {
-        printk("no log_tx recv\r\n");
-    }
-    else
-    {
-        printk("log_tx:%d\r\n", tmp->valueint);
-    }
-
-    ret = protocol_gen_header("test2", 0, "test2");
-    if (ret)
-    {
-        protocol_send(ret);
-    }
-    cJSON_Delete(ret);
-    return;
-}
-
-protocol_custom_cb_t user_custom_cmd[] = {
-    {.cmd = "test", .cmd_cb = test_cmd},
-    {.cmd = "test2", .cmd_cb = test2_cmd},
-};
-#endif /* CONFIG_ENABLE_UART_PROTOCOL */
-
 int main(void)
 {
     static uint64_t last_feed_ms = 0;
@@ -349,7 +307,7 @@ int main(void)
 #endif /* CONFIG_ENABLE_OUTPUT_JPEG */
 
     /* init device */
-    protocol_regesiter_user_cb(&user_custom_cmd[0], sizeof(user_custom_cmd) / sizeof(user_custom_cmd[0]));
+    protocol_regesiter_user_cb(&user_custom_cmd[0], 3);
     protocol_init_device(&g_board_cfg, 0);
     protocol_send_init_done();
 #endif /* CONFIG_ENABLE_UART_PROTOCOL */
@@ -365,13 +323,20 @@ int main(void)
     while (1)
     {
 #if CONFIG_ENABLE_UART_PROTOCOL
-        if (!jpeg_recv_start_flag)
+        if (!jpeg_recv_start_flag && !proto_scan_qrcode_flag)
 #endif /* CONFIG_ENABLE_UART_PROTOCOL */
         {
             face_recognition_cfg.auto_out_fea = (uint8_t)g_board_cfg.brd_soft_cfg.cfg.auto_out_fea;
             face_recognition_cfg.compare_threshold = (float)g_board_cfg.brd_soft_cfg.out_threshold;
             face_lib_run(&face_recognition_cfg);
         }
+
+#if CONFIG_ENABLE_UART_PROTOCOL
+        if (proto_scan_qrcode_flag)
+        {
+            proto_qrcode_scan_loop();
+        }
+#endif /* CONFIG_ENABLE_UART_PROTOCOL */
 
         /* get key state */
         update_key_state();
