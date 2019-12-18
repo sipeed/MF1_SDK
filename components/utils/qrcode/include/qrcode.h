@@ -2,6 +2,7 @@
 #define __QRCODE_H
 
 #include <stdio.h>
+#include <stdint.h>
 #include "yuv_tab.h"
 
 #define QUIRC_MAX_PAYLOAD 255
@@ -62,5 +63,30 @@ typedef struct _qrcode_image
 } __attribute__((aligned(8))) qrcode_image_t;
 
 uint8_t find_qrcodes(qrcode_result_t *out, qrcode_image_t *img);
+
+enum enum_qrcode_res
+{
+    QRCODE_SUCC = 0,    /*  0: 扫码成功 */
+    QRCODE_FAIL = 1,    /* 1: 扫码失败 */
+    QRCODE_TIMEOUT = 2, /* 2: 扫码超时 */
+    QRCODE_TOOBIG = 3,  /* 3: 二维码内容太大 */
+    QRCODE_UNK_ERR = 4, /* 4: 未知异常 */
+};
+
+typedef struct _qrcode_scan
+{
+    int scan_time_out_s;
+    uint64_t start_time_us;
+
+    uint16_t img_w;
+    uint16_t img_h;
+    uint8_t *img_data;
+
+    /* http://chicore.cn/doc/1180830026001202.htm */
+
+    uint8_t qrcode[QUIRC_MAX_PAYLOAD];
+} qrcode_scan_t;
+
+enum enum_qrcode_res qrcode_scan(qrcode_scan_t *scan);
 
 #endif

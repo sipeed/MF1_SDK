@@ -10,7 +10,10 @@
 #include <stdbool.h>
 #include <math.h>
 
-#include "printf.h"
+
+// #include "printf.h"
+extern int printk(const char *format, ...);
+extern uint64_t sysctl_get_time_us(void);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //////// "quirc.h"
@@ -3122,4 +3125,47 @@ uint8_t find_qrcodes(qrcode_result_t *out, qrcode_image_t *img)
     //如果不转换，显示图像就不正确了。
     qrcode_convert_image(img);
     return qrcode_num;
+}
+
+/* 0: 扫码成功
+   1: 扫码失败
+   2: 扫码超时
+   3: 二维码内容太大
+   4: 未知异常
+   */
+enum enum_qrcode_res qrcode_scan(qrcode_scan_t *scan)
+{
+    qrcode_image_t img;
+    qrcode_result_t qrcode;
+
+    if ((sysctl_get_time_us() - (scan->start_time_us)) > (scan->scan_time_out_s * 1000 * 1000))
+    {
+        return QRCODE_TIMEOUT;
+    }
+
+    if (scan->img_data == NULL)
+    {
+        return QRCODE_UNK_ERR;
+    }
+
+    memset(&img, 0, sizeof(img));
+    img.w = scan->img_w; /* 320 */
+    img.h = scan->img_w; /* 240 */
+    img.data = (uint8_t *)(scan->img_data);
+
+    if (find_qrcodes(&qrcode, &img) != 0)
+    {
+        if (/* qrcode.version <= 6 && */ qrcode.payload_len >= QUIRC_MAX_PAYLOAD)
+        {
+            printk("qrcode content too big than buffer\r\n");
+            return QRCODE_TOOBIG;
+        }
+        else
+        {
+            memcpy(scan->qrcode, qrcode.payload, qrcode.payload_len);
+            scan->qrcode[qrcode.payload_len] = 0;
+            return QRCODE_SUCC;
+        }
+    }
+    return QRCODE_FAIL;
 }

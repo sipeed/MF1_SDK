@@ -8,6 +8,7 @@ list(APPEND ADD_INCLUDE "base64/include"
                         "jpeg_decode/include"
                         "jpeg_encode/include"
                         "cQueue/src"
+                        "qrcode/include"
                     )
 
 append_srcs_dir(ADD_SRCS    "base64/src")
@@ -25,6 +26,10 @@ endif()
 
 if(CONFIG_ENABLE_CQUEUE)
     append_srcs_dir(ADD_SRCS    "cQueue/src")
+endif()
+
+if(CONFIG_ENABLE_QRCODE)
+    append_srcs_dir(ADD_SRCS    "qrcode/src")
 endif()
 
 register_component()

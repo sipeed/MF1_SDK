@@ -25,5 +25,8 @@ menu "utils config"
         bool "enable jpeg encode"
         default y
 
+    config ENABLE_QRCODE
+        bool "enable qrcode scan"
+        default y
 endmenu
 
