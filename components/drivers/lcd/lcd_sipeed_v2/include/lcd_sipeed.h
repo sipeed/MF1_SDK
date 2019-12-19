@@ -67,7 +67,7 @@
 #define LCD_VBP                     (30)
 #define LCD_VFP                     (12)
 #define LCD_INIT_LINE               (2)	
-#define LCD_LINE_FIX_PIXEL          (1)
+#define LCD_LINE_FIX_PIXEL          (2)
 ///////////////////////////////////////////////////////////////////////////////
 #endif
 

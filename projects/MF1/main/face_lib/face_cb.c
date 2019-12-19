@@ -65,7 +65,7 @@ void face_cb_init(void)
 
     DisImageX_Off = 0;
     DisImageY_Off = 0;
-#else
+#else /* CONFIG_LCD_TYPE_SIPEED */
     pDisImage = _IOMEM_PADDR(lcd_image);
     pCamImage = _IOMEM_ADDR(cam_image);
 
@@ -122,52 +122,6 @@ void face_cb_init(void)
     image_rgb565_draw_string(lcd_banner_image, "192.168.0.169", 16,
                              29, 399, WHITE, NULL, SIPEED_LCD_BANNER_W, SIPEED_LCD_BANNER_H);
 #endif /* CONFIG_LCD_VERTICAL */
-#elif CONFIG_TYPE_480_272_4_3_INCH
-    DisImageX_Off = 8;
-    DisImageY_Off = 16;
-#if CONFIG_LCD_VERTICAL
-    //时间
-    image_rgb565_draw_string(lcd_banner_image, "10:08", 32,
-                             29, 27, WHITE, NULL, SIPEED_LCD_BANNER_W, SIPEED_LCD_BANNER_H);
-    //09月25日 星期三
-    image_rgb565_draw_zhCN_string(lcd_banner_image, zhCN_date, 16,
-                                  5, 69, WHITE, NULL, SIPEED_LCD_BANNER_W, SIPEED_LCD_BANNER_H,
-                                  lcd_dis_get_zhCN_dat);
-    //深圳XX公司
-    image_rgb565_draw_zhCN_string(lcd_banner_image, zhCN_company, 16,
-                                  18, 111, WHITE, NULL, SIPEED_LCD_BANNER_W, SIPEED_LCD_BANNER_H,
-                                  lcd_dis_get_zhCN_dat);
-    //欢迎使用人脸识别
-    image_rgb565_draw_zhCN_string(lcd_banner_image, zhCN_welcome, 16,
-                                  137, 118, WHITE, NULL, SIPEED_LCD_BANNER_W, SIPEED_LCD_BANNER_H,
-                                  lcd_dis_get_zhCN_dat);
-    //IP地址
-    image_rgb565_draw_string(lcd_banner_image, "192.168.0.169", 16,
-                             149, 138, WHITE, NULL, SIPEED_LCD_BANNER_W, SIPEED_LCD_BANNER_H);
-#else
-    //时间
-    image_rgb565_draw_string(lcd_banner_image, "10:08", 48,
-                             21, 10, WHITE, NULL, SIPEED_LCD_BANNER_W, SIPEED_LCD_BANNER_H);
-    //09月25日 星期三
-    image_rgb565_draw_zhCN_string(lcd_banner_image, zhCN_date, 16,
-                                  21, 59, WHITE, NULL, SIPEED_LCD_BANNER_W, SIPEED_LCD_BANNER_H,
-                                  lcd_dis_get_zhCN_dat);
-    //深圳XX公司
-    image_rgb565_draw_zhCN_string(lcd_banner_image, zhCN_company, 24,
-                                  8, 100, WHITE, NULL, SIPEED_LCD_BANNER_W, SIPEED_LCD_BANNER_H,
-                                  lcd_dis_get_zhCN_dat);
-    //欢迎使用人脸识别
-    image_rgb565_draw_zhCN_string(lcd_banner_image, zhCN_welcome, 16,
-                                  16, 230, WHITE, NULL, SIPEED_LCD_BANNER_W, SIPEED_LCD_BANNER_H,
-                                  lcd_dis_get_zhCN_dat);
-    //IP地址
-    image_rgb565_draw_string(lcd_banner_image, "192.168.0.169", 16,
-                             28, 250, WHITE, NULL, SIPEED_LCD_BANNER_W, SIPEED_LCD_BANNER_H);
-#endif /* CONFIG_LCD_VERTICAL */
-
-#elif CONFIG_TYPE_1024_600
-    DisImageX_Off = 0;
-    DisImageY_Off = 0;
 #endif /* CONFIG_TYPE_800_480_57_INCH */
 #endif /* CONFIG_LCD_TYPE_SIPEED */
 
@@ -177,6 +131,7 @@ void face_cb_init(void)
 #else
     DisY_Off = DisLcd_H - 16;
 #endif
+
     return;
 }
 
@@ -213,10 +168,7 @@ void lcd_display_image_alpha(uint32_t pic_addr, uint16_t pic_w, uint16_t pic_h, 
     while (dis_flag)
     {
     }; //等待中断刷完屏
-    //FIXME:这里更新到最新操作少的
-    image_rgb565_paste_img(pDisImage, DisLcd_W, DisLcd_H,
-                           pCamImage, CamImage_W, CamImage_H,
-                           DisImageX_Off, DisImageY_Off);
+    memcpy(pDisImage, pCamImage, CamImage_W * CamImage_H * 2);
 #else
 #if (CONFIG_LCD_WIDTH == 240)
     convert_320x240_to_240x240(pCamImage, oft_x);
@@ -241,7 +193,12 @@ void lcd_display_image_alpha_old(uint32_t pic_addr, uint32_t alpha)
 void lcd_convert_cb(void)
 {
 #if CONFIG_LCD_TYPE_SIPEED
+#if 0 //CONFIG_LCD_VERTICAL/* 这里本来需要旋转的，但是我们的屏幕本来是横屏显示的，所以不再进行旋转，只是绘图这类操作进行旋转即可 */
+    convert_rgb565_order((uint16_t *)pCamImage, CONFIG_CAMERA_RESOLUTION_WIDTH, CONFIG_CAMERA_RESOLUTION_HEIGHT);
+    image_rgb565_roate_right90_lessmem((uint16_t *)pCamImage, CONFIG_CAMERA_RESOLUTION_WIDTH, CONFIG_CAMERA_RESOLUTION_HEIGHT);
+#else
     convert_rgb565_order((uint16_t *)pCamImage, CamImage_W, CamImage_H);
+#endif
 #endif /* CONFIG_LCD_TYPE_SIPEED */
 
     if (lcd_dis_list->len)
@@ -276,9 +233,7 @@ void lcd_refresh_cb(void)
     while (dis_flag)
     {
     }; //等待中断刷完屏
-    image_rgb565_paste_img(pDisImage, DisLcd_W, DisLcd_H,
-                           pCamImage, CamImage_W, CamImage_H,
-                           DisImageX_Off, DisImageY_Off);
+    memcpy(pDisImage, pCamImage, CamImage_W * CamImage_H * 2);
 #else
 #if (CONFIG_LCD_WIDTH == 240)
     int16_t oft_x = (CamImage_W - PIC_W) / 2 + DisImageX_Off;
@@ -375,6 +330,7 @@ void detected_face_cb(face_recognition_ret_t *face)
             int16_t oft_x = (CamImage_W - PIC_W) / 2 + DisImageX_Off;
 
             sprintf(str, "%.3f", face_info->score);
+            printk("face score:%s\r\n", str);
             image_rgb565_draw_string(pCamImage, str, 16,
                                      oft_x, DisY_Off,
                                      RED, &bg,

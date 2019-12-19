@@ -29,19 +29,13 @@ list(APPEND ADD_INCLUDE "sd_card/include"
         endif()
         
         if(CONFIG_TYPE_800_480_57_INCH)
-            list(APPEND ADD_DEFINITIONS -DSIPEED_LCD_W=322
+            list(APPEND ADD_DEFINITIONS -DSIPEED_LCD_W=320
                                         -DSIPEED_LCD_H=240
                                         -DSIPEED_LCD_BANNER_W=160
                                         -DSIPEED_LCD_BANNER_H=480
                                         )
-        elseif(CONFIG_TYPE_480_272_4_3_INCH)
-            list(APPEND ADD_DEFINITIONS -DSIPEED_LCD_W=322
-                                        -DSIPEED_LCD_H=272
-                                        -DSIPEED_LCD_BANNER_W=160
-                                        -DSIPEED_LCD_BANNER_H=272
-                                        )
-        elseif(CONFIG_TYPE_1024_600)
-    
+        else()
+            message(FATAL_ERROR "Not support other lcd resulotion")
         endif()
     endif()
 
