@@ -10,6 +10,7 @@
 
 #include "lcd.h"
 #include "audio.h"
+#include "user_cmd.h"
 
 #include "global_config.h"
 
@@ -28,6 +29,7 @@ static uint64_t proto_record_start_time = 0;
 ///////////////////////////////////////////////////////////////////////////////
 uint8_t delay_flag = 0;
 uint8_t lcd_bl_stat = 1; /* 1:on, 0:off */
+uint8_t have_face = 0;   /* detect face in image or not */
 
 #define pDisImage (display_image)
 // static uint8_t *pDisImage = NULL;
@@ -168,6 +170,17 @@ void lcd_refresh_cb(void)
         set_lcd_bl(1);
     }
 
+#if CONFIG_ALWAYS_SCAN_QRCODES
+    if (have_face == 0)
+    {
+        proto_qrcode_scan_loop();
+    }
+    else
+    {
+        have_face--;
+    }
+#endif /* CONFIG_ALWAYS_SCAN_QRCODES */
+
 #if (CONFIG_LCD_WIDTH == 240)
     convert_320x240_to_240x240(pDisImage, LCD_OFT);
 #endif
@@ -259,6 +272,7 @@ void detected_face_cb(face_recognition_ret_t *face)
     if (face_cnt > 0)
     {
         lass_have_face_time = sysctl_get_time_us();
+        have_face = 1;
     }
 
     for (uint32_t i = 0; i < face_cnt; i++)
@@ -279,6 +293,8 @@ void detected_face_cb(face_recognition_ret_t *face)
 
         if (proto_record_flag)
         {
+            printk("proto_record_flag\r\n");
+
             tim = sysctl_get_time_us();
             tim = (tim - proto_record_start_time) / 1000 / 1000;
 
@@ -289,7 +305,8 @@ void detected_face_cb(face_recognition_ret_t *face)
                 goto _exit;
             }
 
-            if (judge_face_by_keypoint(&(face_info->key_point)) && (face_info->prob >= 0.92f))
+            // if (judge_face_by_keypoint(&(face_info->key_point)) && (face_info->prob >= 0.92f))
+            if (check_front_face(&(face_info->key_point) == 0) && (face_info->prob >= 0.92f))
             {
                 printf("record face\r\n");
 
@@ -322,6 +339,10 @@ void detected_face_cb(face_recognition_ret_t *face)
                 set_RGB_LED(BLED);
                 msleep(500); //this delay can modify
                 set_RGB_LED(0);
+            }
+            else
+            {
+                printk("face prob error or judge_face_by_keypoint failed\r\n ");
             }
         }
 #if (CONFIG_SHORT_PRESS_FUNCTION_KEY_RECORD_FACE && (CONFIG_KEY_SHORT_QRCODE == 0))

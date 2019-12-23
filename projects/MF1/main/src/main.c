@@ -328,10 +328,12 @@ int main(void)
         {
             face_recognition_cfg.auto_out_fea = (uint8_t)g_board_cfg.brd_soft_cfg.cfg.auto_out_fea;
             face_recognition_cfg.compare_threshold = (float)g_board_cfg.brd_soft_cfg.out_threshold;
+            uint64_t tt = sysctl_get_time_us();
             face_lib_run(&face_recognition_cfg);
+            printk("%ld ms\r\n", (sysctl_get_time_us() - tt) / 1000);
         }
 
-#if CONFIG_ENABLE_UART_PROTOCOL
+#if CONFIG_ENABLE_UART_PROTOCOL && !CONFIG_ALWAYS_SCAN_QRCODES
         if (proto_scan_qrcode_flag)
         {
             proto_qrcode_scan_loop();

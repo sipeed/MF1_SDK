@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <math.h>
 
+#include "global_config.h"
 
 // #include "printf.h"
 extern int printk(const char *format, ...);
@@ -3001,7 +3002,10 @@ static void dump_info(struct quirc *q)
     int count = quirc_count(q);
     int i;
 
+#if !CONFIG_ALWAYS_SCAN_QRCODES
     printk("%d QR-codes found:\r\n\r\n", count);
+#endif
+
     for (i = 0; i < count; i++)
     {
         struct quirc_code code;
@@ -3033,7 +3037,7 @@ static void dump_info(struct quirc *q)
 static void qrcode_convert_image(qrcode_image_t *img)
 {
     uint16_t t[2];
-    uint16_t *ptr = img->data;
+    uint16_t *ptr = (uint16_t *)(img->data);
 
     for (uint32_t i = 0; i < (img->w * img->h); i += 2)
     {
@@ -3046,7 +3050,7 @@ static void qrcode_convert_image(qrcode_image_t *img)
     return;
 }
 
-uint8_t find_qrcodes(qrcode_result_t *out, qrcode_image_t *img)
+uint8_t find_qrcodes(qrcode_result_t *out, qrcode_image_t *img, uint8_t convert)
 {
     uint8_t qrcode_num = 0;
 
@@ -3054,9 +3058,7 @@ uint8_t find_qrcodes(qrcode_result_t *out, qrcode_image_t *img)
     quirc_resize(controller, img->w, img->h);
 
     uint8_t *grayscale_image = quirc_begin(controller, NULL, NULL);
-#if 0
-    memcpy(grayscale_image, img, width * height);
-#else
+
     //摄像头的图像需要交换16BIt高低8位
     qrcode_convert_image(img);
 
@@ -3068,33 +3070,13 @@ uint8_t find_qrcodes(qrcode_result_t *out, qrcode_image_t *img)
             *(grayscale_image++) = COLOR_RGB565_TO_GRAYSCALE(IMAGE_GET_RGB565_PIXEL_FAST(row_ptr, img->w - x));
         }
     }
-#endif
-#if 1
-    // if ((img->w % 2) != 0)
-    // {
-    //     printk("image widht is not error\r\n");
-    //     return 0;
-    // }
-    // //将灰度图像进行左右镜像
-    // for (uint16_t i = 0; i < img->h; i++)
-    // {
-    //     for (uint16_t j = 0; j < (img->w / 2); j++)
-    //     {
-    //         uint8_t tmp1, tmp2;
-    //         tmp1 = *(grayscale_image + i * img->w + j);
-    //         tmp2 = *(grayscale_image + i * img->w + img->w - j);
-    //         *(grayscale_image + i * img->w + j) = tmp2;
-    //         *(grayscale_image + i * img->w + img->w - j) = tmp1;
-    //     }
-    // }
-#endif
 
     quirc_end(controller);
 
     for (int i = 0, j = quirc_count(controller); i < j; i++)
     {
-        struct quirc_code code; // = (struct quirc_code *)malloc(sizeof(struct quirc_code));
-        struct quirc_data data; // = (struct quirc_data *)malloc(sizeof(struct quirc_data));
+        struct quirc_code code;
+        struct quirc_data data;
 
         memset(&code, 0, sizeof(struct quirc_code));
         memset(&data, 0, sizeof(struct quirc_data));
@@ -3119,11 +3101,20 @@ uint8_t find_qrcodes(qrcode_result_t *out, qrcode_image_t *img)
             }
         }
     }
-    dump_info(controller);
+
+    if (qrcode_num)
+    {
+        dump_info(controller);
+    }
+
     quirc_destroy(controller);
 
-    //如果不转换，显示图像就不正确了。
-    qrcode_convert_image(img);
+    if (convert)
+    {
+        //如果不转换，显示图像就不正确了。
+        qrcode_convert_image(img);
+    }
+
     return qrcode_num;
 }
 
@@ -3133,39 +3124,41 @@ uint8_t find_qrcodes(qrcode_result_t *out, qrcode_image_t *img)
    3: 二维码内容太大
    4: 未知异常
    */
-enum enum_qrcode_res qrcode_scan(qrcode_scan_t *scan)
+enum enum_qrcode_res qrcode_scan(qrcode_scan_t *scan, uint8_t convert)
 {
     qrcode_image_t img;
     qrcode_result_t qrcode;
 
+#if !CONFIG_ALWAYS_SCAN_QRCODES
     if ((sysctl_get_time_us() - (scan->start_time_us)) > (scan->scan_time_out_s * 1000 * 1000))
     {
         return QRCODE_TIMEOUT;
     }
+#endif /* CONFIG_ALWAYS_SCAN_QRCODES */
 
     if (scan->img_data == NULL)
     {
-        return QRCODE_UNK_ERR;
+        return QRCODE_ERROR;
     }
 
     memset(&img, 0, sizeof(img));
     img.w = scan->img_w; /* 320 */
-    img.h = scan->img_w; /* 240 */
+    img.h = scan->img_h; /* 240 */
     img.data = (uint8_t *)(scan->img_data);
 
-    if (find_qrcodes(&qrcode, &img) != 0)
+    if (find_qrcodes(&qrcode, &img, convert) != 0)
     {
-        if (/* qrcode.version <= 6 && */ qrcode.payload_len >= QUIRC_MAX_PAYLOAD)
-        {
-            printk("qrcode content too big than buffer\r\n");
-            return QRCODE_TOOBIG;
-        }
-        else
+        // if (/* qrcode.version <= 6 && */ qrcode.payload_len >= QUIRC_MAX_PAYLOAD)
+        // {
+        //     printk("qrcode content too big than buffer\r\n");
+        //     return QRCODE_TOOBIG;
+        // }
+        // else
         {
             memcpy(scan->qrcode, qrcode.payload, qrcode.payload_len);
             scan->qrcode[qrcode.payload_len] = 0;
             return QRCODE_SUCC;
         }
     }
-    return QRCODE_FAIL;
+    return QRCODE_NONE;
 }

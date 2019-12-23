@@ -156,13 +156,18 @@ extern void kpu_unlock_buf(void);
 
 void proto_qrcode_scan_loop(void)
 {
+#if !CONFIG_ALWAYS_SCAN_QRCODES
     if (proto_scan_qrcode_flag)
     {
         kpu_lock_buf();
         rgb_lock_buf();
+#endif /* CONFIG_ALWAYS_SCAN_QRCODES */
+        uint64_t t = sysctl_get_time_us();
 
         qrcode_cfg.img_data = display_image;
-        enum enum_qrcode_res ret = qrcode_scan(&qrcode_cfg);
+        enum enum_qrcode_res ret = qrcode_scan(&qrcode_cfg, 1);
+
+        printk("qrcode: %ld ms\r\n", (sysctl_get_time_us() - t) / 1000);
 
         switch (ret)
         {
@@ -178,25 +183,29 @@ void proto_qrcode_scan_loop(void)
             proto_send_qrcode_ret(2, "timeout", NULL);
         }
         break;
-        case QRCODE_TOOBIG:
+        case QRCODE_ERROR:
         {
-            printk("QRCODE_TOOBIG\r\n");
-            proto_send_qrcode_ret(3, "qrcode too big", NULL);
+            printk("QRCODE_ERROR\r\n");
+            proto_send_qrcode_ret(3, "qrcode error", NULL);
         }
-        break;
         default:
         {
             printk("no qrcode\r\n");
-            printk("%s\r\n", (ret == QRCODE_FAIL) ? "QRCODE_FAIL" : "QRCODE_UNK_ERR");
+#if !CONFIG_ALWAYS_SCAN_QRCODES
+            printk("%s\r\n", (ret == QRCODE_NONE) ? "QRCODE_FAIL" : "QRCODE_UNK_ERR");
             /* here display pic */
             lcd_display_image_alpha(IMG_SCAN_QR_ADDR, 150);
+#endif
         }
         break;
         }
 
+#if !CONFIG_ALWAYS_SCAN_QRCODES
         rgb_unlock_buf();
         kpu_unlock_buf();
     }
+#endif /* CONFIG_ALWAYS_SCAN_QRCODES */
+
     return;
 }
 ///////////////////////////////////////////////////////////////////////////////

@@ -62,15 +62,14 @@ typedef struct _qrcode_image
     };
 } __attribute__((aligned(8))) qrcode_image_t;
 
-uint8_t find_qrcodes(qrcode_result_t *out, qrcode_image_t *img);
+uint8_t find_qrcodes(qrcode_result_t *out, qrcode_image_t *img, uint8_t convert);
 
 enum enum_qrcode_res
 {
     QRCODE_SUCC = 0,    /*  0: 扫码成功 */
-    QRCODE_FAIL = 1,    /* 1: 扫码失败 */
-    QRCODE_TIMEOUT = 2, /* 2: 扫码超时 */
-    QRCODE_TOOBIG = 3,  /* 3: 二维码内容太大 */
-    QRCODE_UNK_ERR = 4, /* 4: 未知异常 */
+    QRCODE_NONE = 1,    /* 1: 扫码失败 */
+    QRCODE_ERROR = 2,   /* 出错 */
+    QRCODE_TIMEOUT = 3, /* 2: 扫码超时 */
 };
 
 typedef struct _qrcode_scan
@@ -87,6 +86,6 @@ typedef struct _qrcode_scan
     uint8_t qrcode[QUIRC_MAX_PAYLOAD];
 } qrcode_scan_t;
 
-enum enum_qrcode_res qrcode_scan(qrcode_scan_t *scan);
+enum enum_qrcode_res qrcode_scan(qrcode_scan_t *scan, uint8_t convert);
 
 #endif

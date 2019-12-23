@@ -128,6 +128,9 @@ menu "Application configuration"
 				int "FLASH Led Open High or Low"
 				range 0 1
 				default 0
+			config FLASH_LED_USE_PWM
+				bool "flash Led use pwm"
+				default y
 		endmenu
 
 		menu "RGB Led configuration"
@@ -372,6 +375,13 @@ menu "Application configuration"
 			depends on ENABLE_UART_PROTOCOL
 			bool "face pass, protocol output only uid"
 			default n
+		
+		config ALWAYS_SCAN_QRCODES
+			depends on ENABLE_UART_PROTOCOL
+			bool "always scan qrcode in main loop"
+			default n
+			--help--
+			Identify Qrcode will took very long time,and will affect lcd display
 
 	endmenu
 
