@@ -3067,7 +3067,8 @@ uint8_t find_qrcodes(qrcode_result_t *out, qrcode_image_t *img, uint8_t convert)
         uint16_t *row_ptr = IMAGE_COMPUTE_RGB565_PIXEL_ROW_PTR(img, y);
         for (int x = 0, xx = img->w; x < xx; x++)
         {
-            *(grayscale_image++) = COLOR_RGB565_TO_GRAYSCALE(IMAGE_GET_RGB565_PIXEL_FAST(row_ptr, img->w - x));
+            *(grayscale_image++) = IMAGE_GET_RGB565_PIXEL_FAST(row_ptr, img->w - x) & 0xff;
+            // *(grayscale_image++) = COLOR_RGB565_TO_GRAYSCALE(IMAGE_GET_RGB565_PIXEL_FAST(row_ptr, img->w - x));
         }
     }
 
@@ -3101,6 +3102,12 @@ uint8_t find_qrcodes(qrcode_result_t *out, qrcode_image_t *img, uint8_t convert)
             }
         }
     }
+
+#if CONFIG_ALWAYS_SCAN_QRCODES
+    /* 有二维码就开led，没有就关闭 */
+    extern void set_W_LED(int state);
+    set_W_LED((quirc_count(controller) > 0) ? 1 : 0);
+#endif
 
     if (qrcode_num)
     {

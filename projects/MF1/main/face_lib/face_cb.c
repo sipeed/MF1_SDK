@@ -272,7 +272,7 @@ void detected_face_cb(face_recognition_ret_t *face)
     if (face_cnt > 0)
     {
         lass_have_face_time = sysctl_get_time_us();
-        have_face = 1;
+        have_face = 3;
     }
 
     for (uint32_t i = 0; i < face_cnt; i++)
@@ -288,6 +288,17 @@ void detected_face_cb(face_recognition_ret_t *face)
             sprintf(str, "%.3f", face_info->score);
 
             image_rgb565_draw_string(pDisImage, str, 16, DisX_Off, DisY_Off, WHITE, &bg, DisImage_W, DisImage_H);
+
+#if CONFIG_NOTIFY_STRANGER
+            if (g_board_cfg.user_custom_cfg[0] == 0x01)
+            {
+                tim = sysctl_get_time_us();
+
+                protocol_send_face_info(face_info,
+                                        0, NULL, (g_board_cfg.user_custom_cfg[1] == 0x01) ? face_info->feature : NULL,
+                                        face_cnt, i, &tim);
+            }
+#endif
         }
         printf("face prob:%.4f\r\n", face_info->prob);
 

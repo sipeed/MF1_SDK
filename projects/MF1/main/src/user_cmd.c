@@ -17,7 +17,14 @@ static void proto_send_qrcode_ret(uint8_t code, char *msg, char *qrcode);
 
 ///////////////////////////////////////////////////////////////////////////////
 /* 增删指令必须修改数组大小 */
+#if CONFIG_NOTIFY_STRANGER
+static void proto_set_notify(cJSON *root);
+
+protocol_custom_cb_t user_custom_cmd[4] = {
+    {.cmd = "set_notify", .cmd_cb = proto_set_notify},
+#else
 protocol_custom_cb_t user_custom_cmd[3] = {
+#endif /* CONFIG_NOTIFY_STRANGER */
     {.cmd = "test", .cmd_cb = test_cmd},
     {.cmd = "test2", .cmd_cb = test2_cmd},
     {.cmd = "qrscan", .cmd_cb = proto_scan_qrcode},
@@ -65,6 +72,91 @@ static void test2_cmd(cJSON *root)
     return;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+/* 对客户需求输出陌生人脸需求添加的指令 */
+#if CONFIG_NOTIFY_STRANGER
+/* code:
+        0, success
+        1, Json parse failed
+        2, Unk error
+*/
+static uint8_t proto_set_notify_ret(uint8_t code, char *msg, uint8_t en, uint8_t out_fea)
+{
+    const char *notify_cmd_ret = "set_notify_ret";
+
+    cJSON *ret = NULL;
+
+    ret = protocol_gen_header(notify_cmd_ret, code, msg);
+
+    if (ret == NULL)
+    {
+        printk("Ahh, failed to gen header\r\n");
+        return 1;
+    }
+
+    cJSON_AddNumberToObject(ret, "en", en);
+    cJSON_AddNumberToObject(ret, "out_fea", out_fea);
+
+    protocol_send(ret);
+
+    cJSON_Delete(ret);
+
+    return 0;
+}
+
+static void proto_set_notify(cJSON *root)
+{
+    cJSON *tmp = NULL;
+    uint8_t en, out_fea;
+
+    tmp = cJSON_GetObjectItem(root, "query");
+    if ((tmp == NULL) || cJSON_IsNumber(tmp) == false)
+    {
+        printk("can not get query\r\n");
+        proto_set_notify_ret(1, "get query failed", 0, 0);
+        return;
+    }
+
+    if ((tmp->valueint & 0x01) == 0x01)
+    {
+        proto_set_notify_ret(0, "query success", g_board_cfg.user_custom_cfg[0], g_board_cfg.user_custom_cfg[1]);
+        return;
+    }
+
+    tmp = cJSON_GetObjectItem(root, "en");
+    if ((tmp == NULL) || cJSON_IsNumber(tmp) == false)
+    {
+        printk("can not get en\r\n");
+        proto_set_notify_ret(1, "get en failed", 0, 0);
+        return;
+    }
+    en = tmp->valueint & 0x01;
+    printk("set en %d\r\n", en);
+
+    tmp = cJSON_GetObjectItem(root, "out_fea");
+    if ((tmp == NULL) || cJSON_IsNumber(tmp) == false)
+    {
+        printk("can not get out_fea\r\n");
+        proto_set_notify_ret(1, "get out_fea failed", 0, 0);
+        return;
+    }
+    out_fea = tmp->valueint & 0x01;
+    printk("set enout_fea %d\r\n", out_fea);
+
+    g_board_cfg.user_custom_cfg[0] = en;
+    g_board_cfg.user_custom_cfg[1] = out_fea;
+
+    if (flash_save_cfg(&g_board_cfg))
+    {
+        printk("save flash cfg success\r\n");
+        proto_set_notify_ret(0, "save cfg success", 0, 0);
+        return;
+    }
+    printk("save flash cfg faild\r\n");
+    proto_set_notify_ret(2, "save cfg failed", 0, 0);
+    return;
+}
+#endif /* CONFIG_NOTIFY_STRANGER */
 ///////////////////////////////////////////////////////////////////////////////
 int proto_scan_qrcode_flag = 0;
 

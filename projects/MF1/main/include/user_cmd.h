@@ -8,8 +8,11 @@
 #include "face_lib.h"
 
 ///////////////////////////////////////
+#if CONFIG_NOTIFY_STRANGER
+extern protocol_custom_cb_t user_custom_cmd[4];
+#else
 extern protocol_custom_cb_t user_custom_cmd[3];
-
+#endif
 ///////////////////////////////////////
 extern int proto_scan_qrcode_flag;
 

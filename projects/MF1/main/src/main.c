@@ -265,6 +265,11 @@ int main(void)
 
     flash_cfg_print(&g_board_cfg);
 
+#if CONFIG_NOTIFY_STRANGER
+    printk("notify stranger en:%d\r\n", g_board_cfg.user_custom_cfg[0]);
+    printk("notify stranger out_fea:%d\r\n", g_board_cfg.user_custom_cfg[1]);
+#endif
+
     face_lib_regisiter_callback(&face_recognition_cb);
 
 #if !CONFIG_ENABLE_UART_PROTOCOL
@@ -306,8 +311,12 @@ int main(void)
     register_core1(core1_function, NULL);
 #endif /* CONFIG_ENABLE_OUTPUT_JPEG */
 
-    /* init device */
+/* init device */
+#if CONFIG_NOTIFY_STRANGER
+    protocol_regesiter_user_cb(&user_custom_cmd[0], 4);
+#else
     protocol_regesiter_user_cb(&user_custom_cmd[0], 3);
+#endif
     protocol_init_device(&g_board_cfg, 0);
     protocol_send_init_done();
 #endif /* CONFIG_ENABLE_UART_PROTOCOL */

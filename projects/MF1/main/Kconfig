@@ -383,6 +383,11 @@ menu "Application configuration"
 			--help--
 			Identify Qrcode will took very long time,and will affect lcd display
 
+		config NOTIFY_STRANGER
+			depends on ENABLE_UART_PROTOCOL
+			bool "output stranger face_info"
+			default n
+
 	endmenu
 
 	menu "Board Type Select"

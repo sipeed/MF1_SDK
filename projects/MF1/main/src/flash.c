@@ -640,5 +640,11 @@ uint8_t flash_cfg_set_default(board_cfg_t *cfg)
 
     memset(cfg->user_custom_cfg, 0, sizeof(cfg->user_custom_cfg));
 
+#if CONFIG_NOTIFY_STRANGER
+    cfg->user_custom_cfg[0] = 1; /* 有陌生人就输出 */
+    cfg->user_custom_cfg[1] = 1; /* 输出信息里带有特征值 */
+
+#endif /* CONFIG_NOTIFY_STRANGER */
+
     return;
 }
