@@ -27,6 +27,7 @@ volatile uint8_t g_key_long_press = 0;
 uint8_t sKey_dir = 0;
 
 ///////////////////////////////////////////////////////////////////////////////
+#if 0
 uint8_t kpu_image[2][CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 3] __attribute__((aligned(128)));
 uint8_t cam_image[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2] __attribute__((aligned(64)));
 
@@ -34,7 +35,10 @@ uint8_t cam_image[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIG
 #if (CONFIG_CAMERA_GC0328_DUAL)
 uint8_t kpu_image_tmp[CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 3] __attribute__((aligned(128)));
 #endif
-
+#else
+uint8_t kpu_image[2][CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 3] __attribute__((aligned(128)));
+uint8_t rgb_image[2][CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2] __attribute__((aligned(64)));
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 static volatile uint8_t g_gpio_flag = 0;
 static volatile uint64_t g_gpio_time = 0;
@@ -249,11 +253,11 @@ void board_init(void)
     dvp_set_image_format(DVP_CFG_RGB_FORMAT);
     dvp_set_image_size(CONFIG_CAMERA_RESOLUTION_WIDTH, CONFIG_CAMERA_RESOLUTION_HEIGHT);
 
-    dvp_set_ai_addr((uint32_t)_IOMEM_ADDR(kpu_image),
-                    (uint32_t)(_IOMEM_ADDR(kpu_image) + CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT),
-                    (uint32_t)(_IOMEM_ADDR(kpu_image) + CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2));
+    dvp_set_ai_addr(_IOMEM_ADDR(kpu_image[1]),
+                    _IOMEM_ADDR(kpu_image[1]) + CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT,
+                    _IOMEM_ADDR(kpu_image[1]) + CONFIG_CAMERA_RESOLUTION_WIDTH * CONFIG_CAMERA_RESOLUTION_HEIGHT * 2);
+    dvp_set_display_addr(rgb_image[1]);
 
-    dvp_set_display_addr((uint32_t)_IOMEM_ADDR(cam_image));
     dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE, 0);
     dvp_disable_auto();
 

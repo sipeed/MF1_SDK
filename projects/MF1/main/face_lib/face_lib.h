@@ -94,6 +94,7 @@ typedef struct
     uint32_t index;
     float score;
     bool pass;
+    int blur;
 } face_obj_t;
 
 typedef struct
@@ -130,6 +131,9 @@ typedef struct
     uint8_t use_flash_led;     //1 when dark, use flash led
     uint8_t no_face_close_lcd; //1 enable, 0 disable
 
+    int face_min_width;
+    int face_min_height;
+    
     float detect_threshold;
     float compare_threshold;
 } face_recognition_cfg_t;
@@ -175,6 +179,7 @@ typedef struct
 
 ///////////////////////////////////////////////////////////////////////////////
 extern volatile uint8_t face_lib_draw_flag;
+extern volatile uint8_t rgb_buf_index;
 ///////////////////////////////////////////////////////////////////////////////
 //get face_lib version
 char *face_lib_version(void);

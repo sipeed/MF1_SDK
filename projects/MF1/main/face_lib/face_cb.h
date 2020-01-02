@@ -25,6 +25,7 @@ void lcd_display_image_alpha(uint32_t pic_addr, uint16_t pic_w, uint16_t pic_h, 
 
 void lcd_draw_pass(void);
 
+uint8_t check_front_face(key_point_t *kp);
 uint8_t judge_face_by_keypoint(key_point_t *kp);
 void protocol_record_face(proto_record_face_cfg_t *cfg);
 

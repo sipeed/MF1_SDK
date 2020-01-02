@@ -19,6 +19,9 @@ typedef struct _camera
     int (*camera_set_hmirror)(camera_t *camera, uint8_t val);
     int (*camera_set_vflip)(camera_t *camera, uint8_t val);
     int (*camera_read_id)(camera_t *camera, uint16_t *manuf_id, uint16_t *device_id);
+
+    //only GC0328_DUAL support
+    int (*camera_modify_reg)(camera_t *camera, uint8_t reg_data[][2]);
 } camera_t;
 
 int camera_init(camera_type_t type);

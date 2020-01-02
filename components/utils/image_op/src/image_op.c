@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "global_config.h"
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -522,48 +523,6 @@ void image_rgb565_draw_zhCN_string(uint16_t *ptr, uint8_t *zhCN_string, uint8_t 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-static uint16_t fast_blender_alpha(uint32_t x, uint32_t y, uint32_t alpha)
-{
-    x = (x | (x << 16)) & 0x7E0F81F;
-    y = (y | (y << 16)) & 0x7E0F81F;
-    uint32_t result = ((((x - y) * alpha) >> 5) + y) & 0x7E0F81F;
-    return (uint16_t)((result & 0xFFFF) | (result >> 16));
-}
-
-void image_rgb565_mix_pic_with_alpha(mix_image_t *img_src, mix_image_t *img_dst, uint32_t alpha)
-{
-    uint16_t sx, sy, sw, sh;
-    uint16_t dx, dy, dw, dh;
-
-    sx = img_src->x;
-    sy = img_src->y;
-    sw = img_src->w;
-    sh = img_src->h;
-
-    dx = img_dst->x;
-    dy = img_dst->y;
-    dw = img_dst->w;
-    dh = img_dst->h;
-
-    if ((dx + dw) > (sw + sx) || (dh + dy) > (sh + sy))
-    {
-        // printk("[image_rgb565_mix_pic_with_alpha]:image invaild\r\n");
-        return;
-    }
-
-    for (uint16_t i = dy; i < (dy + dh); i++)
-    {
-        for (uint16_t j = dx; j < (dx + dw); j++)
-        {
-            *(img_src->img_addr + i * sw + j) = fast_blender_alpha((uint32_t) * (img_src->img_addr + i * sw + j),
-                                                                   (uint32_t) * (img_dst->img_addr + (i - dy) * dw + (j - dx)),
-                                                                   (uint32_t)alpha / 8);
-        }
-    }
-    return;
-}
-
 void image_rgb565_paste_img(uint16_t *canvas, uint16_t canvas_w, uint16_t canvas_h,
                             uint16_t *img, uint16_t img_w, uint16_t img_h,
                             int16_t x_oft, int16_t y_oft)
@@ -593,6 +552,101 @@ void image_rgb565_paste_img(uint16_t *canvas, uint16_t canvas_w, uint16_t canvas
         memcpy((uint8_t *)canvas + (canvas_y * canvas_w + canvas_x0) * 2,
                (uint8_t *)img + (img_y * img_w + img_x0) * 2,
                cpy_w * 2);
+    }
+    return;
+}
+
+static uint16_t fast_blender_alpha(uint32_t x, uint32_t y, uint32_t alpha)
+{
+    x = (x | (x << 16)) & 0x7E0F81F;
+    y = (y | (y << 16)) & 0x7E0F81F;
+    uint32_t result = ((((x - y) * alpha) >> 5) + y) & 0x7E0F81F;
+    return (uint16_t)((result & 0xFFFF) | (result >> 16));
+}
+
+void image_rgb565_mix_pic_with_alpha_lessmem(mix_image_t *img_src, mix_image_t *img_dst,
+                                             uint32_t dst_addr, uint32_t alpha, uint8_t del_white,
+                                             int (*flash_read_data)(uint32_t addr, uint8_t *data_buf, uint32_t length))
+{
+    uint16_t sx, sy, sw, sh;
+    uint16_t dx, dy, dw, dh;
+
+    sx = img_src->x;
+    sy = img_src->y;
+    sw = img_src->w;
+    sh = img_src->h;
+
+    dx = img_dst->x;
+    dy = img_dst->y;
+    dw = img_dst->w;
+    dh = img_dst->h;
+
+    if ((dx + dw) > (sw + sx) || (dh + dy) > (sh + sy))
+    {
+        // printk("[image_rgb565_mix_pic_with_alpha]:image invaild\r\n");
+        return;
+    }
+
+    //申请一行的大小
+    uint16_t *dst_buf = malloc(dw * 2);
+
+    for (uint16_t i = dy; i < (dy + dh); i++)
+    {
+        //读取一行
+        flash_read_data((uint32_t)(dst_addr + ((i - dy) * dw * 2)), (uint8_t *)dst_buf, dw * 2);
+
+        for (uint16_t j = dx; j < (dx + dw); j++)
+        {
+            *(img_src->img_addr + i * sw + j) = fast_blender_alpha((uint32_t) * (img_src->img_addr + i * sw + j),
+                                                                   (uint32_t) * ((uint16_t *)dst_buf + (j - dx)),
+                                                                   (uint32_t)alpha / 8);
+        }
+    }
+
+    if (dst_buf)
+    {
+        free(dst_buf);
+    }
+
+    return;
+}
+
+void image_rgb565_mix_pic_with_alpha(mix_image_t *img_src, mix_image_t *img_dst, uint32_t alpha, uint8_t del_white)
+{
+    uint16_t sx, sy, sw, sh;
+    uint16_t dx, dy, dw, dh;
+
+    sx = img_src->x;
+    sy = img_src->y;
+    sw = img_src->w;
+    sh = img_src->h;
+
+    dx = img_dst->x;
+    dy = img_dst->y;
+    dw = img_dst->w;
+    dh = img_dst->h;
+
+    if ((dx + dw) > (sw + sx) || (dh + dy) > (sh + sy))
+    {
+        // printk("[image_rgb565_mix_pic_with_alpha]:image invaild\r\n");
+        return;
+    }
+
+    for (uint16_t i = dy; i < (dy + dh); i++)
+    {
+        for (uint16_t j = dx; j < (dx + dw); j++)
+        {
+            if (del_white)
+            {
+                if ((uint32_t) * (img_dst->img_addr + (i - dy) * dw + (j - dx)) == 0xFFFF)
+                {
+                    continue;
+                }
+            }
+            *(img_src->img_addr + i * sw + j) = fast_blender_alpha((uint32_t) * (img_src->img_addr + i * sw + j),
+                                                                   (uint32_t) * (img_dst->img_addr + (i - dy) * dw + (j - dx)),
+                                                                   (uint32_t)alpha / 8);
+        }
     }
     return;
 }
