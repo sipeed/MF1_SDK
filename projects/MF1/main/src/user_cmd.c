@@ -4,7 +4,7 @@
 #include "face_cb.h"
 
 #include "cJSON.h"
-#include "qrcode.h"
+#include "maix_qrcode.h"
 
 #include "board.h"
 

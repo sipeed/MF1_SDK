@@ -1,35 +1,16 @@
-#ifndef __QRCODE_H
-#define __QRCODE_H
+#ifndef __MAIX_QRCODE_H
+#define __MAIX_QRCODE_H
 
-#include <stdio.h>
 #include <stdint.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <stdbool.h>
+#include <math.h>
+
 #include "yuv_tab.h"
-
+///////////////////////////////////////////////////////////////////////////////
 #define QUIRC_MAX_PAYLOAD 255
-
-typedef struct qrcode_res
-{
-    /* Various parameters of the QR-code. These can mostly be
-     * ignored if you only care about the data.
-     */
-    int version;
-    int ecc_level;
-    int mask;
-
-    /* This field is the highest-valued data type found in the QR
-     * code.
-     */
-    int data_type;
-
-    /* Data payload. For the Kanji datatype, payload is encoded as
-     * Shift-JIS. For all other datatypes, payload is ASCII text.
-     */
-    uint8_t payload[QUIRC_MAX_PAYLOAD];
-    int payload_len;
-
-    /* ECI assignment number */
-    uint32_t eci;
-} qrcode_result_t __attribute__((aligned(8)));
 
 #define SWAP_16(x) ((x >> 8 & 0xff) | (x << 8))
 
@@ -51,6 +32,15 @@ typedef struct qrcode_res
         ((uint16_t *)_image->data) + (_image->w * _y); \
     })
 
+///////////////////////////////////////////////////////////////////////////////
+enum enum_qrcode_res
+{
+    QRCODE_SUCC = 0,    /*  0: 扫码成功 */
+    QRCODE_NONE = 1,    /* 1: 扫码失败 */
+    QRCODE_ERROR = 2,   /* 出错 */
+    QRCODE_TIMEOUT = 3, /* 2: 扫码超时 */
+};
+
 typedef struct _qrcode_image
 {
     int w;
@@ -60,17 +50,7 @@ typedef struct _qrcode_image
         uint8_t *pixels;
         uint8_t *data;
     };
-} __attribute__((aligned(8))) qrcode_image_t;
-
-uint8_t find_qrcodes(qrcode_result_t *out, qrcode_image_t *img, uint8_t convert);
-
-enum enum_qrcode_res
-{
-    QRCODE_SUCC = 0,    /*  0: 扫码成功 */
-    QRCODE_NONE = 1,    /* 1: 扫码失败 */
-    QRCODE_ERROR = 2,   /* 出错 */
-    QRCODE_TIMEOUT = 3, /* 2: 扫码超时 */
-};
+} qrcode_image_t;
 
 typedef struct _qrcode_scan
 {
@@ -82,10 +62,21 @@ typedef struct _qrcode_scan
     uint8_t *img_data;
 
     /* http://chicore.cn/doc/1180830026001202.htm */
+    uint8_t qrcode_num;
 
     uint8_t qrcode[QUIRC_MAX_PAYLOAD];
 } qrcode_scan_t;
 
+///////////////////////////////////////////////////////////////////////////////
+/* SDK中的函数 */
+extern int printk(const char *format, ...);
+extern uint64_t sysctl_get_time_us(void);
+/* 工程中函数 */
+extern void set_W_LED(int state);
+
+void qrcode_convert_order(qrcode_image_t *img);
+void qrcode_convert_to_gray(qrcode_image_t *img, uint8_t *gray);
+
 enum enum_qrcode_res qrcode_scan(qrcode_scan_t *scan, uint8_t convert);
 
-#endif
+#endif /* __QRCODE_H */

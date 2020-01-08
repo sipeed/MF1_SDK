@@ -33,6 +33,9 @@ set(CMAKE_C_FLAGS 	-mcmodel=medany
                     -Wno-pointer-to-int-cast
                     -Wno-strict-aliasing
                     -Wno-int-to-pointer-cast
+                    -Wno-error=logical-not-parentheses
+                    -Wno-error=duplicate-decl-specifier
+                    -Wno-error=parentheses
                     )
 ################################
 

@@ -1,0 +1,15 @@
+menuconfig ENABLE_QRCODE
+        bool "enable qrcode scan"
+        default y
+
+    choice QRCODE_TYPE
+        depends on ENABLE_QRCODE
+
+        bool "Qrcode engine"
+        default QRCODE_TYPE_QUIRC
+
+        config QRCODE_TYPE_QUIRC
+            bool "Qrcode decode use Quirc"
+        config QRCODE_TYPE_ZBAR
+            bool "Qrcode decode use Zbar"
+    endchoice
