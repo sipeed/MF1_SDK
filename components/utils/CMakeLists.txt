@@ -10,7 +10,7 @@ list(APPEND ADD_INCLUDE "base64/include"
                         "cQueue/src"
                         "qrcode/include"
                         "qrcode/quirc/include"
-                        "qrcode/zbar/include"
+                        # "qrcode/zbar/include"
                         #yuv_tab
                         "yuv_tab/include"
                     )
