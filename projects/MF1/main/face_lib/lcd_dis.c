@@ -323,10 +323,11 @@ lcd_dis_t *lcd_dis_list_add_pic(int id, int auto_del,
 uint8_t lcd_dis_list_init(void)
 {
     memset(list_id_table, 0, sizeof(list_id_table));
+    list_static_init();
     lcd_dis_list = list_new();
     if (lcd_dis_list == NULL)
     {
-        printk("init list failed\r\n");
+        printf("init list failed\r\n");
         return 1;
     }
     return 0;
@@ -347,10 +348,13 @@ int lcd_dis_list_del_by_id(int id)
                 lcd_dis_list_free(lcd_dis);
                 list_remove(lcd_dis_list, node);
                 list_id_table[id / 32] &= ~(1 << (id % 32));
+                list_iterator_destroy(lcd_dis_list_iterator);
                 return id;
             }
         }
     }
+    list_id_table[id / 32] &= ~(1 << (id % 32));
+    list_iterator_destroy(lcd_dis_list_iterator);
     return -1;
 }
 
@@ -369,6 +373,8 @@ void lcd_dis_list_del_all(void)
         }
     }
     memset(list_id_table, 0, sizeof(list_id_table));
+    list_iterator_destroy(lcd_dis_list_iterator);
+    free_all_node();
     return;
 }
 
