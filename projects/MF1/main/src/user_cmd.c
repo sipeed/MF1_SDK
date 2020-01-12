@@ -10,8 +10,11 @@
 
 #if CONFIG_ENABLE_UART_PROTOCOL
 ///////////////////////////////////////////////////////////////////////////////
-static void test_cmd(cJSON *root);
-static void test2_cmd(cJSON *root);
+static void hex_str(uint8_t *inchar, uint16_t len, uint8_t *outtxt);
+static uint16_t str_hex(uint8_t *str, uint8_t *hex);
+
+static void proto_query_uid(cJSON *root);
+static void proto_set_face_recognition_stat(cJSON *root);
 static void proto_scan_qrcode(cJSON *root);
 static void proto_send_qrcode_ret(uint8_t code, char *msg, char *qrcode);
 
@@ -25,53 +28,140 @@ protocol_custom_cb_t user_custom_cmd[4] = {
 #else
 protocol_custom_cb_t user_custom_cmd[3] = {
 #endif /* CONFIG_NOTIFY_STRANGER */
-    {.cmd = "test", .cmd_cb = test_cmd},
-    {.cmd = "test2", .cmd_cb = test2_cmd},
+    {.cmd = "query_uid", .cmd_cb = proto_query_uid},
+    {.cmd = "face_recon", .cmd_cb = proto_set_face_recognition_stat},
     {.cmd = "qrscan", .cmd_cb = proto_scan_qrcode},
 };
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-//recv: {"version":1,"type":"test"}
-//send: {"version":1,"type":"test","code":0,"msg":"test"}
-static void test_cmd(cJSON *root)
-{
-    cJSON *ret = protocol_gen_header("test", 0, "test");
-    if (ret)
-    {
-        protocol_send(ret);
-    }
-    cJSON_Delete(ret);
-    return;
-}
-
-//recv: {"version":1,"type":"test2","log_tx":10}
-//send: {"1":1,"type":"test2","code":0,"msg":"test2"}
-static void test2_cmd(cJSON *root)
+/* code:
+        0: 有
+        1: 没有 
+        2: 解析错误
+*/
+static void proto_query_uid_ret(uint8_t code, char *msg, uint32_t uid_id)
 {
     cJSON *ret = NULL;
-    cJSON *tmp = NULL;
 
-    tmp = cJSON_GetObjectItem(root, "log_tx");
-    if (tmp == NULL)
+    ret = protocol_gen_header("query_uid_ret", code, msg);
+
+    if (ret == NULL)
     {
-        printk("no log_tx recv\r\n");
+        printk("%s Ahh, failed to gen header\r\n", __func__);
+        return 1;
+    }
+
+    cJSON_AddNumberToObject(ret, "uid_id", uid_id);
+
+    protocol_send(ret);
+
+    cJSON_Delete(ret);
+
+    return 0;
+}
+
+/* 这里是去查询某一个UID是否存在 */
+/* {"uid":"xxxxxxx"} */
+static void proto_query_uid(cJSON *root)
+{
+    cJSON *tmp = NULL;
+    uint32_t uid_id = 0;
+    uint8_t hex_uid[16];
+
+    tmp = cJSON_GetObjectItem(root, "uid");
+    if ((tmp == NULL) || (cJSON_IsString(tmp) == false))
+    {
+        printk("get uid failed\r\n");
+        proto_query_uid_ret(2, "no uid", 0);
+        goto _exit;
+    }
+
+    if (str_hex(tmp->valuestring, hex_uid) != 16)
+    {
+        proto_query_uid_ret(2, "uid len error", 0); //json解析出错
+        goto _exit;
+    }
+
+    uid_id = flash_get_id_by_uid(hex_uid);
+    printk("\r\nuid_id:%08x\r\n", uid_id);
+
+    if (uid_id != 0)
+    {
+        proto_query_uid_ret(0, "uid exist", uid_id & 0x0FFFFFFF);
     }
     else
     {
-        printk("log_tx:%d\r\n", tmp->valueint);
+        proto_query_uid_ret(1, "uid not exist", 0);
     }
-
-    ret = protocol_gen_header("test2", 0, "test2");
-    if (ret)
-    {
-        protocol_send(ret);
-    }
-    cJSON_Delete(ret);
+_exit:
     return;
 }
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/* code:
+        0: Ok
+        1: 解析失败
+*/
+static void proto_set_face_recognition_stat_ret(uint8_t code, char *msg, uint8_t stat)
+{
+    cJSON *ret = NULL;
 
+    ret = protocol_gen_header("face_recon_ret", code, msg);
+
+    if (ret == NULL)
+    {
+        printk("%s Ahh, failed to gen header\r\n", __func__);
+        return 1;
+    }
+
+    cJSON_AddNumberToObject(ret, "stat", stat);
+
+    protocol_send(ret);
+
+    cJSON_Delete(ret);
+
+    return 0;
+}
+
+/* 默认使能识别,这个标志位影响几个回调，设置为0就不画人脸框，也不执行后续的回调 */
+uint8_t proto_start_face_recon_flag = 1;
+
+/* {"query_stat":0/1,"set_stat":0/1} */
+static void proto_set_face_recognition_stat(cJSON *root)
+{
+    cJSON *tmp = NULL;
+
+    tmp = cJSON_GetObjectItem(root, "query_stat");
+    if ((tmp != NULL) && (cJSON_IsNumber(tmp) != false))
+    {
+        if ((tmp->valueint & 0x1) == 0x1)
+        {
+            printk("user query face recon stat\r\n");
+
+            /* 返回当前状态 */
+            proto_set_face_recognition_stat_ret(0, "query_stat success", proto_start_face_recon_flag);
+            goto _exit;
+        }
+    }
+
+    tmp = cJSON_GetObjectItem(root, "set_stat");
+    if ((tmp != NULL) && (cJSON_IsNumber(tmp) != false))
+    {
+        printk("user set face recon stat %d to %d\r\n", proto_start_face_recon_flag, (tmp->valueint & 0x1));
+        proto_start_face_recon_flag = (tmp->valueint & 0x1);
+        proto_set_face_recognition_stat_ret(0, "set_stat success", proto_start_face_recon_flag);
+        goto _exit;
+    }
+    /* 这里返回解析错误 */
+    proto_set_face_recognition_stat_ret(1, "pkt parse failed", 0);
+_exit:
+    return;
+}
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /* 对客户需求输出陌生人脸需求添加的指令 */
 #if CONFIG_NOTIFY_STRANGER
@@ -82,15 +172,13 @@ static void test2_cmd(cJSON *root)
 */
 static uint8_t proto_set_notify_ret(uint8_t code, char *msg, uint8_t en, uint8_t out_fea)
 {
-    const char *notify_cmd_ret = "set_notify_ret";
-
     cJSON *ret = NULL;
 
-    ret = protocol_gen_header(notify_cmd_ret, code, msg);
+    ret = protocol_gen_header("set_notify_ret", code, msg);
 
     if (ret == NULL)
     {
-        printk("Ahh, failed to gen header\r\n");
+        printk("%s Ahh, failed to gen header\r\n", __func__);
         return 1;
     }
 
@@ -158,6 +246,8 @@ static void proto_set_notify(cJSON *root)
 }
 #endif /* CONFIG_NOTIFY_STRANGER */
 ///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 int proto_scan_qrcode_flag = 0;
 
 static qrcode_scan_t qrcode_cfg = {
@@ -211,17 +301,16 @@ static void proto_scan_qrcode(cJSON *root)
  */
 static void proto_send_qrcode_ret(uint8_t code, char *msg, char *qrcode)
 {
-    const char *qrcode_cmd_ret = "qrscan_ret";
     cJSON *ret = NULL;
 
     /* 停止扫码 */
     proto_scan_qrcode_flag = 0;
 
-    ret = protocol_gen_header(qrcode_cmd_ret, code, msg);
+    ret = protocol_gen_header("qrscan_ret", code, msg);
 
     if (ret == NULL)
     {
-        printk("Ahh, failed to gen header\r\n");
+        printk("%s Ahh, failed to gen header\r\n", __func__);
         return;
     }
 
@@ -302,3 +391,84 @@ void proto_qrcode_scan_loop(void)
 }
 ///////////////////////////////////////////////////////////////////////////////
 #endif /* CONFIG_ENABLE_UART_PROTOCOL */
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+static void hex_str(uint8_t *inchar, uint16_t len, uint8_t *outtxt)
+{
+    uint16_t i;
+    uint8_t hbit, lbit;
+
+    for (i = 0; i < len; i++)
+    {
+        hbit = (*(inchar + i) & 0xf0) >> 4;
+        lbit = *(inchar + i) & 0x0f;
+        if (hbit > 9)
+            outtxt[2 * i] = 'A' + hbit - 10;
+        else
+            outtxt[2 * i] = '0' + hbit;
+        if (lbit > 9)
+            outtxt[2 * i + 1] = 'A' + lbit - 10;
+        else
+            outtxt[2 * i + 1] = '0' + lbit;
+    }
+    outtxt[2 * i] = 0;
+    return;
+}
+
+static uint16_t str_hex(uint8_t *str, uint8_t *hex)
+{
+    uint8_t ctmp, ctmp1, half;
+    uint16_t num = 0;
+    do
+    {
+        do
+        {
+            half = 0;
+            ctmp = *str;
+            if (!ctmp)
+                break;
+            str++;
+        } while ((ctmp == 0x20) || (ctmp == 0x2c) || (ctmp == '\t'));
+        if (!ctmp)
+            break;
+        if (ctmp >= 'a')
+            ctmp = ctmp - 'a' + 10;
+        else if (ctmp >= 'A')
+            ctmp = ctmp - 'A' + 10;
+        else
+            ctmp = ctmp - '0';
+        ctmp = ctmp << 4;
+        half = 1;
+        ctmp1 = *str;
+        if (!ctmp1)
+            break;
+        str++;
+        if ((ctmp1 == 0x20) || (ctmp1 == 0x2c) || (ctmp1 == '\t'))
+        {
+            ctmp = ctmp >> 4;
+            ctmp1 = 0;
+        }
+        else if (ctmp1 >= 'a')
+            ctmp1 = ctmp1 - 'a' + 10;
+        else if (ctmp1 >= 'A')
+            ctmp1 = ctmp1 - 'A' + 10;
+        else
+            ctmp1 = ctmp1 - '0';
+        ctmp += ctmp1;
+        *hex = ctmp;
+        hex++;
+        num++;
+    } while (1);
+    if (half)
+    {
+        ctmp = ctmp >> 4;
+        *hex = ctmp;
+        num++;
+    }
+    return (num);
+}
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////

@@ -243,6 +243,12 @@ void fake_face_cb(face_recognition_ret_t *face)
 
     face_obj_t *face_info = NULL;
 
+    /* 设置不进行人脸识别的时候不显示框 */
+    if (proto_start_face_recon_flag == 0)
+    {
+        return;
+    }
+
     for (uint32_t i = 0; i < face_cnt; i++)
     {
         face_info = (face_obj_t *)&(face->result->face_obj_info.obj[i]);
@@ -273,6 +279,12 @@ void detected_face_cb(face_recognition_ret_t *face)
     {
         lass_have_face_time = sysctl_get_time_us();
         have_face = 3;
+    }
+
+    /* 设置不进行人脸识别的时候不显示框 */
+    if (proto_start_face_recon_flag == 0)
+    {
+        return;
     }
 
     for (uint32_t i = 0; i < face_cnt; i++)
@@ -421,6 +433,12 @@ void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
         return;
     }
 
+    /* 设置不进行人脸识别的时候不显示框 */
+    if (proto_start_face_recon_flag == 0)
+    {
+        return;
+    }
+
     if (ir_check)
     {
         face_cnt = face->result->face_compare_info.result_number;
@@ -460,6 +478,12 @@ void pass_face_cb(face_recognition_ret_t *face, uint8_t ir_check)
     face_obj_t *face_info = NULL;
 
     v_tick = sysctl_get_time_us();
+
+    /* 设置不进行人脸识别的时候不显示框 */
+    if (proto_start_face_recon_flag == 0)
+    {
+        return;
+    }
 
     if (g_board_cfg.brd_soft_cfg.cfg.auto_out_fea)
     {
