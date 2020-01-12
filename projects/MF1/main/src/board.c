@@ -226,7 +226,7 @@ void set_W_LED(int state)
     {
         fpioa_set_function(CONFIG_PIN_NUM_FLASH_LED, FUNC_TIMER1_TOGGLE1);
         timer_set_enable(TIMER_NOR, TIMER_CHN, 1);
-        pwm_set_frequency(TIMER_PWM, TIMER_PWM_CHN, 1 * 1000, 0.99);
+        pwm_set_frequency(TIMER_PWM, TIMER_PWM_CHN, 1 * 1000, 0.5);
         pwm_set_enable(TIMER_PWM, TIMER_PWM_CHN, 1);
     }
     else
