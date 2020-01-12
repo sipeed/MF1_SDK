@@ -237,7 +237,7 @@ static void proto_set_notify(cJSON *root)
     if (flash_save_cfg(&g_board_cfg))
     {
         printk("save flash cfg success\r\n");
-        proto_set_notify_ret(0, "save cfg success", 0, 0);
+        proto_set_notify_ret(0, "save cfg success", g_board_cfg.user_custom_cfg[0], g_board_cfg.user_custom_cfg[1]);
         return;
     }
     printk("save flash cfg faild\r\n");
