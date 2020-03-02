@@ -328,8 +328,7 @@ void detected_face_cb(face_recognition_ret_t *face)
                 goto _exit;
             }
 
-            // if (judge_face_by_keypoint(&(face_info->key_point)) && (face_info->prob >= 0.92f))
-            if (check_front_face(&(face_info->key_point)) == 0) && (face_info->prob >= 0.92f))
+            if ((check_front_face(&(face_info->key_point)) == 0) && (face_info->prob >= 0.92f))
             {
                 printf("record face\r\n");
 
@@ -407,7 +406,7 @@ void detected_face_cb(face_recognition_ret_t *face)
         }
 
         if (g_key_press)
-        {cnxel1995@gmail.com
+        {
             g_key_press = 0;
         }
 #endif
