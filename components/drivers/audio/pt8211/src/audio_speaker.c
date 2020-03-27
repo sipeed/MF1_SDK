@@ -6,7 +6,6 @@
 #include "dmac.h"
 #include "stdio.h"
 #include "sysctl.h"
-#include "face_lib.h"
 
 #include "audio.h"
 
@@ -317,17 +316,17 @@ void audio_speaker_replay()
     }
 }
 
-int16_t *audio_speaker_read_from_flash(uint32_t addr, uint32_t length)
-{
-    int16_t *buf;
-    buf = malloc(sizeof(int16_t) * length);
-    w25qxx_read_data(addr, buf, sizeof(int16_t) * length);
-    return buf;
-}
-void audio_speaker_free_buf(int16_t *buf)
-{
-    free(buf);
-}
+// int16_t *audio_speaker_read_from_flash(uint32_t addr, uint32_t length)
+// {
+//     int16_t *buf;
+//     buf = malloc(sizeof(int16_t) * length);
+//     w25qxx_read_data(addr, buf, sizeof(int16_t) * length);
+//     return buf;
+// }
+// void audio_speaker_free_buf(int16_t *buf)
+// {
+//     free(buf);
+// }
 
 ///////////////////////////////////////////////////////////////////////////////
 
