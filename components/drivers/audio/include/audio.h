@@ -16,6 +16,9 @@ typedef struct _autio
 {
     uint8_t (*config)(void);
 
+    /* 文件要求，WAV文件去掉头部44Byte */
+    /* 可使用 https://audio.online-convert.com/convert-to-wav 讲MP3转为WAV*/
+    /* 选项设置为 16Bit, 16000Hz, Mono */
     uint8_t (*play)(audio_t *audio, uint8_t *audio_buf, uint32_t audio_len);
 
 } audio_t;
