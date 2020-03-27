@@ -25,6 +25,7 @@
 #define SPEAKER_SAMPLE_RATE (16000)
 #define SPEAKER_FRAME_LENGTH (512)
 
+/*
 typedef enum _audio_play_mode_t
 {
     PLAY_MODE_ONCE,
@@ -101,6 +102,7 @@ void audio_speaker_replay();
 
 int16_t *audio_speaker_read_from_flash(uint32_t addr, uint32_t length);
 void audio_speaker_free_buf(int16_t *buf);
+*/
 
 uint8_t audio_pt8211_init(audio_t *audio);
 

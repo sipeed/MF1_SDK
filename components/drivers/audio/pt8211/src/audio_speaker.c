@@ -11,9 +11,9 @@
 
 #include "global_config.h"
 
-audio_speaker_t audio_speaker;
-uint16_t zero_buf[SPEAKER_FRAME_LENGTH];
-uint32_t i2s_tx_buf[SPEAKER_FRAME_LENGTH * 2];
+// audio_speaker_t audio_speaker;
+// uint16_t zero_buf[SPEAKER_FRAME_LENGTH];
+// uint32_t i2s_tx_buf[SPEAKER_FRAME_LENGTH * 2];
 
 static void audio_speaker_io_mux_init()
 {
@@ -24,9 +24,10 @@ static void audio_speaker_io_mux_init()
     // PA
     fpioa_set_function(CONFIG_PIN_NUM_PT8211_PA_EN, FUNC_GPIO0 + CONFIG_GPIO_NUM_PT8211_PA_EN);
     gpio_set_drive_mode(CONFIG_GPIO_NUM_PT8211_PA_EN, GPIO_DM_OUTPUT);
-    gpio_set_pin(CONFIG_GPIO_NUM_PT8211_PA_EN, GPIO_PV_HIGH);
+    gpio_set_pin(CONFIG_GPIO_NUM_PT8211_PA_EN, GPIO_PV_LOW);
 }
 
+/*
 static void i2s_parse_voice(i2s_device_number_t device_num, uint32_t *buf, const uint8_t *pcm, size_t length, size_t bits_per_sample,
                             uint8_t track_num, size_t *send_len)
 {
@@ -327,13 +328,29 @@ void audio_speaker_replay()
 // {
 //     free(buf);
 // }
+*/
+///////////////////////////////////////////////////////////////////////////////
+static uint8_t audio_speaker_init(void)
+{
+    audio_speaker_io_mux_init();
+
+    sysctl_pll_set_freq(SYSCTL_PLL2, 45158400UL);
+
+    i2s_init(SPEAKER_I2S_DEVICE, I2S_TRANSMITTER, 0x0C);
+    i2s_tx_channel_config(SPEAKER_I2S_DEVICE, SPEAKER_I2S_CHANNEL,
+                          RESOLUTION_16_BIT, SCLK_CYCLES_32,
+                          TRIGGER_LEVEL_4, RIGHT_JUSTIFYING_MODE);
+    i2s_set_sample_rate(SPEAKER_I2S_DEVICE, SPEAKER_SAMPLE_RATE);
+    return 0;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
-
 static uint8_t pt8211_play(audio_t *audio, uint8_t *audio_buf, uint32_t audio_len)
 {
-    audio_speaker_set_buffer(audio_buf, audio_len);
-    audio_speaker_play();
+    gpio_set_pin(CONFIG_GPIO_NUM_PT8211_PA_EN, 1);
+    i2s_play(SPEAKER_I2S_DEVICE, SPEAKER_I2S_CHANNEL, audio_buf, audio_len, 512, 16, 1);
+    msleep(10);
+    gpio_set_pin(CONFIG_GPIO_NUM_PT8211_PA_EN, 0);
     return 0;
 }
 
