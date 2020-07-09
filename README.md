@@ -7,6 +7,10 @@ SDK for Sipeed MF1 AI module
     <img src="https://travis-ci.org/sipeed/MF1_SDK.svg?branch=dev" alt="Master branch build status" />
 </a>
 
+# Notice
+
+This repo is no longer maintained, please contact support@sipeed.com if you need a new SDK
+
 ## Pre Built Firmware
 
 [http://dl.sipeed.com](http://dl.sipeed.com/MAIX/SDK/MF1_SDK_Prebuild/dev)
